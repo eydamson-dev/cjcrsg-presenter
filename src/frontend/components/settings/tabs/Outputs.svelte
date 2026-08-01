@@ -336,7 +336,7 @@
     </InputRow>
 
     <InputRow>
-        <MaterialTextInput label="inputs.name" value={currentOutput.ndiData?.name || `FreeShow NDI${currentOutput.name ? ` - ${currentOutput.name}` : ""}`} defaultValue={`FreeShow NDI${currentOutput.name ? ` - ${currentOutput.name}` : ""}`} on:change={(e) => updateNdiData(e.detail, "name")} />
+        <MaterialTextInput label="inputs.name" value={currentOutput.ndiData?.name || `CJCRSG NDI${currentOutput.name ? ` - ${currentOutput.name}` : ""}`} defaultValue={`CJCRSG NDI${currentOutput.name ? ` - ${currentOutput.name}` : ""}`} on:change={(e) => updateNdiData(e.detail, "name")} />
         <MaterialTextInput label="inputs.group" title="settings.comma_seperated" value={currentOutput.ndiData?.groups || ""} defaultValue="" placeholder="public" on:change={(e) => updateNdiData(e.detail, "groups")} />
     </InputRow>
 

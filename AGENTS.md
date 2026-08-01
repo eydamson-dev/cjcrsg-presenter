@@ -10,6 +10,7 @@ Fork of [ChurchApps/FreeShow](https://github.com/ChurchApps/FreeShow) — an Ele
 - **Shared types**: `src/types` (incl. IPC channel enums in `Channels.ts` and typed IPC payloads in `IPC/`). Frontend↔Electron communication goes through `src/electron/IPC/` and `src/frontend/IPC/`.
 - **All tool configs live under `config/`** (`typescript/`, `linting/`, `testing/`, `formatting/`, `building/`), not the repo root — commands must pass explicit `--config` paths (see package.json scripts).
 - `build/` and `public/build/` are generated and get **wiped by `scripts/preBuild.js`** (which also auto-generates `config/typescript/*.prod.json` and copies the pdf.js worker into `public/assets`).
+- `npm run build` **rewrites `public/index.html`** to load `./build/bundle.js` (correct for packaged apps, but breaks `npm start`). Restore it for dev with `git checkout -- public/index.html` — never commit that hunk.
 - Do not use Svelte 4/5 syntax (runes, snippets, etc.) — this is Svelte 3 with TypeScript 4.9.
 
 ## Commands

@@ -220,7 +220,7 @@ export const mainResponses: MainResponses = {
             console.error(`Provider ${data.providerId} does not support getContent`)
             return []
         }
-        return await provider.getContent(data.key)
+        return await provider.getContent(data.key, data.forceRefresh)
     },
     [Main.CHECK_MEDIA_LICENSE]: async (data) => {
         const provider = ContentProviderRegistry.getProvider(data.providerId)

@@ -10,7 +10,7 @@
     const ONE_DAY = 1000 * 60 * 60 * 24
 
     const messages = {
-        donate: "FreeShow is free because of the generous gifts of our users. Would you consider donating to FreeShow? With your help we can continue to meet the tech needs of the Church."
+        donate: "CJCRSG is free because of the generous gifts of our users. Would you consider donating to CJCRSG? With your help we can continue to meet the tech needs of the Church."
         // welcome: "Welcome to FreeShow! We're glad to have you here. Explore the features and let us know if you need any help getting started.",
         // update: "FreeShow has been updated to the latest version! Check out the new features and improvements we've made for a better experience."
     }
@@ -61,7 +61,7 @@
             {message}
 
             {#if activeMessage === "donate"}
-                <MaterialButton style="margin-left: 10px;padding: 2px 10px;background: linear-gradient(160deg, #f0008c 0%, #d100db 10%, #b300f0 30%, #9000f0 50%, #8000f0 100%) !important;" on:click={donate}>
+                <MaterialButton style="margin-left: 10px;padding: 2px 10px;background: linear-gradient(160deg, #5470c0 0%, #304080 40%, #242f5e 70%, #1a2244 100%) !important;" on:click={donate}>
                     <span style="font-weight: bold;color: white;">Donate</span>
                     <Icon id="launch" white />
                 </MaterialButton>
@@ -88,7 +88,7 @@
 
         /* border-top: 1px solid; */
         border-bottom: 2px solid;
-        border-image: linear-gradient(160deg, #8000f0 0%, #9000f0 10%, #b300f0 30%, #d100db 50%, #f0008c 100%) 1;
+        border-image: linear-gradient(160deg, #1a2244 0%, #242f5e 30%, #304080 60%, #5470c0 100%) 1;
     }
 
     .text {

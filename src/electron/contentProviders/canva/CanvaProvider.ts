@@ -78,8 +78,8 @@ export class CanvaProvider extends ContentProvider<CanvaScopes, CanvaAuthData> {
         }
     }
 
-    async getContent(folderId: string): Promise<ContentFile[]> {
-        return CanvaContentLibrary.getContent(folderId)
+    async getContent(folderId: string, forceRefresh?: boolean): Promise<ContentFile[]> {
+        return CanvaContentLibrary.getContent(folderId, forceRefresh)
     }
 
     protected handleAuthCallback(req: Request, res: Response): void {

@@ -67,10 +67,11 @@ export class CanvaContentLibrary {
     /**
      * Fetches page metadata for a design (preview-only, fast).
      * Returns cached result if available, otherwise fetches from API.
+     * forceRefresh bypasses the cache read (still updates the cache with fresh data).
      */
-    public static async getPageMetadata(designId: string): Promise<PageMetadata | null> {
+    public static async getPageMetadata(designId: string, forceRefresh = false): Promise<PageMetadata | null> {
         const cacheKey = `pages:${designId}`
-        const cached = this.getCachedEntry(this.pageMetadataCache, cacheKey)
+        const cached = forceRefresh ? null : this.getCachedEntry(this.pageMetadataCache, cacheKey)
         if (cached) return cached
 
         try {
@@ -186,7 +187,7 @@ export class CanvaContentLibrary {
      * If folderId starts with 'presentation-export-batch:', fetch all pages with high-res exports.
      * If folderId starts with 'presentation:', treat as a presentation and fetch page metadata with thumbnails.
      */
-    public static async getContent(folderId: string): Promise<ContentFile[]> {
+    public static async getContent(folderId: string, forceRefresh = false): Promise<ContentFile[]> {
         if (folderId.startsWith("presentation-export-batch:")) {
             const match = folderId.match(/^presentation-export-batch:(.*):(.+)$/)
             const designId = match?.[1] || ""
@@ -199,13 +200,13 @@ export class CanvaContentLibrary {
                           .split(",")
                           .map(Number)
                           .filter((page) => Number.isFinite(page) && page > 0)
-            return await this.getPresentationSlides(designId, true, pages)
+            return await this.getPresentationSlides(designId, true, pages, forceRefresh)
         }
 
         // If folderId is a presentation, fetch slides with thumbnails (no export wait)
         if (folderId.startsWith("presentation:")) {
             const designId = folderId.replace("presentation:", "")
-            return await this.getPresentationSlides(designId, false)
+            return await this.getPresentationSlides(designId, false, undefined, forceRefresh)
         }
 
         // Otherwise, fetch normal folder content
@@ -269,9 +270,10 @@ export class CanvaContentLibrary {
      * @param designId - Canva design ID
      * @param exportFullQuality - If true, requests high-res exports; if false, returns thumbnail URLs only
      * @param pages - Optional 1-based page indexes to fetch. If omitted, fetches all pages.
+     * @param forceRefresh - If true, bypasses cached page metadata and export URLs
      */
-    private static async getPresentationSlides(designId: string, exportFullQuality = true, pages?: number[]): Promise<ContentFile[]> {
-        const metadata = await this.getPageMetadata(designId)
+    private static async getPresentationSlides(designId: string, exportFullQuality = true, pages?: number[], forceRefresh = false): Promise<ContentFile[]> {
+        const metadata = await this.getPageMetadata(designId, forceRefresh)
         if (!metadata) return []
 
         const pageItems = pages?.length ? pages.map((page) => metadata.items[page - 1]).filter(Boolean) : metadata.items
@@ -279,7 +281,7 @@ export class CanvaContentLibrary {
 
         let exportedUrls: string[] = []
         if (exportFullQuality) {
-            exportedUrls = await this.exportDesignAsPngs(designId, pagesToExport)
+            exportedUrls = await this.exportDesignAsPngs(designId, pagesToExport, forceRefresh)
         }
 
         // Use full-quality export URLs when available. Page URLs are thumbnails and only used as fallback.
@@ -310,8 +312,9 @@ export class CanvaContentLibrary {
      *
      * @param designIdOrUrl Canva design ID or URL
      * @param pages 1-based page indexes. If omitted, Canva exports all pages.
+     * @param forceRefresh If true, skips the cached export URLs and starts a new export job
      */
-    public static async exportDesignAsPngs(designIdOrUrl: string, pages?: number[]): Promise<string[]> {
+    public static async exportDesignAsPngs(designIdOrUrl: string, pages?: number[], forceRefresh = false): Promise<string[]> {
         let designId = designIdOrUrl
         if (designIdOrUrl.startsWith("http://") || designIdOrUrl.startsWith("https://")) {
             designId = this.urlToContentIdMap[designIdOrUrl]
@@ -320,7 +323,7 @@ export class CanvaContentLibrary {
 
         // Check cache first
         const cacheKey = `export:${designId}:${pages?.join(",") || "all"}`
-        const cached = this.getCachedEntry(this.exportJobCache, cacheKey)
+        const cached = forceRefresh ? null : this.getCachedEntry(this.exportJobCache, cacheKey)
         if (cached) return cached.urls
 
         const exportBody: any = {

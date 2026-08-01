@@ -23,16 +23,16 @@
 
     const gradientId = `icon-gradient-${uid(5)}`
     export let gradientColor: string | null = null
-    let baseColor = gradientColor || (gradient ? "#e800f0" : "#f0008c")
+    let baseColor = gradientColor || (gradient ? "#3d4f99" : "#304080")
     $: if ($themes[$theme]) updateBaseColor()
     function updateBaseColor() {
         if (gradientColor || gradient) return
-        baseColor = $themes[$theme]?.colors?.secondary || "#f0008c"
+        baseColor = $themes[$theme]?.colors?.secondary || "#304080"
     }
 
     // smaller change
     $: hsl = hexToHSL(baseColor)
-    $: colorStart = gradient ? (gradientColor ? hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 15, 100)) : hslToHex(340, hsl.s, Math.min(hsl.l + 15, 100))) : hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 6, 100)) // lighter
+    $: colorStart = gradient ? (gradientColor ? hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 15, 100)) : hslToHex(228, hsl.s, Math.min(hsl.l + 15, 100))) : hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 6, 100)) // lighter
     $: colorMid = baseColor
     $: colorEnd = gradient ? (gradientColor ? hslToHex(hsl.h, hsl.s, Math.max(hsl.l - 30, 0)) : hslToHex(270, hsl.s, Math.max(hsl.l - 30, 0))) : hslToHex(hsl.h, hsl.s, Math.max(hsl.l - 6, 0)) // darker
 

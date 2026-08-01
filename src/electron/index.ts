@@ -214,6 +214,12 @@ function mainWindowLoaded() {
 export async function loadWindowContent(window: BrowserWindow, type: null | "output" = null) {
     const mainOutput = type === null
 
+    if (mainOutput) {
+        // keep the CJCRSG window title instead of the loaded page's <title> (public/index.html)
+        window.on("page-title-updated", (e) => e.preventDefault())
+        window.setTitle("CJCRSG")
+    }
+
     if (isProd) window.loadFile("public/index.html").catch(loadingFailed)
     else {
         // load development environment
@@ -225,7 +231,11 @@ export async function loadWindowContent(window: BrowserWindow, type: null | "out
     }
 
     window.webContents.on("did-finish-load", () => {
-        window.webContents.send(STARTUP, { channel: "TYPE", data: type, autoProfile })
+        window.webContents.send(STARTUP, {
+            channel: "TYPE",
+            data: type,
+            autoProfile
+        })
     })
 
     function loadingFailed(err: Error) {

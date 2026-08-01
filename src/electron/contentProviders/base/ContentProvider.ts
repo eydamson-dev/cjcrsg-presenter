@@ -93,8 +93,9 @@ export abstract class ContentProvider<TScope extends string = string, TAuthData 
 
     /**
      * Retrieves content files for a given category key (optional - only if hasContentLibrary is true)
+     * forceRefresh asks the provider to bypass cached data (used by explicit user-triggered syncs)
      */
-    getContent?(key: string): Promise<ContentFile[]>
+    getContent?(key: string, forceRefresh?: boolean): Promise<ContentFile[]>
 
     /**
      * Checks if a media item is licensed and returns its pingback URL + expiration (optional).
@@ -168,7 +169,7 @@ export abstract class ContentProvider<TScope extends string = string, TAuthData 
             <title>Success!</title>
         </head>
         <body style="padding: 80px;background: #242832;color: #f0f0ff;font-family: system-ui;font-size: 1.2em;">
-            <h1 style="color: #f0008c;">Success!</h1>
+            <h1 style="color: #5470c0;">Success!</h1>
             <p>You can close this page</p>
         </body>`
     }

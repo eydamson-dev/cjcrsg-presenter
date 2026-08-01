@@ -261,7 +261,7 @@ export interface MainSendPayloads {
     [Main.PCO_LOAD_PLAN]: { serviceTypeId: string; planId: string }
     // Content Library
     [Main.GET_CONTENT_LIBRARY]: { providerId: ContentProviderId }
-    [Main.GET_PROVIDER_CONTENT]: { providerId: ContentProviderId; key: string }
+    [Main.GET_PROVIDER_CONTENT]: { providerId: ContentProviderId; key: string; forceRefresh?: boolean }
     [Main.CHECK_MEDIA_LICENSE]: { providerId: ContentProviderId; mediaId: string }
     // Timecode
     [Main.TIMECODE_START]: { type: "send" | "receive"; mode: TimecodeMode; framerate?: number; data?: any }

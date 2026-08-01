@@ -42,7 +42,7 @@ export async function syncCanvaShow(showId: string) {
     try {
         newToast("toast.canva_exporting")
 
-        const slides = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation:${designId}` }, undefined, CANVA_PREVIEW_TIMEOUT)
+        const slides = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation:${designId}`, forceRefresh: true }, undefined, CANVA_PREVIEW_TIMEOUT)
         if (!slides?.length) throw new Error("No Canva slides returned")
 
         const presentationName = currentShow.reference?.data?.presentationName || currentShow.name
@@ -95,11 +95,11 @@ async function syncCanvaShowInBatches(showId: string) {
     if (!designId) return
 
     try {
-        const metadata = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation:${designId}` }, undefined, CANVA_PREVIEW_TIMEOUT)
+        const metadata = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation:${designId}`, forceRefresh: true }, undefined, CANVA_PREVIEW_TIMEOUT)
         if (!metadata?.length) return
 
         const pageNumbers = Array.from({ length: metadata.length }, (_, i) => i + 1)
-        const exportedSlides = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation-export-batch:${designId}:${pageNumbers.join(",")}` }, undefined, CANVA_EXPORT_TIMEOUT)
+        const exportedSlides = await requestMain(Main.GET_PROVIDER_CONTENT, { providerId: "canva", key: `presentation-export-batch:${designId}:${pageNumbers.join(",")}`, forceRefresh: true }, undefined, CANVA_EXPORT_TIMEOUT)
         if (!exportedSlides?.length) {
             newToast("main.finished")
             return

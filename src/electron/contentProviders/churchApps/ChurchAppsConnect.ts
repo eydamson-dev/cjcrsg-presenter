@@ -28,7 +28,7 @@ export class ChurchAppsConnect {
         <title>Success!</title>
     </head>
     <body style="padding: 80px;background: #242832;color: #f0f0ff;font-family: system-ui;font-size: 1.2em;">
-        <h1 style="color: #f0008c;">Success!</h1>
+        <h1 style="color: #5470c0;">Success!</h1>
         <p>You can close this page</p>
     </body>
   `
@@ -61,7 +61,9 @@ export class ChurchAppsConnect {
         return accessData
     }
 
-    public static disconnect(scope: ChurchAppsScopes = "plans"): { success: boolean } {
+    public static disconnect(scope: ChurchAppsScopes = "plans"): {
+        success: boolean
+    } {
         setContentProviderAccess("churchApps", scope, null)
         this.CHURCHAPPS_ACCESS = null
         return { success: true }
@@ -200,5 +202,9 @@ export class ChurchAppsConnect {
 }
 
 function connectionInitialized(isFirstConnection = false) {
-    sendToMain(ToMain.PROVIDER_CONNECT, { providerId: "churchApps", success: true, isFirstConnection })
+    sendToMain(ToMain.PROVIDER_CONNECT, {
+        providerId: "churchApps",
+        success: true,
+        isFirstConnection
+    })
 }

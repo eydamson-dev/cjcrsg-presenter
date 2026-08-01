@@ -147,7 +147,7 @@
         /* gradient border */
         background:
             linear-gradient(var(--background), var(--background)) padding-box,
-            linear-gradient(160deg, #8000f0 0%, #9000f0 10%, #b300f0 20%, #d100db 35%, var(--secondary) 100%) border-box !important;
+            linear-gradient(160deg, #1a2244 0%, #242f5e 10%, #304080 35%, var(--secondary) 100%) border-box !important;
         border: 2px solid transparent;
 
         transition: 0.4s filter ease;
@@ -156,7 +156,7 @@
     .row.gradient :global(button:not(.isActive):not(:disabled):active) {
         background:
             linear-gradient(var(--background), var(--background)) padding-box,
-            linear-gradient(160deg, #8000f0 0%, #9000f0 10%, #b300f0 20%, #d100db 35%, var(--secondary) 100%) border-box !important;
+            linear-gradient(160deg, #1a2244 0%, #242f5e 10%, #304080 35%, var(--secondary) 100%) border-box !important;
 
         filter: hue-rotate(15deg);
     }

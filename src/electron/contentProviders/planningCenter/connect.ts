@@ -44,7 +44,7 @@ const HTML_success = `
         <title>Success!</title>
     </head>
     <body style="padding: 80px;background: #242832;color: #f0f0ff;font-family: system-ui;font-size: 1.2em;">
-        <h1 style="color: #f0008c;">Success!</h1>
+        <h1 style="color: #5470c0;">Success!</h1>
         <p>You can close this page</p>
     </body>
 `
@@ -147,7 +147,11 @@ function refreshToken(access: PCOAuthData): Promise<PCOAuthData> {
 
         console.info("refreshToken: Refreshing PCO OAuth token")
 
-        const params = { grant_type: "refresh_token", client_id: clientId, refresh_token: access.refresh_token }
+        const params = {
+            grant_type: "refresh_token",
+            client_id: clientId,
+            refresh_token: access.refresh_token
+        }
 
         httpsRequest(PCO_API_URL, "/oauth/token", "POST", {}, params, (err: any, data: PCOAuthData) => {
             if (err || data === null) {
@@ -212,5 +216,9 @@ export async function pcoStartupLoad(scope: PCOScopes = "services", syncFolderId
 }
 
 function connectionInitialized(isFirstConnection = false): void {
-    sendToMain(ToMain.PROVIDER_CONNECT, { providerId: "planningcenter", success: true, isFirstConnection })
+    sendToMain(ToMain.PROVIDER_CONNECT, {
+        providerId: "planningcenter",
+        success: true,
+        isFirstConnection
+    })
 }
