@@ -37,11 +37,11 @@ end-to-end on a second physical display.
 
 - [x] Blank/clear (keeps position)
 - [x] Previous/next edge cases
-- [ ] Groups and slide sequencing beyond a flat order
+- [ ] Groups and slide sequencing beyond a flat order\n- [ ] Stage timers
 - [x] Output manager: audience, stage, preview, confidence, independent lifecycles
 - Transition compatibility with FreeShow
 - [x] Stage display: current + next slide
-- [ ] Stage display: clock, notes, timers
+- [x] Stage display: clock slot and operator notes
 - [ ] Remote command parity with the existing socket.io surface (ours is JSON/HTTP)
 
 **Exit criteria:** a service can be run from the app: load, navigate, stage

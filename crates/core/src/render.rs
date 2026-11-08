@@ -18,6 +18,9 @@ pub struct RenderState {
     pub show_id: String,
     pub slide_id: String,
     pub slide: RenderSlide,
+    /// Operator notes for the live slide. Empty when there are none.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     /// The slide that follows the current one, for a stage display.
     ///
     /// Part of the state rather than something a stage computes, because the

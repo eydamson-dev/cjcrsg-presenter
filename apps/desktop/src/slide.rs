@@ -59,13 +59,24 @@ pub fn SlideView(
 /// The next slide comes from the published state, not from the stage looking
 /// ahead — a stage that computes its own "next" can disagree with the engine.
 #[component]
-pub fn StageView(current: RenderSlide, next: Option<RenderSlide>, output: String) -> Element {
+pub fn StageView(
+    current: RenderSlide,
+    next: Option<RenderSlide>,
+    output: String,
+    notes: String,
+) -> Element {
     rsx! {
         div { class: "stage",
             div { class: "pane",
-                div { class: "pane-label", "Live" }
+                div { class: "pane-label",
+                    span { "Live" }
+                    span { class: "clock", id: "stage-clock", "--:--" }
+                }
                 div { class: "pane-body",
                     SlideView { slide: current, output: output, animate: false, revision: 0, transition: TransitionKind::None }
+                }
+                if !notes.is_empty() {
+                    div { class: "pane-notes", "{notes}" }
                 }
             }
             div { class: "pane",

@@ -225,6 +225,7 @@ impl ShowEngine {
                 revision: self.revision,
                 show_id: show.id.clone(),
                 slide_id: slide.id.clone(),
+                notes: slide.notes.clone(),
                 slide: RenderSlide::default(),
                 next,
                 transition: self.transition,
@@ -236,6 +237,7 @@ impl ShowEngine {
             show_id: show.id.clone(),
             slide_id: slide.id.clone(),
             slide: project_slide(slide),
+            notes: slide.notes.clone(),
             next,
             transition: self.transition,
         }
@@ -414,6 +416,14 @@ mod tests {
         let transition = state.transition.expect("transition after navigation");
         assert_eq!(transition.revision, state.revision);
         assert_eq!(transition.kind, TransitionKind::Fade);
+    }
+
+    #[test]
+    fn state_carries_the_slide_notes() {
+        let mut project = fixture();
+        project.shows[0].groups[0].slides[0].notes = "Welcome, then verse one".to_string();
+        let engine = ShowEngine::new(project);
+        assert_eq!(engine.state().notes, "Welcome, then verse one");
     }
 
     #[test]

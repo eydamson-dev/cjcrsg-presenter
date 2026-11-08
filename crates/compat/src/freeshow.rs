@@ -136,6 +136,7 @@ fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
         } else {
             slide.notes.clone()
         },
+        notes: slide.notes.clone(),
         elements,
         ..Default::default()
     }

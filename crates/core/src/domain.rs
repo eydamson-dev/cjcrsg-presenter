@@ -52,6 +52,9 @@ pub struct SlideGroup {
 pub struct Slide {
     pub id: Id,
     pub name: String,
+    /// Operator notes, shown on a stage display, never on the audience output.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     pub elements: Vec<SlideElement>,
     /// Fields we do not model yet, preserved verbatim on save.
     #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]

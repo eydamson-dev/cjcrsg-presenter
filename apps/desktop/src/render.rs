@@ -41,6 +41,7 @@ pub fn render(
                 current: state.slide.clone(),
                 next: state.next.clone(),
                 output: "Stage".to_string(),
+                notes: state.notes.clone(),
             }
         },
     };

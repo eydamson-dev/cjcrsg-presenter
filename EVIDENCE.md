@@ -74,6 +74,12 @@ Detail: `parity/reports/transitions-2026-11-09.md`.
 
 ---
 
+## 1e. Stage with operator notes
+
+![Stage with notes](parity/reports/evidence/render/stage-notes-1920x1080.png)
+
+---
+
 ## 2. Remote control — driven and photographed headlessly
 
 ![Remote phone](parity/reports/evidence/remote/remote-390x844.png)

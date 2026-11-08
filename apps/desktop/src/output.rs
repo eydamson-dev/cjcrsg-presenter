@@ -64,6 +64,26 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         let _ = document::eval(script).await;
     });
 
+    // A stage clock ticks in the page, not through Rust: a per-second state
+    // publish would wake every output for a label.
+    if kind == OutputKind::Stage {
+        use_future(|| async move {
+            let script = r#"
+                (() => {
+                    const tick = () => {
+                        const el = document.getElementById('stage-clock');
+                        if (el) el.textContent = new Date().toLocaleTimeString([], {
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    };
+                    tick();
+                    setInterval(tick, 1000);
+                })();
+            "#;
+            let _ = document::eval(script).await;
+        });
+    }
+
     let state = current.read().clone();
     let animate = state.revision != first_revision;
 
@@ -76,6 +96,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 current: state.slide.clone(),
                 next: state.next.clone(),
                 output: kind.label().to_string(),
+                notes: state.notes.clone(),
             }
         } else {
             SlideView {

@@ -419,12 +419,32 @@ footer p {
 
 .stage .pane-label {
     flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 16px;
     font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #8b949e;
     border-bottom: 1px solid #1a1f26;
+}
+
+.stage .clock {
+    font-variant-numeric: tabular-nums;
+    color: #e6e8ea;
+}
+
+.stage .pane-notes {
+    flex: 0 0 auto;
+    max-height: 22%;
+    overflow: hidden;
+    padding: 10px 16px;
+    border-top: 1px solid #1a1f26;
+    color: #b8c0c8;
+    font-size: 16px;
+    line-height: 1.35;
+    white-space: pre-line;
 }
 
 .stage .pane-body {
