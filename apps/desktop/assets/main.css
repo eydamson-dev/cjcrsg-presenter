@@ -265,45 +265,134 @@ footer p {
     opacity: 0.3;
 }
 
-.fade-in {
-    animation: slide-fade-in 400ms ease-out both;
+/* FreeShow's transition set: none, blur, fade, crossfade, fly, scale, slide, spin.
+   Each effect is defined twice (a/b) so alternating the class restarts the
+   animation on the next slide without remounting the subtree. */
+
+.tx-fade-a {
+    animation: tx-fade-a 400ms ease-out both;
 }
 
-/* Two identical animations: alternating the name restarts the fade on each
-   revision change without remounting the slide subtree. */
-.fade-a {
-    animation: slide-fade-a 400ms ease-out both;
+.tx-fade-b {
+    animation: tx-fade-b 400ms ease-out both;
 }
 
-.fade-b {
-    animation: slide-fade-b 400ms ease-out both;
+.tx-crossfade-a {
+    animation: tx-crossfade-a 400ms ease-out both;
 }
 
-@keyframes slide-fade-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+.tx-crossfade-b {
+    animation: tx-crossfade-b 400ms ease-out both;
 }
 
-@keyframes slide-fade-a {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+.tx-blur-a {
+    animation: tx-blur-a 400ms ease-out both;
 }
 
-@keyframes slide-fade-b {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+.tx-blur-b {
+    animation: tx-blur-b 400ms ease-out both;
+}
+
+.tx-fly-a {
+    animation: tx-fly-a 400ms ease-out both;
+}
+
+.tx-fly-b {
+    animation: tx-fly-b 400ms ease-out both;
+}
+
+.tx-scale-a {
+    animation: tx-scale-a 400ms ease-out both;
+}
+
+.tx-scale-b {
+    animation: tx-scale-b 400ms ease-out both;
+}
+
+.tx-slide-a {
+    animation: tx-slide-a 400ms ease-out both;
+}
+
+.tx-slide-b {
+    animation: tx-slide-b 400ms ease-out both;
+}
+
+.tx-spin-a {
+    animation: tx-spin-a 400ms ease-out both;
+}
+
+.tx-spin-b {
+    animation: tx-spin-b 400ms ease-out both;
+}
+
+@keyframes tx-fade-a {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-fade-b {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-crossfade-a {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-crossfade-b {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-blur-a {
+    from { filter: blur(24px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes tx-blur-b {
+    from { filter: blur(24px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes tx-fly-a {
+    from { transform: translateY(6%) scale(0.98); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-fly-b {
+    from { transform: translateY(6%) scale(0.98); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-scale-a {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-scale-b {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-slide-a {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+}
+
+@keyframes tx-slide-b {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+}
+
+@keyframes tx-spin-a {
+    from { transform: rotate(-8deg) scale(0.92); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-spin-b {
+    from { transform: rotate(-8deg) scale(0.92); opacity: 0; }
+    to { transform: none; opacity: 1; }
 }
 
 /* ---------- stage ---------- */

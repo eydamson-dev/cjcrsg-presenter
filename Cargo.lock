@@ -399,6 +399,7 @@ dependencies = [
  "presenter-compat",
  "presenter-core",
  "presenter-remote",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

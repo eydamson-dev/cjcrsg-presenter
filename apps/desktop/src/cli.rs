@@ -17,6 +17,8 @@ pub enum Action {
         out: PathBuf,
         layout: crate::render::Layout,
         slide: Option<usize>,
+        transition: presenter_core::TransitionKind,
+        pause: Option<u32>,
     },
 }
 
@@ -115,6 +117,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             let out = PathBuf::from(&rest[1]);
             let mut layout = crate::render::Layout::Audience;
             let mut slide = None;
+            let mut transition = presenter_core::TransitionKind::None;
+            let mut pause = None;
 
             let mut args = rest[2..].iter();
             while let Some(arg) = args.next() {
@@ -125,6 +129,23 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                             Some("audience") => crate::render::Layout::Audience,
                             other => return Err(format!("unknown layout {other:?}")),
                         };
+                    }
+                    "--transition" => {
+                        let name = args.next().ok_or("--transition needs a name")?;
+                        transition = presenter_core::TransitionKind::ALL
+                            .into_iter()
+                            .find(|kind| {
+                                serde_json::to_string(kind).unwrap().trim_matches('"') == name
+                            })
+                            .ok_or_else(|| format!("unknown transition {name:?}"))?;
+                    }
+                    "--pause" => {
+                        let value = args.next().ok_or("--pause needs milliseconds")?;
+                        pause = Some(
+                            value
+                                .parse()
+                                .map_err(|_| format!("not a number: {value:?}"))?,
+                        );
                     }
                     "--slide" => {
                         let value = args.next().ok_or("--slide needs a number")?;
@@ -143,6 +164,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 out,
                 layout,
                 slide,
+                transition,
+                pause,
             })
         }
 

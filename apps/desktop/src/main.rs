@@ -38,8 +38,10 @@ fn main() {
             out,
             layout,
             slide,
+            transition,
+            pause,
         }) => {
-            render_to_file(&project, &out, layout, slide);
+            render_to_file(&project, &out, layout, slide, transition, pause);
             return;
         }
         Err(message) => {
@@ -78,6 +80,8 @@ fn render_to_file(
     out: &std::path::Path,
     layout: render::Layout,
     slide: Option<usize>,
+    transition: presenter_core::TransitionKind,
+    pause: Option<u32>,
 ) {
     let document = match presenter_compat::cjcp::read(project) {
         Ok(document) => document,
@@ -93,7 +97,7 @@ fn render_to_file(
     }
 
     let shared = presenter_core::SharedEngine::new(engine);
-    let html = render::render(&shared, layout);
+    let html = render::render(&shared, layout, transition, pause);
     if let Err(error) = std::fs::write(out, html) {
         eprintln!("cannot write {}: {error}", out.display());
         std::process::exit(1);

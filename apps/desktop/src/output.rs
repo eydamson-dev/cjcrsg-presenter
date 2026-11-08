@@ -83,6 +83,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 output: kind.label().to_string(),
                 animate,
                 revision: state.revision,
+                transition: state.transition.map(|t| t.kind).unwrap_or_default(),
             }
         }
     }

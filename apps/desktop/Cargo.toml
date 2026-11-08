@@ -14,6 +14,7 @@ path = "src/main.rs"
 presenter-core.workspace = true
 presenter-compat.workspace = true
 presenter-remote.workspace = true
+serde_json.workspace = true
 
 dioxus = { workspace = true, features = ["desktop"] }
 dioxus-desktop.workspace = true

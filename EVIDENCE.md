@@ -63,6 +63,17 @@ failed and is documented as failed in
 
 ---
 
+## 1d. All eight transitions
+
+FreeShow's full set, frozen 200 ms into each effect.
+
+![Transitions](parity/reports/evidence/transitions/montage.png)
+
+Order: none, blur, fade, crossfade / fly, scale, slide, spin.
+Detail: `parity/reports/transitions-2026-11-09.md`.
+
+---
+
 ## 2. Remote control — driven and photographed headlessly
 
 ![Remote phone](parity/reports/evidence/remote/remote-390x844.png)
