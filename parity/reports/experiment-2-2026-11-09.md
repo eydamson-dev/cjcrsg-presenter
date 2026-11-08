@@ -57,16 +57,33 @@ Two corrections followed from reading it:
 
 Every text box agrees within **0.15 px**.
 
-## Pixel comparison — inconclusive at this size
+## Pixel comparison at full resolution — parity
 
-Cropped to 16:9 (286×161): **12.0% differing pixels, mean channel delta 10.9**,
-after searching ±3 px of vertical alignment for the best match.
+The preview's letterboxing made pixel comparison meaningless at 286 px. Resizing
+FreeShow's `Zoomed` container to 1920×1080 makes it lay out at scale 1, which
+gives a true reference.
 
-That number is not a fidelity score. At 286 px wide the glyphs are ~14 px tall,
-so a fraction of a pixel of rasterisation difference — antialiasing, hinting, the
-transform's resampling — flips a large share of the ink pixels. The structural
-comparison above is the reliable signal at this size; pixels need a full-size
-capture.
+| | FreeShow | Ours |
+| --- | --- | --- |
+| Line 1 | x 531.89, y 429.00, w 856.20, h 112 | x 531.84, y 428.00, w 856.20, h 112 |
+| Line 2 | x 537.5, y 539.0 | x 537.5, y 540.0 |
+
+| Metric | Value |
+| --- | --- |
+| Differing pixels (>8 per channel) | **0.35%** |
+| Mean channel delta | **0.51** |
+| Max channel delta | 255 (glyph edges only) |
+
+**Verdict: parity on this slide.** A 0.35% differing pixel ratio at 1080p is
+glyph-edge antialiasing, not layout: every text box is within 1 px and the ink
+mass sits in the same place.
+
+The diff image showed a clean one-pixel vertical offset, so the text block was
+nudged 1px down with a 2px top pad — measured, not guessed. Before that nudge
+the ratio was 0.50%; after, 0.35%.
+
+The earlier 12% figure is retained below as the reason the preview cannot be
+used as a reference — it is a method artefact, not a property of the renderer.
 
 ## What this pass established
 
@@ -99,8 +116,8 @@ capture.
 | `evidence/experiment-2/diff.png` | Pixel difference, amplified |
 | `evidence/experiment-2/*-metrics.json` | Raw boxes and computed styles |
 
-![FreeShow, cropped](evidence/experiment-2/freeshow-cropped.png)
+![FreeShow 1920x1080](evidence/experiment-2/freeshow-1920x1080.png)
 
-![Ours](evidence/experiment-2/ours-final.png)
+![Ours 1920x1080](evidence/experiment-2/ours-1920x1080.png)
 
-![Difference](evidence/experiment-2/diff-cropped.png)
+![Difference](evidence/experiment-2/diff-1920x1080.png)

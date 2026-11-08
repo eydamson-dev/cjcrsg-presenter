@@ -1,0 +1,96 @@
+{
+ "sized": {
+  "x": 0,
+  "y": 0,
+  "width": 1920,
+  "height": 1080,
+  "top": 0,
+  "right": 1920,
+  "bottom": 1080,
+  "left": 0
+ },
+ "metrics": {
+  "rootSize": [
+   1920,
+   1080
+  ],
+  "texts": [
+   {
+    "text": "Verse one, line one",
+    "fontFamily": "sans-serif",
+    "fontSize": "100px",
+    "fontWeight": "400",
+    "color": "rgb(255, 255, 255)",
+    "rel": {
+     "x": 0.277,
+     "y": 0.3972,
+     "w": 0.4459,
+     "h": 0.1037
+    },
+    "px": {
+     "x": 531.89,
+     "y": 429,
+     "w": 856.2,
+     "h": 112
+    }
+   },
+   {
+    "text": "Verse one, line two",
+    "fontFamily": "sans-serif",
+    "fontSize": "100px",
+    "fontWeight": "400",
+    "color": "rgb(255, 255, 255)",
+    "rel": {
+     "x": 0.2799,
+     "y": 0.4991,
+     "w": 0.4401,
+     "h": 0.1037
+    },
+    "px": {
+     "x": 537.5,
+     "y": 539,
+     "w": 844.98,
+     "h": 112
+    }
+   },
+   {
+    "text": "1",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif",
+    "fontSize": "12.8px",
+    "fontWeight": "700",
+    "color": "rgb(240, 240, 255)",
+    "rel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "px": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    }
+   },
+   {
+    "text": ".",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif",
+    "fontSize": "12.8px",
+    "fontWeight": "700",
+    "color": "rgb(240, 240, 255)",
+    "rel": {
+     "x": 0.0142,
+     "y": 1.0046,
+     "w": 0.9753,
+     "h": 0.0139
+    },
+    "px": {
+     "x": 27.34,
+     "y": 1085,
+     "w": 1872.66,
+     "h": 15
+    }
+   }
+  ]
+ }
+}
