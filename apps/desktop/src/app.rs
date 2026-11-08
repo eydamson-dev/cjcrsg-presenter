@@ -33,6 +33,18 @@ pub fn App() -> Element {
     let window = use_window();
     let app: Rc<AppState> = shared.read().0.clone();
 
+    // Screenshot and manual-test convenience: open the audience output on start.
+    if std::env::var("CJCRSG_DEMO_OPEN").is_ok() {
+        let app = app.clone();
+        let window = window.clone();
+        use_hook(move || {
+            spawn(async move {
+                tokio::time::sleep(Duration::from_millis(700)).await;
+                open_output(window, app, OutputKind::Audience);
+            });
+        });
+    }
+
     let (slide_id, position, total) = app.cursor();
     let revision = app.revision();
 
@@ -48,7 +60,7 @@ pub fn App() -> Element {
         .count();
 
     rsx! {
-        document::Stylesheet { href: asset!("/assets/main.css") }
+        document::Style { {crate::assets::MAIN_CSS} }
         document::Title { "CJCRSG Presenter — Experiment 1" }
 
         div { class: "controller",

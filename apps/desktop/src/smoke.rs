@@ -46,7 +46,10 @@ pub fn Smoke() -> Element {
             checks.push((
                 "four outputs open".into(),
                 open_ok,
-                format!("open={}", OutputKind::ALL.iter().filter(|k| app.is_open(**k)).count()),
+                format!(
+                    "open={}",
+                    OutputKind::ALL.iter().filter(|k| app.is_open(**k)).count()
+                ),
             ));
 
             // 2. advance ten slides at ~2/second
@@ -74,11 +77,15 @@ pub fn Smoke() -> Element {
 
             // 3. close the stage output and advance five more
             let closed = app.close_output(OutputKind::Stage);
-            let closed_ok = wait_until(Duration::from_secs(3), || !app.is_open(OutputKind::Stage)).await;
+            let closed_ok =
+                wait_until(Duration::from_secs(3), || !app.is_open(OutputKind::Stage)).await;
             checks.push((
                 "stage closes".into(),
                 closed && closed_ok,
-                format!("close_requested={closed} now_open={}", app.is_open(OutputKind::Stage)),
+                format!(
+                    "close_requested={closed} now_open={}",
+                    app.is_open(OutputKind::Stage)
+                ),
             ));
 
             let revision_before_advance = app.revision();
@@ -110,7 +117,10 @@ pub fn Smoke() -> Element {
             checks.push((
                 "reopened output reaches the live revision".into(),
                 recovered,
-                format!("target={target} applied={:?} in {elapsed}ms", app.applied(OutputKind::Stage)),
+                format!(
+                    "target={target} applied={:?} in {elapsed}ms",
+                    app.applied(OutputKind::Stage)
+                ),
             ));
             checks.push((
                 "recovery under 1 s".into(),
@@ -120,9 +130,13 @@ pub fn Smoke() -> Element {
 
             // 5. the other outputs must not have been disturbed
             tokio::time::sleep(SETTLE).await;
-            let others_ok = [OutputKind::Audience, OutputKind::Preview, OutputKind::Confidence]
-                .iter()
-                .all(|kind| app.applied(*kind) == Some(app.revision()));
+            let others_ok = [
+                OutputKind::Audience,
+                OutputKind::Preview,
+                OutputKind::Confidence,
+            ]
+            .iter()
+            .all(|kind| app.applied(*kind) == Some(app.revision()));
             checks.push((
                 "other outputs unaffected".into(),
                 others_ok,

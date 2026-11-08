@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/core", "apps/desktop"]
+members = ["crates/core", "crates/compat", "apps/desktop"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,6 +10,7 @@ rust-version = "1.83"
 
 [workspace.dependencies]
 presenter-core = { path = "crates/core" }
+presenter-compat = { path = "crates/compat" }
 
 dioxus = { version = "=0.7.10" }
 dioxus-desktop = "=0.7.10"

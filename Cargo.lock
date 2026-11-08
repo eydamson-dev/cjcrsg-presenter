@@ -331,6 +331,7 @@ version = "0.1.0"
 dependencies = [
  "dioxus",
  "dioxus-desktop",
+ "presenter-compat",
  "presenter-core",
  "tokio",
  "tracing",
@@ -3203,10 +3204,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
+name = "presenter-compat"
+version = "0.1.0"
+dependencies = [
+ "presenter-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tracing",
+]
+
+[[package]]
 name = "presenter-core"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]

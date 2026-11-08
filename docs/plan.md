@@ -49,10 +49,11 @@ display on a second screen, remote control from a phone.
 Native project format: see `docs/file-format.md` (`.cjcp` project, `.cjcs`
 single show, JSON first, versioned envelope, unknown fields preserved).
 
-- Native `.show` and project JSON read/write with unknown-field preservation
-- SQLite compatibility and versioned migrations
+- [x] FreeShow `.show` import (read-only) — `crates/compat/src/freeshow.rs`
+- [x] Native `.cjcp` read/write with unknown-field preservation — `crates/compat/src/cjcp.rs`
+- [ ] SQLite compatibility and versioned migrations
 - Media library, templates, groups
-- Importers: PDF, PPTX, DOCX, ODP/ODT
+- [ ] Importers: PDF, PPTX, DOCX, ODP/ODT
 - Round-trip tests against files from multiple FreeShow releases
 
 **Exit criteria:** an existing CJCRSG project opens, edits, and saves back

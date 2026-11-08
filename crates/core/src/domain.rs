@@ -3,7 +3,10 @@
 //! These types are persisted and must stay compatible with FreeShow's formats.
 //! They are not what an output window renders — that is [`crate::render`].
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 pub type Id = String;
 
@@ -13,6 +16,9 @@ pub struct Project {
     pub id: Id,
     pub name: String,
     pub shows: Vec<Show>,
+    /// Fields we do not model yet, preserved verbatim on save.
+    #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra: BTreeMap<String, Value>,
 }
 
 /// One presentable show.
@@ -21,6 +27,9 @@ pub struct Show {
     pub id: Id,
     pub name: String,
     pub groups: Vec<SlideGroup>,
+    /// Fields we do not model yet, preserved verbatim on save.
+    #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra: BTreeMap<String, Value>,
 }
 
 /// A run of slides that belong together (a song verse set, a scripture set).
@@ -29,6 +38,9 @@ pub struct SlideGroup {
     pub id: Id,
     pub name: String,
     pub slides: Vec<Slide>,
+    /// Fields we do not model yet, preserved verbatim on save.
+    #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra: BTreeMap<String, Value>,
 }
 
 /// One screenful of content.
@@ -37,6 +49,9 @@ pub struct Slide {
     pub id: Id,
     pub name: String,
     pub elements: Vec<SlideElement>,
+    /// Fields we do not model yet, preserved verbatim on save.
+    #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra: BTreeMap<String, Value>,
 }
 
 /// A positioned piece of content on a slide.
@@ -48,6 +63,9 @@ pub struct SlideElement {
     pub class_name: String,
     /// Inline style, already resolved. Empty means none.
     pub style: String,
+    /// Fields we do not model yet, preserved verbatim on save.
+    #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra: BTreeMap<String, Value>,
 }
 
 impl Show {

@@ -210,47 +210,59 @@ mod tests {
                 text: text.into(),
                 class_name: "lyrics".into(),
                 style: String::new(),
+                ..Default::default()
             }],
+            ..Default::default()
         }
     }
 
     /// Two shows, five slides total, one group deliberately empty.
     fn fixture() -> Project {
+        fn group(id: &str, name: &str, slides: Vec<Slide>) -> SlideGroup {
+            SlideGroup {
+                id: id.into(),
+                name: name.into(),
+                slides,
+                ..Default::default()
+            }
+        }
+        fn show(id: &str, name: &str, groups: Vec<SlideGroup>) -> Show {
+            Show {
+                id: id.into(),
+                name: name.into(),
+                groups,
+                ..Default::default()
+            }
+        }
+
         Project {
             id: "p1".into(),
             name: "Sunday".into(),
             shows: vec![
-                Show {
-                    id: "s1".into(),
-                    name: "Worship".into(),
-                    groups: vec![
-                        SlideGroup {
-                            id: "g1".into(),
-                            name: "Song A".into(),
-                            slides: vec![slide("a1", "first"), slide("a2", "second")],
-                        },
-                        SlideGroup {
-                            id: "g-empty".into(),
-                            name: "Empty".into(),
-                            slides: vec![],
-                        },
-                        SlideGroup {
-                            id: "g2".into(),
-                            name: "Song B".into(),
-                            slides: vec![slide("b1", "third")],
-                        },
+                show(
+                    "s1",
+                    "Worship",
+                    vec![
+                        group(
+                            "g1",
+                            "Song A",
+                            vec![slide("a1", "first"), slide("a2", "second")],
+                        ),
+                        group("g-empty", "Empty", vec![]),
+                        group("g2", "Song B", vec![slide("b1", "third")]),
                     ],
-                },
-                Show {
-                    id: "s2".into(),
-                    name: "Sermon".into(),
-                    groups: vec![SlideGroup {
-                        id: "g3".into(),
-                        name: "Points".into(),
-                        slides: vec![slide("c1", "fourth"), slide("c2", "fifth")],
-                    }],
-                },
+                ),
+                show(
+                    "s2",
+                    "Sermon",
+                    vec![group(
+                        "g3",
+                        "Points",
+                        vec![slide("c1", "fourth"), slide("c2", "fifth")],
+                    )],
+                ),
             ],
+            ..Default::default()
         }
     }
 

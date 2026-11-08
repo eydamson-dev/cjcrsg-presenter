@@ -1,0 +1,14 @@
+[package]
+name = "presenter-compat"
+description = "FreeShow import and the native .cjcp project format"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+presenter-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

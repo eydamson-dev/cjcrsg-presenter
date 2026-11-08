@@ -5,7 +5,9 @@ use std::rc::{Rc, Weak};
 use std::sync::Mutex;
 
 use dioxus_desktop::DesktopService;
-use presenter_core::{Project, RenderHub, Revision, Show, ShowEngine, Slide, SlideElement, SlideGroup};
+use presenter_core::{
+    Project, RenderHub, Revision, Show, ShowEngine, Slide, SlideElement, SlideGroup,
+};
 
 /// The four outputs a service needs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -65,7 +67,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let engine = ShowEngine::new(demo_project());
+        let engine = ShowEngine::new(load_project().unwrap_or_else(demo_project));
         let hub = RenderHub::new(engine.state());
         Self {
             engine: Mutex::new(engine),
@@ -176,6 +178,26 @@ impl AppState {
     }
 }
 
+/// Load `CJCRSG_PROJECT` when the app was started with a `.cjcp` path.
+fn load_project() -> Option<Project> {
+    let path = std::env::var("CJCRSG_PROJECT").ok()?;
+    match presenter_compat::cjcp::read(std::path::Path::new(&path)) {
+        Ok(document) => {
+            tracing::info!(
+                path = %path,
+                project = %document.project.name,
+                slides = document.project.slide_count(),
+                "project loaded"
+            );
+            Some(document.project)
+        }
+        Err(error) => {
+            tracing::error!(path = %path, %error, "could not load project; falling back to demo");
+            None
+        }
+    }
+}
+
 impl Default for AppState {
     fn default() -> Self {
         Self::new()
@@ -187,32 +209,37 @@ impl Default for AppState {
 /// Twelve slides: enough to run ten `NEXT` commands and still have headroom,
 /// which is exactly what the Experiment 1 procedure requires.
 fn demo_project() -> Project {
-    let mut slides = Vec::new();
-    for index in 1..=8 {
-        slides.push(Slide {
-            id: format!("lyric-{index}"),
-            name: format!("Verse {index}"),
+    fn slide(id: String, name: String, text: String) -> Slide {
+        Slide {
             elements: vec![SlideElement {
-                id: format!("lyric-{index}-text"),
-                text: format!("Line one of lyric slide {index}\nLine two of lyric slide {index}"),
+                id: format!("{id}-text"),
+                text,
                 class_name: "lyrics".into(),
                 style: String::new(),
+                ..Default::default()
             }],
-        });
+            id,
+            name,
+            ..Default::default()
+        }
+    }
+
+    let mut worship = Vec::new();
+    for index in 1..=8 {
+        worship.push(slide(
+            format!("lyric-{index}"),
+            format!("Verse {index}"),
+            format!("Line one of lyric slide {index}\nLine two of lyric slide {index}"),
+        ));
     }
 
     let mut points = Vec::new();
     for index in 1..=4 {
-        points.push(Slide {
-            id: format!("point-{index}"),
-            name: format!("Point {index}"),
-            elements: vec![SlideElement {
-                id: format!("point-{index}-text"),
-                text: format!("Sermon point {index}"),
-                class_name: "lyrics".into(),
-                style: String::new(),
-            }],
-        });
+        points.push(slide(
+            format!("point-{index}"),
+            format!("Point {index}"),
+            format!("Sermon point {index}"),
+        ));
     }
 
     Project {
@@ -225,14 +252,18 @@ fn demo_project() -> Project {
                 SlideGroup {
                     id: "worship".into(),
                     name: "Worship".into(),
-                    slides,
+                    slides: worship,
+                    ..Default::default()
                 },
                 SlideGroup {
                     id: "sermon".into(),
                     name: "Sermon".into(),
                     slides: points,
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }

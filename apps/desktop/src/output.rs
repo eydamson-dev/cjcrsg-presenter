@@ -55,7 +55,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
     let animate = state.revision != first_revision;
 
     rsx! {
-        document::Stylesheet { href: asset!("/assets/main.css") }
+        document::Style { {crate::assets::MAIN_CSS} }
         document::Title { "CJCRSG — {kind.label()}" }
 
         SlideView {
