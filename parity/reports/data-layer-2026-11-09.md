@@ -36,6 +36,29 @@ cargo test -p presenter-compat  12 passed
 - a foreign `format` is refused with `WrongFormat`;
 - output is pretty-printed and diffable.
 
+## Whole-project import
+
+A FreeShow project is a record in `projects.json` that references shows by id;
+the shows live in `shows/*.show`. `import-project` joins the two.
+
+```
+$ cjcrsg-presenter import-project projects.json shows/ sunday.cjcp
+imported project "Sunday Morning" -> sunday.cjcp (1 shows, 3 slides)
+
+$ cjcrsg-presenter inspect sunday.cjcp
+project   Sunday Morning
+shows     1
+slides    3
+```
+
+A referenced show that is not on disk fails with `MissingShow { project, show }`
+rather than producing a quietly short project. An unreadable show file does not
+abort the import; it simply will not satisfy a reference.
+
+![Project imported and rendered](evidence/project/imported-project-1920x1080.png)
+
+Raw output: `evidence/project/import.txt`, `evidence/project/inspect.txt`.
+
 ## Manual CLI evidence
 
 ```

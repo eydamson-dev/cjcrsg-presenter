@@ -58,6 +58,44 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Handled)
         }
 
+        [command, rest @ ..] if command == "import-project" => {
+            if rest.len() < 3 {
+                return Err("usage: cjcrsg-presenter import-project \
+                     <projects.json> <shows-dir> <out.cjcp> [--id PROJECT_ID]"
+                    .into());
+            }
+            let projects = Path::new(&rest[0]);
+            let shows_dir = Path::new(&rest[1]);
+            let out = Path::new(&rest[2]);
+
+            let mut id: Option<&str> = None;
+            let mut args = rest[3..].iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--id" => id = Some(args.next().ok_or("--id needs a value")?),
+                    other => return Err(format!("unknown option {other:?}")),
+                }
+            }
+
+            let json = std::fs::read_to_string(projects)
+                .map_err(|error| format!("cannot read {}: {error}", projects.display()))?;
+            let project = presenter_compat::import_project(&json, shows_dir, id)
+                .map_err(|error| format!("cannot import project: {error}"))?;
+
+            let document = presenter_compat::cjcp::Document::new(project);
+            presenter_compat::cjcp::write(out, &document)
+                .map_err(|error| format!("cannot write {}: {error}", out.display()))?;
+
+            println!(
+                "imported project {:?} -> {} ({} shows, {} slides)",
+                document.project.name,
+                out.display(),
+                document.project.shows.len(),
+                document.project.slide_count()
+            );
+            Ok(Action::Handled)
+        }
+
         [command, rest @ ..] if command == "inspect" => {
             let [path] = rest else {
                 return Err("usage: cjcrsg-presenter inspect <file.cjcp>".into());
@@ -178,6 +216,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter <file.cjcp>     launch with a project\n  \
              cjcrsg-presenter import <in.show> <out.cjcp>\n  \
              cjcrsg-presenter inspect <file.cjcp>\n  \
+             cjcrsg-presenter import-project <projects.json> <shows-dir> <out.cjcp> [--id ID]\n  \
              cjcrsg-presenter serve [--port N]   headless remote server\n  \
              cjcrsg-presenter render <in.cjcp> <out.html> [--layout stage|audience] [--slide N]"
         )),

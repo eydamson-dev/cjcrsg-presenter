@@ -133,6 +133,16 @@ the demo project.
 
 ---
 
+## 5b. A whole FreeShow project, imported and rendered
+
+`projects.json` + `shows/` joined into one `.cjcp`, then rendered:
+
+![Imported project](parity/reports/evidence/project/imported-project-1920x1080.png)
+
+Transcript: `parity/reports/evidence/project/import.txt`.
+
+---
+
 ## 6. Experiment 1 — four outputs, one engine
 
 `parity/reports/evidence/experiment-1-smoke.json` — seven checks, all passing,

@@ -40,8 +40,8 @@ document importers are not started.
 ## Test counts
 
 ```
-crates/core     25
-crates/compat   14
+crates/core     35
+crates/compat   19
 crates/remote    6
 ```
 
