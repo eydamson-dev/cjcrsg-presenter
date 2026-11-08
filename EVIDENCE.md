@@ -38,14 +38,15 @@ and the stage badge overlapped the pane label.
 
 ## 1b. Experiment 2 — renderer parity, measured
 
-Our render and FreeShow's, at equal width. Glyph metrics match exactly; the
-vertical difference comes from the preview's aspect ratio, not the typography.
+Our render and FreeShow's, cropped to the same 16:9 area. Every text box agrees
+within **0.15 px**; glyph advance and horizontal placement are identical. The
+pixel difference is glyph rasterisation at 14 px text, not layout.
 
 | FreeShow | Ours | Difference |
 | --- | --- | --- |
-| ![FreeShow](parity/reports/evidence/experiment-2/freeshow.png) | ![Ours](parity/reports/evidence/experiment-2/ours.png) | ![Diff](parity/reports/evidence/experiment-2/diff.png) |
+| ![FreeShow](parity/reports/evidence/experiment-2/freeshow-cropped.png) | ![Ours](parity/reports/evidence/experiment-2/ours-final.png) | ![Diff](parity/reports/evidence/experiment-2/diff-cropped.png) |
 
-Numbers: `parity/reports/experiment-2-2026-11-09.md`.
+Numbers and caveats: `parity/reports/experiment-2-2026-11-09.md`.
 
 ---
 
