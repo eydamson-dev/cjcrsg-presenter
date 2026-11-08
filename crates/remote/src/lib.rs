@@ -48,6 +48,7 @@ struct StateBody {
     total: usize,
     cleared: bool,
     slide: presenter_core::RenderSlide,
+    next: Option<presenter_core::RenderSlide>,
 }
 
 async fn state(State(engine): State<Arc<SharedEngine>>) -> Json<StateBody> {
@@ -60,6 +61,7 @@ async fn state(State(engine): State<Arc<SharedEngine>>) -> Json<StateBody> {
         total,
         cleared: engine.is_cleared(),
         slide: snapshot.slide.clone(),
+        next: snapshot.next.clone(),
     })
 }
 

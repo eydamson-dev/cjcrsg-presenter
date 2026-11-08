@@ -273,3 +273,46 @@ footer p {
         opacity: 1;
     }
 }
+
+/* ---------- stage ---------- */
+
+.stage {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    color: #fff;
+}
+
+.stage .pane {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid #1a1f26;
+}
+
+.stage .pane:last-child {
+    border-right: 0;
+}
+
+.stage .pane-label {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8b949e;
+    border-bottom: 1px solid #1a1f26;
+}
+
+.stage .pane-body {
+    flex: 1 1 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.stage .pane-body .slide {
+    width: 100%;
+    height: 100%;
+}

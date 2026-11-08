@@ -33,14 +33,27 @@ pub fn App() -> Element {
     let window = use_window();
     let app: Rc<AppState> = shared.read().0.clone();
 
-    // Screenshot and manual-test convenience: open the audience output on start.
-    if std::env::var("CJCRSG_DEMO_OPEN").is_ok() {
+    // Screenshot and manual-test convenience: open outputs on start.
+    // `CJCRSG_DEMO_OPEN=audience|stage|preview|confidence|all`
+    if let Ok(requested) = std::env::var("CJCRSG_DEMO_OPEN") {
+        let kinds: Vec<OutputKind> = match requested.as_str() {
+            "all" => OutputKind::ALL.to_vec(),
+            "audience" => vec![OutputKind::Audience],
+            "stage" => vec![OutputKind::Stage],
+            "preview" => vec![OutputKind::Preview],
+            "confidence" => vec![OutputKind::Confidence],
+            _ => Vec::new(),
+        };
+
         let app = app.clone();
         let window = window.clone();
         use_hook(move || {
             spawn(async move {
                 tokio::time::sleep(Duration::from_millis(700)).await;
-                open_output(window, app, OutputKind::Audience);
+                for kind in kinds {
+                    open_output(window.clone(), app.clone(), kind);
+                    tokio::time::sleep(Duration::from_millis(250)).await;
+                }
             });
         });
     }

@@ -38,3 +38,31 @@ pub fn SlideView(slide: RenderSlide, output: String, animate: bool, revision: u6
         }
     }
 }
+
+/// A stage display: the live slide beside the one that comes next.
+///
+/// The next slide comes from the published state, not from the stage looking
+/// ahead — a stage that computes its own "next" can disagree with the engine.
+#[component]
+pub fn StageView(current: RenderSlide, next: Option<RenderSlide>, output: String) -> Element {
+    rsx! {
+        div { class: "stage",
+            div { class: "pane",
+                div { class: "pane-label", "Live" }
+                div { class: "pane-body",
+                    SlideView { slide: current, output: output, animate: false, revision: 0 }
+                }
+            }
+            div { class: "pane",
+                div { class: "pane-label", "Next" }
+                div { class: "pane-body",
+                    if let Some(upcoming) = next {
+                        SlideView { slide: upcoming, output: String::new(), animate: false, revision: 0 }
+                    } else {
+                        p { class: "blank", "End of show" }
+                    }
+                }
+            }
+        }
+    }
+}

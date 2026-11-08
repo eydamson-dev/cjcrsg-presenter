@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use presenter_core::Revision;
 
 use crate::runtime::{OutputKind, Shared};
-use crate::slide::SlideView;
+use crate::slide::{SlideView, StageView};
 
 #[derive(Props, Clone, PartialEq)]
 pub struct OutputProps {
@@ -58,11 +58,19 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         document::Style { {crate::assets::MAIN_CSS} }
         document::Title { "CJCRSG — {kind.label()}" }
 
-        SlideView {
-            slide: state.slide.clone(),
-            output: kind.label().to_string(),
-            animate,
-            revision: state.revision,
+        if kind == OutputKind::Stage {
+            StageView {
+                current: state.slide.clone(),
+                next: state.next.clone(),
+                output: kind.label().to_string(),
+            }
+        } else {
+            SlideView {
+                slide: state.slide.clone(),
+                output: kind.label().to_string(),
+                animate,
+                revision: state.revision,
+            }
         }
     }
 }

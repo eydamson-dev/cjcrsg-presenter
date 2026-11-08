@@ -181,6 +181,22 @@ impl ShowEngine {
         self.toggle_clear()
     }
 
+    #[cfg(test)]
+    fn last_slide_for_test(&mut self) {
+        let last = self.order.len().saturating_sub(1);
+        self.go_to_index(last);
+    }
+
+    fn slide_at(&self, position: Position) -> Option<&Slide> {
+        self.project
+            .shows
+            .get(position.show)?
+            .groups
+            .get(position.group)?
+            .slides
+            .get(position.slide)
+    }
+
     fn bump(&mut self) {
         self.revision += 1;
         self.transition = Some(TransitionState {
@@ -196,6 +212,12 @@ impl ShowEngine {
             return RenderState::blank(self.revision);
         };
 
+        let next = self
+            .order
+            .get(self.index + 1)
+            .and_then(|position| self.slide_at(*position))
+            .map(project_slide);
+
         if self.cleared {
             // A cleared output still reports which slide is live, so a remote
             // or stage client can show "blanked at verse 3" rather than nothing.
@@ -204,6 +226,7 @@ impl ShowEngine {
                 show_id: show.id.clone(),
                 slide_id: slide.id.clone(),
                 slide: RenderSlide::default(),
+                next,
                 transition: self.transition,
             };
         }
@@ -213,6 +236,7 @@ impl ShowEngine {
             show_id: show.id.clone(),
             slide_id: slide.id.clone(),
             slide: project_slide(slide),
+            next,
             transition: self.transition,
         }
     }
@@ -390,6 +414,20 @@ mod tests {
         let transition = state.transition.expect("transition after navigation");
         assert_eq!(transition.revision, state.revision);
         assert_eq!(transition.kind, TransitionKind::Fade);
+    }
+
+    #[test]
+    fn state_carries_the_next_slide() {
+        let mut engine = ShowEngine::new(fixture());
+        let state = engine.state();
+        let next = state.next.expect("a next slide exists");
+        assert_eq!(next.elements[0].text, "second");
+
+        engine.last_slide_for_test();
+        assert!(
+            engine.state().next.is_none(),
+            "nothing follows the last slide"
+        );
     }
 
     #[test]

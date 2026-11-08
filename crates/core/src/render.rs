@@ -18,6 +18,11 @@ pub struct RenderState {
     pub show_id: String,
     pub slide_id: String,
     pub slide: RenderSlide,
+    /// The slide that follows the current one, for a stage display.
+    ///
+    /// Part of the state rather than something a stage computes, because the
+    /// stage must never disagree with the engine about what comes next.
+    pub next: Option<RenderSlide>,
     /// Describes the change that produced `revision`, if any.
     ///
     /// A renderer animates only when it already knows a *previous* revision. On
