@@ -59,6 +59,8 @@ Raw output: `evidence/import-cli.txt`, `evidence/inspect-cli.txt`.
 
 ## Screenshot evidence
 
+![Controller with the imported project](evidence/controller-imported-project.png)
+
 `evidence/controller-imported-project.png` — the app launched with
 `parity-fixture.cjcp`:
 

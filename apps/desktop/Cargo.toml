@@ -17,6 +17,7 @@ presenter-remote.workspace = true
 
 dioxus = { workspace = true, features = ["desktop"] }
 dioxus-desktop.workspace = true
+dioxus-ssr.workspace = true
 
 tokio.workspace = true
 tracing.workspace = true

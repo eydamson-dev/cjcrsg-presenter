@@ -201,6 +201,14 @@ pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: Outpu
             Ok(context) => {
                 // Registered weakly: the registry must never keep a window alive.
                 app.register(kind, Rc::downgrade(&context));
+
+                // Test-only: make the window we just created the active one so a
+                // screenshot cannot land on somebody else's window. Presentation
+                // outputs must never do this in production.
+                if std::env::var("CJCRSG_FOCUS_OUTPUT").is_ok() {
+                    context.set_focus();
+                }
+
                 tracing::info!(output = kind.label(), "output window opened");
             }
             Err(err) => {

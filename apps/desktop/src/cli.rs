@@ -11,6 +11,13 @@ pub enum Action {
     Gui(Option<PathBuf>),
     /// Run only the remote control server, with no window.
     Serve(u16),
+    /// Render slides to HTML and exit. Used by the visual harness.
+    Render {
+        project: PathBuf,
+        out: PathBuf,
+        layout: crate::render::Layout,
+        slide: Option<usize>,
+    },
 }
 
 pub fn run(args: &[String]) -> Result<Action, String> {
@@ -98,6 +105,47 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Serve(port))
         }
 
+        [command, rest @ ..] if command == "render" => {
+            if rest.len() < 2 {
+                return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
+                     [--layout stage|audience] [--slide N]"
+                    .into());
+            }
+            let project = PathBuf::from(&rest[0]);
+            let out = PathBuf::from(&rest[1]);
+            let mut layout = crate::render::Layout::Audience;
+            let mut slide = None;
+
+            let mut args = rest[2..].iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--layout" => {
+                        layout = match args.next().map(String::as_str) {
+                            Some("stage") => crate::render::Layout::Stage,
+                            Some("audience") => crate::render::Layout::Audience,
+                            other => return Err(format!("unknown layout {other:?}")),
+                        };
+                    }
+                    "--slide" => {
+                        let value = args.next().ok_or("--slide needs a number")?;
+                        slide = Some(
+                            value
+                                .parse()
+                                .map_err(|_| format!("not a number: {value:?}"))?,
+                        );
+                    }
+                    other => return Err(format!("unknown option {other:?}")),
+                }
+            }
+
+            Ok(Action::Render {
+                project,
+                out,
+                layout,
+                slide,
+            })
+        }
+
         [path] if path.ends_with(".cjcp") => Ok(Action::Gui(Some(PathBuf::from(path)))),
 
         [command, ..] => Err(format!(
@@ -107,7 +155,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter <file.cjcp>     launch with a project\n  \
              cjcrsg-presenter import <in.show> <out.cjcp>\n  \
              cjcrsg-presenter inspect <file.cjcp>\n  \
-             cjcrsg-presenter serve [--port N]   headless remote server"
+             cjcrsg-presenter serve [--port N]   headless remote server\n  \
+             cjcrsg-presenter render <in.cjcp> <out.html> [--layout stage|audience] [--slide N]"
         )),
     }
 }

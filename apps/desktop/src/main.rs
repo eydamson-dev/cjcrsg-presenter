@@ -8,6 +8,7 @@ mod app;
 mod assets;
 mod cli;
 mod output;
+mod render;
 mod runtime;
 mod slide;
 mod smoke;
@@ -30,6 +31,15 @@ fn main() {
         Ok(Action::Gui(project)) => project,
         Ok(Action::Serve(port)) => {
             run_server(port);
+            return;
+        }
+        Ok(Action::Render {
+            project,
+            out,
+            layout,
+            slide,
+        }) => {
+            render_to_file(&project, &out, layout, slide);
             return;
         }
         Err(message) => {
@@ -60,6 +70,35 @@ fn main() {
             .with_cfg(desktop_config())
             .launch(app::App);
     }
+}
+
+/// Render a project to HTML. No window, no display server.
+fn render_to_file(
+    project: &std::path::Path,
+    out: &std::path::Path,
+    layout: render::Layout,
+    slide: Option<usize>,
+) {
+    let document = match presenter_compat::cjcp::read(project) {
+        Ok(document) => document,
+        Err(error) => {
+            eprintln!("cannot read {}: {error}", project.display());
+            std::process::exit(1);
+        }
+    };
+
+    let mut engine = presenter_core::ShowEngine::new(document.project);
+    if let Some(index) = slide {
+        engine.go_to_index(index);
+    }
+
+    let shared = presenter_core::SharedEngine::new(engine);
+    let html = render::render(&shared, layout);
+    if let Err(error) = std::fs::write(out, html) {
+        eprintln!("cannot write {}: {error}", out.display());
+        std::process::exit(1);
+    }
+    println!("rendered {} -> {}", project.display(), out.display());
 }
 
 /// Blocking headless server for tests and for a machine with no display.

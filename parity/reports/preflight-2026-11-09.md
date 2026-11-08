@@ -90,3 +90,9 @@ gives a direct read of the live output, which the parity adapter needs anyway.
 | `evidence/controller-page.png` | Controller client at 5512, buttons rendered |
 | `evidence/remote-project.png` | Remote at 5510 listing the seeded project |
 | `evidence/remote-show-slides.png` | Remote showing the fixture's slides after the layout fix |
+
+![FreeShow controller](evidence/controller-page.png)
+
+![FreeShow remote project](evidence/remote-project.png)
+
+![FreeShow fixture slides](evidence/remote-show-slides.png)

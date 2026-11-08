@@ -23,7 +23,11 @@ captures of the same slide, same machine, same browser, minutes apart.
 | Mean channel delta | **0** |
 | Comparable | yes |
 
-Raw: `/tmp/parity-capture/calibration.json` (captures `slide-a.png`, `slide-b.png`).
+Raw: `/tmp/parity-capture/calibration.json`.
+
+| First capture | Second capture |
+| --- | --- |
+| ![Slide A](evidence/calibration/slide-a.png) | ![Slide B](evidence/calibration/slide-b.png) |
 
 ## What this means
 
