@@ -1,0 +1,93 @@
+# Navigation
+
+Features read from FreeShow `ff784eb`. Each entry names the file it was read
+from and how confident that reading is. `confidence: low` means a human should
+confirm before implementation.
+
+---
+
+```yaml
+id: nav.next.controller
+area: navigation
+title: Advance one slide from the controller
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/server/controller/App.svelte:111-112
+    - src/server/controller/App.svelte:146-150
+  confidence: high
+scenarios: [nav-next-basic]
+status: partial
+deviations: [DEV-001]
+notes: >
+  The controller emits { channel: "ACTION", data: { id: "next" } } over Socket.IO
+  and also maps Space, ArrowRight and PageDown to the same action.
+```
+
+```yaml
+id: nav.previous.controller
+area: navigation
+title: Go back one slide from the controller
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/server/controller/App.svelte:111-112
+    - src/server/controller/App.svelte:146-150
+  confidence: high
+scenarios: [nav-next-basic]
+status: partial
+deviations: []
+```
+
+```yaml
+id: nav.goto.remote
+area: navigation
+title: Jump directly to a slide by clicking it in the remote
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/server/remote/components/show/Slides.svelte:216-222
+  confidence: medium
+scenarios: [nav-goto-direct]
+status: planned
+deviations: []
+notes: >
+  The click handler calls click(entry.index). The exact IPC/socket path from
+  there to the output was not traced; confirm before implementing goto.
+```
+
+```yaml
+id: nav.bounds.next-at-end
+area: navigation
+title: Next on the last slide does not wrap
+ui: false
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence: []
+  confidence: low
+scenarios: [nav-next-edge-cases]
+status: planned
+deviations: []
+notes: >
+  Unverified in the reference. Our engine currently ignores next at the end
+  (crates/core/src/engine.rs). The reference may instead advance to the next
+  group or stop the show. This is the first behaviour to confirm, because both
+  answers are plausible and they feel different in a service.
+```
+
+## Deviations
+
+```yaml
+# parity/deviations.yaml
+DEV-001:
+  title: Keyboard shortcuts not implemented
+  detail: >
+    FreeShow's controller accepts Space/ArrowRight/PageDown and
+    ArrowLeft/PageUp. The Rust controller does not exist yet.
+  accepted: true
+  reason: Deferred until the controller client is built (Phase 2).
+  owner: implementation
+```
