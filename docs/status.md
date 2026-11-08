@@ -40,12 +40,19 @@ document importers are not started.
 ## Test counts
 
 ```
-crates/core     35
-crates/compat   19
-crates/remote    6
+crates/core     39
+crates/compat   20
+crates/remote    8
 ```
 
 Run everything with `scripts/check.sh`.
+
+## Decisions
+
+`docs/decisions.md` records why the expensive choices were made: Dioxus on a
+WebView, fixed-resolution rendering, one VirtualDom per output, snapshots over
+events, JSON-first format, relative media paths, GPL, and headless visual
+evidence.
 
 ## Next, in order
 

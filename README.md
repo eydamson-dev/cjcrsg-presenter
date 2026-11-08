@@ -16,6 +16,8 @@ Dioxus, not an alternative to it.
 - [docs/architecture.md](docs/architecture.md) — the design and its invariants
 - [docs/plan.md](docs/plan.md) — phases and exit criteria
 - [docs/experiments.md](docs/experiments.md) — the three measurements that gate development
+- [docs/decisions.md](docs/decisions.md) — why the expensive choices were made
+- [EVIDENCE.md](EVIDENCE.md) — screenshots and raw results per milestone
 - [docs/provenance.md](docs/provenance.md) — GPL-3.0 obligations
 
 ```bash

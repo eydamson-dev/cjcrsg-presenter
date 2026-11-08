@@ -17,7 +17,7 @@ use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use presenter_core::SharedEngine;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_PORT: u16 = 5520;
 
@@ -31,6 +31,7 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/last", post(last))
         .route("/api/clear", post(clear))
         .route("/api/next-group", post(next_group))
+        .route("/api/goto", post(goto))
         .route("/api/previous-group", post(previous_group))
         .with_state(engine)
 }
@@ -73,6 +74,19 @@ async fn next(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
 
 async fn previous(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
     command(engine.previous_slide())
+}
+
+#[derive(Debug, Deserialize)]
+struct GotoBody {
+    /// Zero-based slide index, counting across the whole project.
+    index: usize,
+}
+
+async fn goto(
+    State(engine): State<Arc<SharedEngine>>,
+    Json(body): Json<GotoBody>,
+) -> impl IntoResponse {
+    command(engine.go_to_index(body.index))
 }
 
 async fn next_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
@@ -269,6 +283,37 @@ mod tests {
             ..Default::default()
         };
         Arc::new(SharedEngine::new(ShowEngine::new(project)))
+    }
+
+    #[tokio::test]
+    async fn goto_jumps_to_an_index() {
+        let shared = engine();
+        let app = router(shared.clone());
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/goto")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"index":2}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(shared.state().slide_id, "c");
+
+        // Out of range is a no-op, reported as a conflict.
+        let response = app
+            .oneshot(
+                Request::post("/api/goto")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"index":99}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+        assert_eq!(shared.state().slide_id, "c");
     }
 
     #[tokio::test]
