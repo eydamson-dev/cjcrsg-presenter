@@ -196,8 +196,19 @@ footer p {
 /* ---------- output ---------- */
 
 .slide {
-    width: 100vw;
-    height: 100vh;
+    /* Slides are laid out at a fixed 1920x1080 and scaled to the viewport, so
+       every size on stage is proportional. Reflowing instead would make text
+       relatively larger on small outputs — a real difference from FreeShow. */
+    width: 1920px;
+    height: 1080px;
+    /* The scale is set by `--slide-scale`, computed from the viewport when the
+       document loads. `calc()` cannot divide a length by a number inside
+       `scale()`, so this cannot be done in pure CSS. */
+    transform: scale(var(--slide-scale, 1));
+    transform-origin: top left;
+    position: absolute;
+    top: 0;
+    left: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -218,13 +229,18 @@ footer p {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: clamp(2rem, 5vw, 7rem);
-    line-height: 1.2;
+    font-family: sans-serif;
+    /* Measured from FreeShow at 1080p: 100px glyphs on a 1.0 line box. */
+    font-size: 100px;
+    line-height: 1;
     text-align: center;
-    white-space: pre-line;
-    padding: 4vh 6vw;
+    padding: 0 6%;
     margin: 0;
     box-sizing: border-box;
+}
+
+.slide .lyrics .line {
+    white-space: pre;
 }
 
 .slide .blank {

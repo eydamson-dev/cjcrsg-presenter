@@ -9,7 +9,7 @@ Something must be usable at every milestone.
 
 - [x] Architecture decided and recorded (`docs/architecture.md`)
 - [x] Experiment 1 — multi-window Dioxus + `RenderHub` recovery (passed, 205 ms; `parity/reports/experiment-1-2026-11-09.md`)
-- [ ] Experiment 2 — renderer parity on one real lyric slide
+- [x] Experiment 2 — renderer parity, first pass (horizontal metrics exact; `parity/reports/experiment-2-2026-11-09.md`)
 - [ ] Experiment 3 — video cost across 2 and 4 output windows
 
 **Exit criteria:** all three experiments have numeric results in

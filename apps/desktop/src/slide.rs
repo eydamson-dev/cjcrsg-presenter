@@ -31,7 +31,15 @@ pub fn SlideView(slide: RenderSlide, output: String, animate: bool, revision: u6
                         key: "{element.id}",
                         class: "{element.class_name}",
                         style: "{element.style}",
-                        "{element.text}"
+                        // FreeShow stores each line as its own element; matching
+                        // that keeps line boxes measurable and comparable.
+                        for (index, line) in element.text.split('\n').enumerate() {
+                            div {
+                                key: "{element.id}-line-{index}",
+                                class: "line",
+                                "{line}"
+                            }
+                        }
                     }
                 }
             }

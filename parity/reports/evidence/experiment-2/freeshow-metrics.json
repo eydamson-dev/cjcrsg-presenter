@@ -1,0 +1,68 @@
+{
+ "box": {
+  "x": 267,
+  "y": 7,
+  "width": 285.984375,
+  "height": 185.859375
+ },
+ "metrics": {
+  "rootSize": [
+   285.984375,
+   185.859375
+  ],
+  "texts": [
+   {
+    "text": "Verse one, line one",
+    "fontFamily": "sans-serif",
+    "fontSize": "100px",
+    "fontWeight": "400",
+    "color": "rgb(255, 255, 255)",
+    "rel": {
+     "x": 0.277,
+     "y": 0.3438,
+     "w": 0.4459,
+     "h": 0.0898
+    }
+   },
+   {
+    "text": "Verse one, line two",
+    "fontFamily": "sans-serif",
+    "fontSize": "100px",
+    "fontWeight": "400",
+    "color": "rgb(255, 255, 255)",
+    "rel": {
+     "x": 0.2799,
+     "y": 0.4319,
+     "w": 0.4401,
+     "h": 0.0898
+    }
+   },
+   {
+    "text": "1",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif",
+    "fontSize": "12.8px",
+    "fontWeight": "700",
+    "color": "rgb(240, 240, 255)",
+    "rel": {
+     "x": -0.9336,
+     "y": -0.0377,
+     "w": 0,
+     "h": 0
+    }
+   },
+   {
+    "text": ".",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif",
+    "fontSize": "12.8px",
+    "fontWeight": "700",
+    "color": "rgb(240, 240, 255)",
+    "rel": {
+     "x": 0.0956,
+     "y": 0.8924,
+     "w": 0.8345,
+     "h": 0.0807
+    }
+   }
+  ]
+ }
+}

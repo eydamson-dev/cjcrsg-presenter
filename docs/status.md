@@ -7,8 +7,9 @@ Last updated: 2026-11-09.
 
 ## Where the project stands
 
-**Phase 0 — architecture validation.** Experiment 1 passed. Experiments 2 and 3
-have not run.
+**Phase 0 — architecture validation.** Experiment 1 passed. Experiment 2 has a
+first measurement (glyph metrics exact; a true 16:9 reference is still needed).
+Experiment 3 has not run.
 
 **Phase 1 — walking skeleton.** Except the second physical display, done:
 a project loads, a show advances, outputs render, a remote can drive it, and a

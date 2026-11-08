@@ -36,6 +36,19 @@ and the stage badge overlapped the pane label.
 
 ---
 
+## 1b. Experiment 2 — renderer parity, measured
+
+Our render and FreeShow's, at equal width. Glyph metrics match exactly; the
+vertical difference comes from the preview's aspect ratio, not the typography.
+
+| FreeShow | Ours | Difference |
+| --- | --- | --- |
+| ![FreeShow](parity/reports/evidence/experiment-2/freeshow.png) | ![Ours](parity/reports/evidence/experiment-2/ours.png) | ![Diff](parity/reports/evidence/experiment-2/diff.png) |
+
+Numbers: `parity/reports/experiment-2-2026-11-09.md`.
+
+---
+
 ## 2. Remote control — driven and photographed headlessly
 
 ![Remote phone](parity/reports/evidence/remote/remote-390x844.png)

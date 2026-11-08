@@ -48,7 +48,15 @@ fn wrap(body: &str) -> String {
 <title>CJCRSG render</title>
 <style>{MAIN_CSS}</style>
 <style>html,body,#main{{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000}}</style>
-</head><body><div id="main">{body}</div></body></html>
+</head><body><div id="main">{body}</div>
+<script>
+  // Lay out at 1920x1080 and scale to the window, the way an output does.
+  const fit = () => document.documentElement.style.setProperty(
+    "--slide-scale", String(window.innerWidth / 1920));
+  fit();
+  addEventListener("resize", fit);
+</script>
+</body></html>
 "#
     )
 }

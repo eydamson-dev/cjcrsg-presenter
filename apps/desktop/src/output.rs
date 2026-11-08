@@ -51,6 +51,19 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         reporter.report_applied(kind, revision);
     });
 
+    // Outputs lay out at 1920x1080 and scale to the window.
+    use_future(|| async move {
+        let script = r#"
+            (() => {
+                const fit = () => document.documentElement.style.setProperty(
+                    "--slide-scale", String(window.innerWidth / 1920));
+                fit();
+                addEventListener("resize", fit);
+            })();
+        "#;
+        let _ = document::eval(script).await;
+    });
+
     let state = current.read().clone();
     let animate = state.revision != first_revision;
 
