@@ -8,7 +8,7 @@ Something must be usable at every milestone.
 **Goal:** prove the Dioxus multi-window foundation before writing product code.
 
 - [x] Architecture decided and recorded (`docs/architecture.md`)
-- [ ] Experiment 1 — multi-window Dioxus + `RenderHub` recovery
+- [x] Experiment 1 — multi-window Dioxus + `RenderHub` recovery (passed, 205 ms; `parity/reports/experiment-1-2026-11-09.md`)
 - [ ] Experiment 2 — renderer parity on one real lyric slide
 - [ ] Experiment 3 — video cost across 2 and 4 output windows
 
