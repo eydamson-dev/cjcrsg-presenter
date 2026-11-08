@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 
-use presenter_core::{Show, Slide, SlideElement, SlideGroup};
+use presenter_core::{MediaAsset, MediaKind, Show, Slide, SlideElement, SlideGroup};
 use serde::Deserialize;
 
 #[derive(Debug, thiserror::Error)]
@@ -88,12 +88,38 @@ pub fn import_show(json: &str) -> Result<Show, ImportError> {
             .push(convert_slide(slide, slide_id, position));
     }
 
+    let media = raw
+        .media
+        .iter()
+        .filter(|(_, entry)| !entry.path.is_empty())
+        .map(|(media_id, entry)| {
+            // FreeShow keeps media in a central folder outside any project, so
+            // these are external references and are not portable by nature.
+            MediaAsset::external(
+                media_id.clone(),
+                kind_from_path(&entry.path),
+                entry.path.clone(),
+            )
+        })
+        .collect();
+
     Ok(Show {
         id,
         name: raw.name,
         groups,
+        media,
         ..Default::default()
     })
+}
+
+fn kind_from_path(path: &str) -> MediaKind {
+    let extension = path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+    match extension.as_str() {
+        "png" | "jpg" | "jpeg" | "webp" | "gif" | "avif" => MediaKind::Image,
+        "mp4" | "mkv" | "webm" | "mov" | "m4v" => MediaKind::Video,
+        "mp3" | "wav" | "ogg" | "m4a" | "flac" | "aac" => MediaKind::Audio,
+        _ => MediaKind::Other,
+    }
 }
 
 fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
@@ -152,6 +178,14 @@ struct RawShow {
     slides: BTreeMap<String, RawSlide>,
     #[serde(default)]
     layouts: BTreeMap<String, RawLayout>,
+    #[serde(default)]
+    media: BTreeMap<String, RawMedia>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct RawMedia {
+    #[serde(default)]
+    path: String,
 }
 
 fn unnamed() -> String {
@@ -254,6 +288,32 @@ mod tests {
         // fx-1 has group ".", fx-2 and fx-3 have null → one group of three.
         assert_eq!(show.groups.len(), 1);
         assert_eq!(show.groups[0].slides.len(), 3);
+    }
+
+    #[test]
+    fn media_arrives_as_an_external_reference_with_a_kind() {
+        let json = r#"["m-show", {
+            "name": "With media",
+            "settings": {"activeLayout": "lay"},
+            "slides": {"s1": {"group": ".", "items": []}},
+            "layouts": {"lay": {"slides": [{"id": "s1"}]}},
+            "media": {
+                "m1": {"path": "/srv/media/background.mp4"},
+                "m2": {"path": "/srv/media/logo.png"},
+                "m3": {"path": ""}
+            }
+        }]"#;
+
+        let show = import_show(json).unwrap();
+        assert_eq!(show.media.len(), 2, "empty paths are dropped");
+
+        let video = show.media.iter().find(|m| m.id == "m1").unwrap();
+        assert_eq!(video.kind, MediaKind::Video);
+        assert_eq!(video.origin, presenter_core::MediaOrigin::External);
+        assert!(video.path.ends_with("background.mp4"));
+
+        let image = show.media.iter().find(|m| m.id == "m2").unwrap();
+        assert_eq!(image.kind, MediaKind::Image);
     }
 
     #[test]

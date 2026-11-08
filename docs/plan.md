@@ -54,7 +54,7 @@ single show, JSON first, versioned envelope, unknown fields preserved).
 
 - [x] FreeShow `.show` import (read-only) — `crates/compat/src/freeshow.rs`
 - [x] Native `.cjcp` read/write with unknown-field preservation — `crates/compat/src/cjcp.rs`
-- [ ] SQLite compatibility and versioned migrations
+- [x] Media references: bundled/external origin, validation, import\n- [ ] Media: copy External -> Bundled in the app\n- [ ] SQLite compatibility and versioned migrations
 - Media library, templates, groups
 - [ ] Importers: PDF, PPTX, DOCX, ODP/ODT
 - Round-trip tests against files from multiple FreeShow releases

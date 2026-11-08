@@ -22,6 +22,13 @@ pub enum Action {
     },
 }
 
+/// Print a line, ignoring a closed pipe: `inspect x | head` is normal, and
+/// Rust's default is to panic on EPIPE.
+fn out(line: impl AsRef<str>) {
+    use std::io::Write;
+    let _ = writeln!(std::io::stdout(), "{}", line.as_ref());
+}
+
 pub fn run(args: &[String]) -> Result<Action, String> {
     match args {
         [] => Ok(Action::Gui(None)),
@@ -48,13 +55,13 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             cjcp::write(destination, &document)
                 .map_err(|error| format!("cannot write {}: {error}", destination.display()))?;
 
-            println!(
+            out(format!(
                 "imported {} -> {} ({} shows, {} slides)",
                 source.display(),
                 destination.display(),
                 document.project.shows.len(),
                 document.project.slide_count()
-            );
+            ));
             Ok(Action::Handled)
         }
 
@@ -66,7 +73,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             }
             let projects = Path::new(&rest[0]);
             let shows_dir = Path::new(&rest[1]);
-            let out = Path::new(&rest[2]);
+            let destination = Path::new(&rest[2]);
 
             let mut id: Option<&str> = None;
             let mut args = rest[3..].iter();
@@ -83,16 +90,16 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 .map_err(|error| format!("cannot import project: {error}"))?;
 
             let document = presenter_compat::cjcp::Document::new(project);
-            presenter_compat::cjcp::write(out, &document)
-                .map_err(|error| format!("cannot write {}: {error}", out.display()))?;
+            presenter_compat::cjcp::write(destination, &document)
+                .map_err(|error| format!("cannot write {}: {error}", destination.display()))?;
 
-            println!(
+            out(format!(
                 "imported project {:?} -> {} ({} shows, {} slides)",
                 document.project.name,
-                out.display(),
+                destination.display(),
                 document.project.shows.len(),
                 document.project.slide_count()
-            );
+            ));
             Ok(Action::Handled)
         }
 
@@ -103,23 +110,31 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             let document = cjcp::read(Path::new(path))
                 .map_err(|error| format!("cannot read {}: {error}", path))?;
 
-            println!("project   {}", document.project.name);
-            println!("format    cjcp v{}", document.format_version);
-            println!("app       {}", document.app_version);
-            println!("shows     {}", document.project.shows.len());
-            println!("slides    {}", document.project.slide_count());
-            println!("preserved {} unknown key(s)", document.extensions.len());
+            out(format!("project   {}", document.project.name));
+            out(format!("format    cjcp v{}", document.format_version));
+            out(format!("app       {}", document.app_version));
+            out(format!("shows     {}", document.project.shows.len()));
+            out(format!("slides    {}", document.project.slide_count()));
+            out(format!("media     {}", document.project.media.len()));
+            out(format!(
+                "preserved {} unknown key(s)",
+                document.extensions.len()
+            ));
             for show in &document.project.shows {
-                println!("  show  {} ({})", show.name, show.id);
+                out(format!("  show  {} ({})", show.name, show.id));
                 for group in &show.groups {
-                    println!("    group {} — {} slide(s)", group.name, group.slides.len());
+                    out(format!(
+                        "    group {} — {} slide(s)",
+                        group.name,
+                        group.slides.len()
+                    ));
                     for slide in &group.slides {
                         let first = slide
                             .elements
                             .first()
                             .map(|element| element.text.split('\n').next().unwrap_or(""))
                             .unwrap_or("");
-                        println!("      {} — {:?}", slide.id, first);
+                        out(format!("      {} — {first:?}", slide.id));
                     }
                 }
             }

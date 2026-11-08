@@ -1,0 +1,12 @@
+project   Parity With Media
+format    cjcp v1
+app       0.1.0
+shows     1
+slides    3
+media     2
+preserved 0 unknown key(s)
+  show  Parity With Media (fx-media)
+    group Group 1 — 3 slide(s)
+      fx-1 — "Verse one, line one"
+      fx-2 — "Verse one, line three"
+      fx-3 — "Verse two, line one"

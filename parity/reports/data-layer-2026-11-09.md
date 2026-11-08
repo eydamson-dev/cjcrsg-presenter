@@ -59,6 +59,26 @@ abort the import; it simply will not satisfy a reference.
 
 Raw output: `evidence/project/import.txt`, `evidence/project/inspect.txt`.
 
+## Media references
+
+FreeShow keeps media in a central folder outside any project, so imported media
+is always `External`: the path is absolute and the asset is explicitly not
+portable. The import records a kind from the extension and drops entries with an
+empty path.
+
+```
+$ cjcrsg-presenter inspect media.cjcp
+project   Parity With Media
+shows     1
+slides    3
+media     2
+```
+
+A project aggregates its shows' media, deduplicated by id, so a clip used by two
+shows appears once. The UI is expected to offer "copy into project", which turns
+`External` into `Bundled` with a relative path — that conversion is not
+implemented yet.
+
 ## Manual CLI evidence
 
 ```

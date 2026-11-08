@@ -1,0 +1,1 @@
+imported parity/fixtures/parity-with-media.show -> media.cjcp (1 shows, 3 slides)

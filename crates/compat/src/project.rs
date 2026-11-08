@@ -97,10 +97,22 @@ pub fn import_project(
         imported.push(show.clone());
     }
 
+    // Media belongs to shows, but a project view wants one list. Deduplicate by
+    // id so a clip used by two shows appears once.
+    let mut media: Vec<presenter_core::MediaAsset> = Vec::new();
+    for show in &imported {
+        for asset in &show.media {
+            if !media.iter().any(|existing| existing.id == asset.id) {
+                media.push(asset.clone());
+            }
+        }
+    }
+
     Ok(Project {
         id,
         name: raw.name.clone(),
         shows: imported,
+        media,
         ..Default::default()
     })
 }
