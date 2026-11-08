@@ -8,6 +8,7 @@ mod app;
 mod output;
 mod runtime;
 mod slide;
+mod smoke;
 
 fn main() {
     tracing_subscriber::fmt()
@@ -18,5 +19,11 @@ fn main() {
         .init();
 
     tracing::info!("starting experiment 1 shell");
-    dioxus::launch(app::App);
+
+    // `CJCRSG_SMOKE=1` runs Experiment 1 unattended and exits with its verdict.
+    if std::env::var("CJCRSG_SMOKE").is_ok() {
+        dioxus::launch(smoke::Smoke);
+    } else {
+        dioxus::launch(app::App);
+    }
 }

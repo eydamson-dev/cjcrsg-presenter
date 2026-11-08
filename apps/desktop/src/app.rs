@@ -149,7 +149,7 @@ pub fn App() -> Element {
 }
 
 /// Spawn an output window backed by its own `VirtualDom`.
-fn open_output(window: DesktopContext, app: Rc<AppState>, kind: OutputKind) {
+pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: OutputKind) {
     let props = OutputProps {
         kind,
         shared: Shared(app.clone()),

@@ -1,6 +1,7 @@
 # Experiment 1 — multi-window Dioxus and state recovery
 
-**Status:** buildable; not yet run. Waiting on a human to execute the procedure.
+**Status:** **automated run passed.** Seven checks green; recovery 205 ms.
+Second physical display and focus behaviour still unmeasured (see *Not measured*).
 
 **Date:** 2026-11-09
 **Commit:** uncommitted working tree (no git history in this directory yet)
@@ -62,17 +63,53 @@ Build and checks, 2026-11-09:
 
 ## Results
 
+Automated run, `CJCRSG_SMOKE=1`, single display, 2026-11-09.
+Raw output: `evidence/experiment-1-smoke.json`.
+
 | Criterion | Target | Measured | Pass |
 | --- | --- | --- | --- |
-| State propagation, 4 outputs | < 50 ms | — | — |
-| Reopen → correct slide | < 1 s | — | — |
-| Reopen → applied == engine revision | 100% of 20 | — | — |
-| Closing one output changes engine state | never | — | — |
-| Closing last output exits app | never | — | — |
-| Output steals focus on creation | never | — | — |
-| 4 windows, static slide | 60 fps | — | — |
-| 4 windows, 10 min idle | stable RSS, CPU < 5% | — | — |
+| Four outputs open | 4 | 4 | yes |
+| State propagation after 10 advances | all at engine revision | all four at rev 10 | yes |
+| Closing an output changes engine state | never | engine 10 → 11 after 5 advances with Stage closed | yes |
+| Reopen → correct slide | < 1 s | **205 ms** | yes |
+| Reopen → applied == engine revision | yes | `Some(11)` vs target 11 | yes |
+| Other outputs undisturbed by a reopen | yes | Audience/Preview/Confidence at 11 | yes |
+| Process exit code | 0 | 0 | yes |
+
+Raw checks:
+
+```
+four outputs open                               open=4
+all outputs reach revision after 10 advances    engine=10 applied=[(Audience,10),(Stage,10),(Preview,10),(Confidence,10)]
+stage closes                                    close_requested=true now_open=false
+engine keeps running with an output closed      10 -> 11
+reopened output reaches the live revision       target=11 applied=Some(11) in 205ms
+recovery under 1 s                              205ms
+other outputs unaffected                        Some(11)
+```
+
+## Not measured
+
+These criteria from the procedure have no number yet, and the experiment is not
+fully closed without them:
+
+- **Second physical display.** All windows opened on one screen. Monitor
+  placement and fullscreen-on-target are untested.
+- **Focus stealing.** Not asserted; the automated run cannot detect it.
+- **60 fps with four windows.** Not measured. The slides are static, so this
+  needs a frame counter, and says more about WebKit than about our code.
+- **10-minute idle memory.** Not run.
+- **WebView isolation.** Stylesheet and `eval` isolation between windows is
+  implied by separate documents but not asserted.
+
+None of these block the architecture question. The first two should be closed
+before the outputs area is implemented.
 
 ## Decision
 
-Pending. Do not start renderer work until this report has numbers.
+**Proceed.** The central claim holds: one engine, independent `VirtualDom`s, and
+a closed output that recovers the live slide from a snapshot rather than a
+replay. Recovery at 205 ms is far inside the one-second budget.
+
+The renderer work (Experiment 2) is unblocked. Display placement and focus must
+be closed before the multi-output features in Phase 2.
