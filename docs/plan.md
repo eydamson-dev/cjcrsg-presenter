@@ -1,0 +1,110 @@
+# Plan
+
+Organised by user-visible capability and architectural risk, not by module.
+Something must be usable at every milestone.
+
+## Phase 0 — Architecture validation (**current**)
+
+**Goal:** prove the Dioxus multi-window foundation before writing product code.
+
+- [x] Architecture decided and recorded (`docs/architecture.md`)
+- [ ] Experiment 1 — multi-window Dioxus + `RenderHub` recovery
+- [ ] Experiment 2 — renderer parity on one real lyric slide
+- [ ] Experiment 3 — video cost across 2 and 4 output windows
+
+**Exit criteria:** all three experiments have numeric results in
+`parity/reports/` and the pass criteria in `docs/experiments.md` are met or
+knowingly waived with a documented alternative.
+
+**Do not proceed if Experiment 1 fails.** The escape hatch is a JS renderer
+island, not a different architecture.
+
+## Phase 1 — Walking skeleton
+
+**Goal:** one real project, one show, one slide, one audience output, one remote
+NEXT, and a restart that recovers.
+
+- `crates/core`: domain types, `.show` parsing for a fixture, show engine with
+  NEXT/PREVIOUS/GOTO and tests
+- `crates/compat`: read-only `.show` reader
+- `apps/desktop`: controller window, one audience window, remote NEXT
+- Audit log of every window lifecycle transition
+
+**Exit criteria:** the restart scenario in `docs/experiments.md` passes
+end-to-end on a second physical display.
+
+## Phase 2 — Presentation engine
+
+- Groups and slide sequencing, blank/clear, previous/next edge cases
+- Output manager: audience, stage, preview, confidence, independent lifecycles
+- Transition compatibility with FreeShow
+- Stage display: current/next slide, clock, notes, timers
+- Remote command parity with the existing socket.io surface
+
+**Exit criteria:** a service can be run from the app: load, navigate, stage
+display on a second screen, remote control from a phone.
+
+## Phase 3 — Data and content
+
+- Native `.show` and project JSON read/write with unknown-field preservation
+- SQLite compatibility and versioned migrations
+- Media library, templates, groups
+- Importers: PDF, PPTX, DOCX, ODP/ODT
+- Round-trip tests against files from multiple FreeShow releases
+
+**Exit criteria:** an existing CJCRSG project opens, edits, and saves back
+without loss; importers match the converters on a golden corpus.
+
+## Phase 4 — Media engine
+
+- GStreamer pipeline for synchronised audio/video
+- Audio routing, multi-channel, low-latency output
+- Capture, LTC
+- Media position in `RenderState` for correct recovery mid-playback
+
+**Exit criteria:** a service with live video and audio plays with no drift and
+survives an output restart mid-playback.
+
+## Phase 5 — Professional AV
+
+- NDI send/receive
+- DeckLink/SDI playback and capture
+- OMT
+- OSC and MIDI control surface parity
+
+**Exit criteria:** each integration runs a documented hardware test; absent
+hardware skips cleanly rather than failing the suite.
+
+## Phase 6 — Compatibility and release
+
+- Remote protocol parity, including auth and reconnection
+- Cloud sync
+- Cross-platform packaging (Windows, macOS, Linux X11/Wayland)
+- Migration tooling and documentation
+- Performance and regression gates
+
+**Exit criteria:** a full service runs on the target machine, with the old app
+available as a fallback.
+
+## Risk order
+
+| # | Area | Risk | Why |
+| --- | --- | --- | --- |
+| 1 | Renderer fidelity | Very high | Autofit and typography are the product |
+| 2 | Multi-output lifecycle | Very high | Four WebViews, four failure modes |
+| 3 | Show state consistency | Very high | Wrong slide at the wrong moment |
+| 4 | Media sync | Very high | Video/audio drift is visible and unforgivable |
+| 5 | NDI / SDI | Very high | Vendor SDKs, dedicated hardware |
+| 6 | Import converters | High | Another 520k of behaviour |
+| 7 | Remote/stage parity | High | Phones already deployed |
+| 8 | Cloud sync | High | Account and data migration |
+| 9 | MIDI / OSC / LTC | Moderate | Isolated, testable |
+| 10 | SQLite / project mgmt | Moderate | Well-trodden |
+
+## Deliberately deferred
+
+- Dioxus Compose / native renderer (Blitz) — experimental; not a bet for a
+  presentation app's fidelity.
+- Mobile native apps — responsive web/PWA until a concrete need appears.
+- Rewriting vendor SDKs in Rust — no value, real risk.
+- A new project file format — read and write FreeShow's, always.

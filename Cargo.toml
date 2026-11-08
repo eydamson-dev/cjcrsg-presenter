@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["crates/core", "apps/desktop"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+rust-version = "1.83"
+
+[workspace.dependencies]
+presenter-core = { path = "crates/core" }
+
+dioxus = { version = "=0.7.10" }
+dioxus-desktop = "=0.7.10"
+
+tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+anyhow = "1"

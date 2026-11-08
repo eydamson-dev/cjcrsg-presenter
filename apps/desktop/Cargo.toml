@@ -1,0 +1,21 @@
+[package]
+name = "cjcrsg-presenter"
+description = "CJCRSG Presenter — Dioxus desktop shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "cjcrsg-presenter"
+path = "src/main.rs"
+
+[dependencies]
+presenter-core.workspace = true
+
+dioxus = { workspace = true, features = ["desktop"] }
+dioxus-desktop.workspace = true
+
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

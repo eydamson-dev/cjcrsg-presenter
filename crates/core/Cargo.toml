@@ -1,0 +1,15 @@
+[package]
+name = "presenter-core"
+description = "Presentation domain, show engine and render state for CJCRSG Presenter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

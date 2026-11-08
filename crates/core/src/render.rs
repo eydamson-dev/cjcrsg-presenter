@@ -1,0 +1,73 @@
+//! What an output window needs *now*.
+//!
+//! Never persisted. Produced by projecting the domain model, and consumed by one
+//! `VirtualDom` per output. See `docs/architecture.md#state-model`.
+
+use serde::{Deserialize, Serialize};
+
+pub type Revision = u64;
+
+/// The complete, self-sufficient state of one presentation instant.
+///
+/// A window that receives only the newest value can render correctly: it needs
+/// no history. That property is what makes a closed output recoverable.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RenderState {
+    /// Monotonic. Increments on every meaningful change, never on a timer.
+    pub revision: Revision,
+    pub show_id: String,
+    pub slide_id: String,
+    pub slide: RenderSlide,
+    /// Describes the change that produced `revision`, if any.
+    ///
+    /// A renderer animates only when it already knows a *previous* revision. On
+    /// first mount it renders directly, so reopening a window never replays a
+    /// transition the congregation already saw.
+    pub transition: Option<TransitionState>,
+}
+
+/// A slide reduced to everything the renderer needs, with no lookups required.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RenderSlide {
+    /// CSS background value (colour, gradient or `url(...)`).
+    pub background: Option<String>,
+    pub elements: Vec<RenderElement>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RenderElement {
+    pub id: String,
+    pub class_name: String,
+    pub text: String,
+    pub style: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TransitionKind {
+    Cut,
+    Fade,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransitionState {
+    /// The revision this transition belongs to. Not the revision it starts from.
+    pub revision: Revision,
+    pub kind: TransitionKind,
+    pub duration_ms: u32,
+}
+
+impl RenderSlide {
+    pub fn is_blank(&self) -> bool {
+        self.elements.is_empty() && self.background.is_none()
+    }
+}
+
+impl RenderState {
+    /// State for "nothing loaded". Outputs show black rather than an error.
+    pub fn blank(revision: Revision) -> Self {
+        Self {
+            revision,
+            ..Self::default()
+        }
+    }
+}
