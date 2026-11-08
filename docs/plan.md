@@ -46,6 +46,9 @@ display on a second screen, remote control from a phone.
 
 ## Phase 3 — Data and content
 
+Native project format: see `docs/file-format.md` (`.cjcp` project, `.cjcs`
+single show, JSON first, versioned envelope, unknown fields preserved).
+
 - Native `.show` and project JSON read/write with unknown-field preservation
 - SQLite compatibility and versioned migrations
 - Media library, templates, groups
