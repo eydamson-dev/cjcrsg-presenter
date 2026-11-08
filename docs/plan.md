@@ -35,11 +35,14 @@ end-to-end on a second physical display.
 
 ## Phase 2 — Presentation engine
 
-- Groups and slide sequencing, blank/clear, previous/next edge cases
-- Output manager: audience, stage, preview, confidence, independent lifecycles
+- [x] Blank/clear (keeps position)
+- [x] Previous/next edge cases
+- [ ] Groups and slide sequencing beyond a flat order
+- [x] Output manager: audience, stage, preview, confidence, independent lifecycles
 - Transition compatibility with FreeShow
-- Stage display: current/next slide, clock, notes, timers
-- Remote command parity with the existing socket.io surface
+- [x] Stage display: current + next slide
+- [ ] Stage display: clock, notes, timers
+- [ ] Remote command parity with the existing socket.io surface (ours is JSON/HTTP)
 
 **Exit criteria:** a service can be run from the app: load, navigate, stage
 display on a second screen, remote control from a phone.

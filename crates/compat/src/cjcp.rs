@@ -122,6 +122,43 @@ pub fn read(path: &Path) -> Result<Document, FormatError> {
     from_json(&std::fs::read_to_string(path)?)
 }
 
+/// Read a single show from `.cjcs`.
+pub fn read_show(path: &Path) -> Result<Show, FormatError> {
+    let json = std::fs::read_to_string(path)?;
+    let probe: Value = serde_json::from_str(&json)?;
+    let format = probe
+        .get("format")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+
+    if format != FORMAT_SHOW {
+        return Err(FormatError::WrongFormat {
+            found: format,
+            expected: FORMAT_SHOW,
+        });
+    }
+
+    let version = probe
+        .get("format_version")
+        .and_then(Value::as_u64)
+        .unwrap_or(0) as u32;
+    if version > SUPPORTED_VERSION {
+        return Err(FormatError::UnsupportedVersion {
+            found: version,
+            supported: SUPPORTED_VERSION,
+        });
+    }
+
+    #[derive(Deserialize)]
+    struct ShowEnvelope {
+        show: Show,
+    }
+
+    let envelope: ShowEnvelope = serde_json::from_str(&json)?;
+    Ok(envelope.show)
+}
+
 /// Write a single show as `.cjcs`.
 pub fn write_show(path: &Path, show: &Show) -> Result<(), FormatError> {
     let envelope = serde_json::json!({
@@ -234,6 +271,35 @@ mod tests {
             Err(FormatError::WrongFormat { found, .. }) => assert_eq!(found, "something-else"),
             other => panic!("expected WrongFormat, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn single_show_round_trips() {
+        let directory = std::env::temp_dir().join(format!("cjcs-test-{}", std::process::id()));
+        std::fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("show.cjcs");
+
+        let show = project().shows.into_iter().next().unwrap();
+        write_show(&path, &show).unwrap();
+        let back = read_show(&path).unwrap();
+        assert_eq!(back.id, show.id);
+        assert_eq!(back.name, show.name);
+        assert_eq!(back.slide_count(), 1);
+
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&directory).ok();
+    }
+
+    #[test]
+    fn a_project_file_is_not_a_show_file() {
+        let json = r#"{"format":"cjcp","format_version":1,"app_version":"1","project":{}}"#;
+        let path = std::env::temp_dir().join(format!("cjcp-not-cjcs-{}.cjcs", std::process::id()));
+        std::fs::write(&path, json).unwrap();
+        assert!(matches!(
+            read_show(&path),
+            Err(FormatError::WrongFormat { .. })
+        ));
+        std::fs::remove_file(&path).ok();
     }
 
     #[test]
