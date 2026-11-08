@@ -230,8 +230,21 @@ These are assumptions from reading the source. Each needs a real check.
   or to the Electron route for that feature.
 - FreeShow's own Playwright setup (its source notes a "throwaway test path") can
   start the app headless. If it can, the reference can be run in CI too.
-- Both sides can use the same installed font files. Without this, visual
-  calibration is meaningless.
+### 8.1 Preflight result (2026-11-09)
+
+Done. See `parity/reports/preflight-2026-11-09.md`. Headline correction:
+
+- **Navigation is on the controller (5512), not the remote (5510).** The remote
+  is a management UI; the stage (5511) needs a configured layout.
+- The Electron harness FreeShow ships works, and is the better adapter route
+  than the web clients, because it can read the live output directly.
+
+The adapter route is therefore: **Playwright `_electron`, main-window DOM as the
+oracle**, with the controller click only if a UI-level interaction is the thing
+under test.
+
+- Both sides can use the same installed font files — still to be measured in
+  calibration.
 
 ## 9. Build order
 
