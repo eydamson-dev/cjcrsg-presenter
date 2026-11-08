@@ -1,0 +1,47 @@
+{
+ "rootSize": [
+  286,
+  160.875
+ ],
+ "texts": [
+  {
+   "text": "Audience",
+   "fontFamily": "Inter, \"Segoe UI\", system-ui, -apple-system, sans-serif",
+   "fontSize": "11px",
+   "fontWeight": "400",
+   "color": "rgb(255, 255, 255)",
+   "rel": {
+    "x": 0.0083,
+    "y": 0.0093,
+    "w": 0.0356,
+    "h": 0.013
+   }
+  },
+  {
+   "text": "Verse one, line one",
+   "fontFamily": "sans-serif",
+   "fontSize": "100px",
+   "fontWeight": "400",
+   "color": "rgb(255, 255, 255)",
+   "rel": {
+    "x": 0.277,
+    "y": 0.3963,
+    "w": 0.4459,
+    "h": 0.1037
+   }
+  },
+  {
+   "text": "Verse one, line two",
+   "fontFamily": "sans-serif",
+   "fontSize": "100px",
+   "fontWeight": "400",
+   "color": "rgb(255, 255, 255)",
+   "rel": {
+    "x": 0.2799,
+    "y": 0.5,
+    "w": 0.4401,
+    "h": 0.1037
+   }
+  }
+ ]
+}

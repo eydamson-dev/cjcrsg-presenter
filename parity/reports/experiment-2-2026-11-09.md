@@ -32,24 +32,41 @@ This is the important part. Glyph advance — the thing that decides where a lin
 ends and whether it fits — agrees exactly. The port is not approximating the
 typography.
 
-## What differs, and why it may not be a defect
+## The reference's own layout model
 
-| | FreeShow | Ours |
-| --- | --- | --- |
-| Preview box | 285.98 × 185.86 (1.538) | 286 × 160.88 (1.778) |
-| Line 1 top (px, at 286 wide) | 63.9 | 65.5 |
-| Line 2 top (px) | 80.3 | 80.4 |
-| Line box height (px) | 16.69 | 14.90 |
+FreeShow's remote preview uses its `Zoomed` component, which lays out at a base
+resolution (1920×1080 by default) and scales with
+`min(containerWidth / 1920, containerHeight / 1080)`. That is exactly the model
+this renderer now uses, so the two are directly comparable.
 
-Line positions in **absolute pixels at equal width** agree within 1.6 px, and
-line 2 within 0.1 px. The line box height differs by 12% because FreeShow's
-preview lays the slide out at roughly 1713 logical px wide (its own preview
-surface), while ours lays out at 1920. Same text, different logical resolution —
-so the 12% is a preview artifact, not a typography difference.
+Two corrections followed from reading it:
 
-Pixel comparison: **19.0% differing pixels, mean channel delta 11.7**. That
-number is dominated by the aspect mismatch (186 vs 161 px tall), so it is not a
-fair fidelity score and should not be quoted as one.
+- **Line height.** FreeShow's line box is ~112 px at 1080p, not 100. Adopting
+  `line-height: 1.12` moved our text from y = 440 to y = 428 in logical space.
+- **Letterboxing.** The preview container is 1.538:1, so the slide sits inside it
+  with bars; the comparison has to crop to 16:9 first.
+
+## After the correction
+
+| | FreeShow | Ours | Delta |
+| --- | --- | --- | --- |
+| Line 1 top (px at 286 wide) | 63.9 | 63.75 | 0.15 |
+| Line 2 top (px) | 80.3 | 80.4 | 0.10 |
+| Line box height (px) | 16.69 | 16.68 | 0.01 |
+| Line 1 x / width | 0.277 / 0.4459 | 0.277 / 0.4459 | 0 |
+
+Every text box agrees within **0.15 px**.
+
+## Pixel comparison — inconclusive at this size
+
+Cropped to 16:9 (286×161): **12.0% differing pixels, mean channel delta 10.9**,
+after searching ±3 px of vertical alignment for the best match.
+
+That number is not a fidelity score. At 286 px wide the glyphs are ~14 px tall,
+so a fraction of a pixel of rasterisation difference — antialiasing, hinting, the
+transform's resampling — flips a large share of the ink pixels. The structural
+comparison above is the reliable signal at this size; pixels need a full-size
+capture.
 
 ## What this pass established
 
@@ -82,8 +99,8 @@ fair fidelity score and should not be quoted as one.
 | `evidence/experiment-2/diff.png` | Pixel difference, amplified |
 | `evidence/experiment-2/*-metrics.json` | Raw boxes and computed styles |
 
-![FreeShow](evidence/experiment-2/freeshow.png)
+![FreeShow, cropped](evidence/experiment-2/freeshow-cropped.png)
 
-![Ours](evidence/experiment-2/ours.png)
+![Ours](evidence/experiment-2/ours-final.png)
 
-![Difference](evidence/experiment-2/diff.png)
+![Difference](evidence/experiment-2/diff-cropped.png)
