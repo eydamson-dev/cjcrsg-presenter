@@ -109,6 +109,14 @@ pub fn App() -> Element {
                         },
                         "First"
                     }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.engine.toggle_clear(); }
+                        },
+                        "Clear"
+                    }
                 }
             }
 

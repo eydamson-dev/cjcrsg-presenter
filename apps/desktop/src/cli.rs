@@ -9,6 +9,8 @@ pub enum Action {
     Handled,
     /// Start the GUI, optionally with a project already loaded.
     Gui(Option<PathBuf>),
+    /// Run only the remote control server, with no window.
+    Serve(u16),
 }
 
 pub fn run(args: &[String]) -> Result<Action, String> {
@@ -77,6 +79,25 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Handled)
         }
 
+        [command, rest @ ..] if command == "serve" => {
+            let mut port = presenter_remote::DEFAULT_PORT;
+            let mut args = rest.iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--port" => {
+                        let value = args
+                            .next()
+                            .ok_or_else(|| "--port needs a number".to_string())?;
+                        port = value
+                            .parse()
+                            .map_err(|_| format!("not a port: {value:?}"))?;
+                    }
+                    other => return Err(format!("unknown option {other:?}")),
+                }
+            }
+            Ok(Action::Serve(port))
+        }
+
         [path] if path.ends_with(".cjcp") => Ok(Action::Gui(Some(PathBuf::from(path)))),
 
         [command, ..] => Err(format!(
@@ -85,7 +106,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter                 launch the app\n  \
              cjcrsg-presenter <file.cjcp>     launch with a project\n  \
              cjcrsg-presenter import <in.show> <out.cjcp>\n  \
-             cjcrsg-presenter inspect <file.cjcp>"
+             cjcrsg-presenter inspect <file.cjcp>\n  \
+             cjcrsg-presenter serve [--port N]   headless remote server"
         )),
     }
 }

@@ -46,6 +46,9 @@ pub struct ShowEngine {
     revision: Revision,
     policy: TransitionPolicy,
     transition: Option<TransitionState>,
+    /// Blanked output. The show position is untouched: clearing is a display
+    /// state, not a navigation event.
+    cleared: bool,
 }
 
 impl ShowEngine {
@@ -58,6 +61,7 @@ impl ShowEngine {
             revision: 0,
             policy: TransitionPolicy::default(),
             transition: None,
+            cleared: false,
         }
     }
 
@@ -154,6 +158,29 @@ impl ShowEngine {
         true
     }
 
+    pub fn is_cleared(&self) -> bool {
+        self.cleared
+    }
+
+    /// Blank or restore the output. Returns whether anything changed.
+    pub fn toggle_clear(&mut self) -> bool {
+        self.cleared = !self.cleared;
+        self.revision += 1;
+        self.transition = Some(TransitionState {
+            revision: self.revision,
+            kind: self.policy.kind,
+            duration_ms: self.policy.duration_ms,
+        });
+        true
+    }
+
+    pub fn set_cleared(&mut self, cleared: bool) -> bool {
+        if self.cleared == cleared {
+            return false;
+        }
+        self.toggle_clear()
+    }
+
     fn bump(&mut self) {
         self.revision += 1;
         self.transition = Some(TransitionState {
@@ -168,6 +195,18 @@ impl ShowEngine {
         let Some((show, _group, slide)) = self.current() else {
             return RenderState::blank(self.revision);
         };
+
+        if self.cleared {
+            // A cleared output still reports which slide is live, so a remote
+            // or stage client can show "blanked at verse 3" rather than nothing.
+            return RenderState {
+                revision: self.revision,
+                show_id: show.id.clone(),
+                slide_id: slide.id.clone(),
+                slide: RenderSlide::default(),
+                transition: self.transition,
+            };
+        }
 
         RenderState {
             revision: self.revision,
@@ -351,6 +390,34 @@ mod tests {
         let transition = state.transition.expect("transition after navigation");
         assert_eq!(transition.revision, state.revision);
         assert_eq!(transition.kind, TransitionKind::Fade);
+    }
+
+    #[test]
+    fn clearing_blanks_the_output_but_keeps_the_position() {
+        let mut engine = ShowEngine::new(fixture());
+        engine.next_slide();
+        assert_eq!(engine.state().slide_id, "a2");
+
+        assert!(engine.toggle_clear());
+        let cleared = engine.state();
+        assert!(cleared.slide.is_blank(), "output should be blank");
+        assert_eq!(cleared.slide_id, "a2", "position is still reported");
+        assert!(cleared.slide.elements.is_empty());
+
+        assert!(engine.toggle_clear());
+        assert_eq!(engine.state().slide_id, "a2");
+        assert!(!engine.state().slide.is_blank());
+    }
+
+    #[test]
+    fn setting_cleared_to_its_current_value_is_a_no_op() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(!engine.set_cleared(false));
+        assert_eq!(engine.revision(), 0);
+        assert!(engine.set_cleared(true));
+        assert_eq!(engine.revision(), 1);
+        assert!(!engine.set_cleared(true));
+        assert_eq!(engine.revision(), 1);
     }
 
     #[test]

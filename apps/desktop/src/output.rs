@@ -20,12 +20,12 @@ pub fn OutputRoot(props: OutputProps) -> Element {
     // Captured once per window instance. The first revision this window ever
     // renders is not animated: reopening an output must not replay a transition
     // the congregation already saw.
-    let first_revision: Revision = use_hook(|| shared.hub.revision());
+    let first_revision: Revision = use_hook(|| shared.engine.revision());
 
-    let initial = shared.hub.snapshot();
+    let initial = shared.engine.state();
     let current = use_signal(|| initial);
 
-    let hub = shared.hub.clone();
+    let hub = shared.engine.clone();
     use_future(move || {
         let hub = hub.clone();
         let mut current = current;

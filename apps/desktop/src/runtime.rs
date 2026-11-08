@@ -2,11 +2,11 @@
 
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use dioxus_desktop::DesktopService;
 use presenter_core::{
-    Project, RenderHub, Revision, Show, ShowEngine, Slide, SlideElement, SlideGroup,
+    Project, Revision, SharedEngine, Show, ShowEngine, Slide, SlideElement, SlideGroup,
 };
 
 /// The four outputs a service needs.
@@ -56,8 +56,7 @@ impl std::fmt::Debug for Shared {
 }
 
 pub struct AppState {
-    engine: Mutex<ShowEngine>,
-    pub hub: RenderHub,
+    pub engine: Arc<SharedEngine>,
     /// Windows are held weakly on purpose: the registry must never be the reason
     /// a window stays alive. A dead weak reference means "closed".
     windows: Mutex<HashMap<OutputKind, Weak<DesktopService>>>,
@@ -67,11 +66,8 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let engine = ShowEngine::new(load_project().unwrap_or_else(demo_project));
-        let hub = RenderHub::new(engine.state());
         Self {
-            engine: Mutex::new(engine),
-            hub,
+            engine: shared_engine(),
             windows: Mutex::new(HashMap::new()),
             applied: Mutex::new(HashMap::new()),
         }
@@ -80,41 +76,24 @@ impl AppState {
     // ---- presentation commands -------------------------------------------------
 
     pub fn next_slide(&self) -> bool {
-        let mut engine = self.engine.lock().expect("engine lock");
-        let changed = engine.next_slide();
-        if changed {
-            self.hub.publish(engine.state());
-        }
-        changed
+        self.engine.next_slide()
     }
 
     pub fn previous_slide(&self) -> bool {
-        let mut engine = self.engine.lock().expect("engine lock");
-        let changed = engine.previous_slide();
-        if changed {
-            self.hub.publish(engine.state());
-        }
-        changed
+        self.engine.previous_slide()
     }
 
     pub fn first_slide(&self) -> bool {
-        let mut engine = self.engine.lock().expect("engine lock");
-        let changed = engine.go_to_index(0);
-        if changed {
-            self.hub.publish(engine.state());
-        }
-        changed
+        self.engine.first_slide()
     }
 
     pub fn revision(&self) -> Revision {
-        self.hub.revision()
+        self.engine.revision()
     }
 
     /// `(slide id, position, total)` for the controller readout.
     pub fn cursor(&self) -> (String, usize, usize) {
-        let engine = self.engine.lock().expect("engine lock");
-        let state = engine.state();
-        (state.slide_id, engine.index() + 1, engine.len())
+        self.engine.cursor()
     }
 
     // ---- output registry -------------------------------------------------------
@@ -176,6 +155,21 @@ impl AppState {
             .get(&kind)
             .copied()
     }
+}
+
+/// The one engine every window and the remote server share.
+///
+/// A process-wide singleton because the remote control thread must reach the
+/// same instance the windows do; two engines would mean two shows.
+static SHARED: OnceLock<Arc<SharedEngine>> = OnceLock::new();
+
+pub fn shared_engine() -> Arc<SharedEngine> {
+    SHARED
+        .get_or_init(|| {
+            let project = load_project().unwrap_or_else(demo_project);
+            Arc::new(SharedEngine::new(ShowEngine::new(project)))
+        })
+        .clone()
 }
 
 /// Load `CJCRSG_PROJECT` when the app was started with a `.cjcp` path.

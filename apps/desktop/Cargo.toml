@@ -13,6 +13,7 @@ path = "src/main.rs"
 [dependencies]
 presenter-core.workspace = true
 presenter-compat.workspace = true
+presenter-remote.workspace = true
 
 dioxus = { workspace = true, features = ["desktop"] }
 dioxus-desktop.workspace = true

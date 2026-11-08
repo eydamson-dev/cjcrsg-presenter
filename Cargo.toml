@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/core", "crates/compat", "apps/desktop"]
+members = ["crates/core", "crates/compat", "crates/remote", "apps/desktop"]
 
 [workspace.package]
 version = "0.1.0"
@@ -11,11 +11,13 @@ rust-version = "1.83"
 [workspace.dependencies]
 presenter-core = { path = "crates/core" }
 presenter-compat = { path = "crates/compat" }
+presenter-remote = { path = "crates/remote" }
+axum = { version = "0.8", features = ["json"] }
 
 dioxus = { version = "=0.7.10" }
 dioxus-desktop = "=0.7.10"
 
-tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "time"] }
+tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "time", "net"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

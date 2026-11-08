@@ -1,0 +1,3 @@
+{"revision":1,"slide_id":"fx-2","position":2,"total":3,"slide":{"background":null,"elements":[{"id":"fx-2-item-0","class_name":"lyrics","text":"Verse one, line three","style":"top:0;left:0;width:100%;height:100%;"}]}}---
+POST /api/next -> 200
+{"revision":2,"slide_id":"fx-3","position":3,"total":3,"slide":{"background":null,"elements":[{"id":"fx-3-item-0","class_name":"lyrics","text":"Verse two, line one","style":"top:0;left:0;width:100%;height:100%;"}]}}

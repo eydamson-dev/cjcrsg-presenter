@@ -28,6 +28,10 @@ fn main() {
     let project = match cli::run(&args) {
         Ok(Action::Handled) => return,
         Ok(Action::Gui(project)) => project,
+        Ok(Action::Serve(port)) => {
+            run_server(port);
+            return;
+        }
         Err(message) => {
             eprintln!("{message}");
             std::process::exit(2);
@@ -42,6 +46,10 @@ fn main() {
 
     tracing::info!("starting experiment 1 shell");
 
+    if std::env::var("CJCRSG_REMOTE").as_deref() != Ok("0") {
+        start_remote();
+    }
+
     // `CJCRSG_SMOKE=1` runs Experiment 1 unattended and exits with its verdict.
     if std::env::var("CJCRSG_SMOKE").is_ok() {
         dioxus::LaunchBuilder::desktop()
@@ -52,6 +60,54 @@ fn main() {
             .with_cfg(desktop_config())
             .launch(app::App);
     }
+}
+
+/// Blocking headless server for tests and for a machine with no display.
+fn run_server(port: u16) {
+    let engine = runtime::shared_engine();
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("could not start runtime: {error}");
+            std::process::exit(1);
+        }
+    };
+
+    println!("serving remote on http://127.0.0.1:{port}");
+    if let Err(error) = runtime.block_on(presenter_remote::serve(engine, port)) {
+        eprintln!("server stopped: {error}");
+        std::process::exit(1);
+    }
+}
+
+/// Run the remote control server on its own thread and runtime.
+///
+/// A separate runtime keeps the server's scheduling from competing with the
+/// UI's, and a separate thread keeps a bind failure from taking down the app.
+fn start_remote() {
+    let port: u16 = std::env::var("CJCRSG_REMOTE_PORT")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(presenter_remote::DEFAULT_PORT);
+    let engine = runtime::shared_engine();
+
+    std::thread::spawn(move || {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build();
+
+        match runtime {
+            Ok(runtime) => {
+                if let Err(error) = runtime.block_on(presenter_remote::serve(engine, port)) {
+                    tracing::error!(port, %error, "remote control server stopped");
+                }
+            }
+            Err(error) => tracing::error!(%error, "could not start the remote runtime"),
+        }
+    });
 }
 
 /// The controller is the operator's window: it needs to be readable, and it is

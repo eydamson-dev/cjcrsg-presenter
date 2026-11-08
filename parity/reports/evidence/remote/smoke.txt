@@ -1,0 +1,39 @@
+# remote control smoke, 2026-11-09
+
+GET /api/state
+{
+    "revision": 0,
+    "slide_id": "fx-1",
+    "position": 1,
+    "total": 3,
+    "cleared": false,
+    "slide": {
+        "background": null,
+        "elements": [
+            {
+                "id": "fx-1-item-0",
+                "class_name": "lyrics",
+                "text": "Verse one, line one\nVerse one, line two",
+                "style": "top:0;left:0;width:100%;height:100%;"
+            }
+        ]
+    }
+}
+
+POST /api/next -> 200
+POST /api/clear -> 200
+
+GET /api/state after
+{
+    "revision": 2,
+    "slide_id": "fx-2",
+    "position": 2,
+    "total": 3,
+    "cleared": true,
+    "slide": {
+        "background": null,
+        "elements": []
+    }
+}
+
+POST /api/previous at first slide -> 200 then previous -> 409
