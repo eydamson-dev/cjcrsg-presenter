@@ -1,0 +1,35 @@
+{
+ "video": "/tmp/opencode/media/test-1080p.webm",
+ "codec": "VP9/WebM (Playwright Chromium has no H.264)",
+ "sampleSeconds": 15,
+ "viewport": "1280x720",
+ "results": [
+  {
+   "surfaces": 1,
+   "idleCpu": 24.95,
+   "videoCpu": 28.76,
+   "mediaCpu": 3.81,
+   "mediaCpuPerSurface": 3.81,
+   "dropped": 0,
+   "frames": 591
+  },
+  {
+   "surfaces": 2,
+   "idleCpu": 1.73,
+   "videoCpu": 13.87,
+   "mediaCpu": 12.14,
+   "mediaCpuPerSurface": 6.07,
+   "dropped": 0,
+   "frames": 1184
+  },
+  {
+   "surfaces": 4,
+   "idleCpu": 21.44,
+   "videoCpu": 3.12,
+   "mediaCpu": -18.32,
+   "mediaCpuPerSurface": -4.58,
+   "dropped": 0,
+   "frames": 2376
+  }
+ ]
+}

@@ -9,7 +9,7 @@ Last updated: 2026-11-09.
 
 **Phase 0 — architecture validation.** Experiment 1 passed. Experiment 2 has a
 first measurement (glyph metrics exact; a true 16:9 reference is still needed).
-Experiment 3 has not run.
+Experiment 3 ran: four surfaces, zero dropped frames; CPU cost still unmeasured in-app.
 
 **Phase 1 — walking skeleton.** Except the second physical display, done:
 a project loads, a show advances, outputs render, a remote can drive it, and a

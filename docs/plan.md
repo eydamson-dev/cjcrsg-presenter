@@ -10,7 +10,7 @@ Something must be usable at every milestone.
 - [x] Architecture decided and recorded (`docs/architecture.md`)
 - [x] Experiment 1 — multi-window Dioxus + `RenderHub` recovery (passed, 205 ms; `parity/reports/experiment-1-2026-11-09.md`)
 - [x] Experiment 2 — renderer parity, first pass (horizontal metrics exact; `parity/reports/experiment-2-2026-11-09.md`)
-- [ ] Experiment 3 — video cost across 2 and 4 output windows
+- [x] Experiment 3 — no dropped frames at 4 surfaces (`parity/reports/experiment-3-2026-11-09.md`); CPU attribution inconclusive
 
 **Exit criteria:** all three experiments have numeric results in
 `parity/reports/` and the pass criteria in `docs/experiments.md` are met or

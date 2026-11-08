@@ -8,12 +8,14 @@
 pub mod domain;
 pub mod engine;
 pub mod hub;
+pub mod media;
 pub mod render;
 pub mod shared;
 
 pub use domain::{Project, Show, Slide, SlideElement, SlideGroup};
 pub use engine::{Position, ShowEngine};
 pub use hub::RenderHub;
+pub use media::{MediaAsset, MediaError, MediaKind, MediaOrigin};
 pub use render::{
     RenderElement, RenderSlide, RenderState, Revision, TransitionKind, TransitionState,
 };

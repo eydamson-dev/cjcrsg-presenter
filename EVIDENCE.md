@@ -50,6 +50,19 @@ Numbers and caveats: `parity/reports/experiment-2-2026-11-09.md`.
 
 ---
 
+## 1c. Experiment 3 — four surfaces playing 1080p
+
+Zero dropped frames at 1, 2 and 4 surfaces; frames decoded scale 1:2:4, so each
+surface decodes independently.
+
+![A surface playing the test clip](parity/reports/evidence/experiment-3/playing.png)
+
+Raw run: `parity/reports/evidence/experiment-3/video.json`. CPU attribution
+failed and is documented as failed in
+`parity/reports/experiment-3-2026-11-09.md`.
+
+---
+
 ## 2. Remote control — driven and photographed headlessly
 
 ![Remote phone](parity/reports/evidence/remote/remote-390x844.png)

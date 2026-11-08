@@ -16,6 +16,10 @@ pub struct Project {
     pub id: Id,
     pub name: String,
     pub shows: Vec<Show>,
+    /// Media referenced anywhere in the project. Paths are relative for
+    /// bundled assets; see `crate::media`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub media: Vec<crate::media::MediaAsset>,
     /// Fields we do not model yet, preserved verbatim on save.
     #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
     pub extra: BTreeMap<String, Value>,
