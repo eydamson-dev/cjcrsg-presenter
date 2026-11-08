@@ -69,6 +69,12 @@ evidence.
 
 ## Known gaps and hazards
 
+- **CI does not run yet.** `.github/workflows/check.yml` is committed and pins
+  `ubuntu-24.04`, but GitHub refuses to start the job: "recent account payments
+  have failed or your spending limit needs to be increased". That is an account
+  setting, not a workflow problem. Until it is resolved, run `scripts/check.sh`
+  locally.
+
 - **No authentication on the remote**, and it binds `0.0.0.0`. Bound it to
   localhost or add auth before it runs on a shared network.
 - **Monitor placement is untested.** `set_fullscreen` uses the window's current
