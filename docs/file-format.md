@@ -97,9 +97,67 @@ licensed under this project's licence. They cover, at minimum:
 A FreeShow-format fixture is converted by the importer during the test run, so
 the importer is exercised every time.
 
-## Open decisions
+## Media references
 
-1. **Extension names:** `.cjcp` and `.cjcs`, or something else?
-2. **Container:** JSON first, zip later (recommended), or zip from the start?
-3. **Export to FreeShow format:** not planned. Do we ever need it?
-4. **Media references:** relative paths, absolute paths, or content hashes?
+The rule: **a project's identity is never an absolute path.** Absolute paths
+break when a folder moves, when a project is shared, and when the same file is
+opened on another machine. They also leak the user's directory layout.
+
+A media entry:
+
+```json
+{
+  "id": "m_7f3a",
+  "kind": "video",
+  "origin": "bundled",
+  "path": "media/worship-bg.mp4",
+  "size": 18432021,
+  "hash": "blake3:9f2c…",
+  "relink_hint": null
+}
+```
+
+| Field | Rule |
+| --- | --- |
+| `origin` | `bundled` (inside the project folder) or `external` (anywhere else) |
+| `path` | Always forward slashes. For `bundled`, relative to the project root and must not escape it. For `external`, may be absolute, and is documented as non-portable |
+| `size` + `hash` | Optional now; required when zip packaging lands. Used to detect a file that changed underneath us, and to deduplicate |
+| `relink_hint` | Last known location, used only to offer a one-click relink. Never resolved silently |
+
+**Why not hashes as the primary identity.** Content hashing means reading
+every byte of every video on open, and it makes a project unreadable in a text
+editor. Hashing is a *verification* field, not an address.
+
+**Why relative paths win.** They survive moving the project, sharing it, and
+the change to a zip container, because the zip layout is relative paths by
+nature. JSON first and zip later only works cleanly if references are already
+relative.
+
+**Resolution order**, when opening a project:
+
+1. `bundled`: resolve against the project root. That is the only authoritative
+   lookup.
+2. `external`: resolve `path`. If it is gone, offer relink using `relink_hint`.
+3. Never scan the filesystem guessing by filename — with several `bg.mp4`
+   files around, that silently picks the wrong asset.
+
+**FreeShow imports.** FreeShow keeps media in a central media folder, outside
+any project, so imported media arrives as `origin: "external"` with an absolute
+`path`. That is accurate, not a workaround. The import report lists how many
+entries are external, and the UI offers "copy into project" to convert them to
+`bundled`.
+
+**When zip packaging lands**, `bundled` entries are what goes in the archive;
+`external` entries stay references and are reported to the user. Because the
+field is already there, nothing about the file layout has to change.
+
+## Decisions
+
+Decided by the user, 2026-11-09:
+
+1. **Extensions:** `.cjcp` (project) and `.cjcs` (single show).
+2. **Container:** JSON first, zip later. The envelope does not change when it does.
+3. **Export to FreeShow format:** not planned, and not implemented.
+4. **Media:** relative paths, with `origin` distinguishing bundled from
+   external, and an optional hash for verification. See above.
+
