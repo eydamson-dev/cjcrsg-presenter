@@ -64,6 +64,14 @@ impl SharedEngine {
         })
     }
 
+    pub fn next_group(&self) -> bool {
+        self.apply(ShowEngine::next_group)
+    }
+
+    pub fn previous_group(&self) -> bool {
+        self.apply(ShowEngine::previous_group)
+    }
+
     pub fn toggle_clear(&self) -> bool {
         self.apply(ShowEngine::toggle_clear)
     }

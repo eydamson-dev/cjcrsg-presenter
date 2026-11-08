@@ -37,7 +37,7 @@ end-to-end on a second physical display.
 
 - [x] Blank/clear (keeps position)
 - [x] Previous/next edge cases
-- [ ] Groups and slide sequencing beyond a flat order\n- [ ] Stage timers
+- [x] Group navigation: next/previous section, skipping empty groups\n- [ ] Stage timers
 - [x] Output manager: audience, stage, preview, confidence, independent lifecycles
 - Transition compatibility with FreeShow
 - [x] Stage display: current + next slide

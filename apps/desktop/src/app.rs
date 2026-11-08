@@ -130,6 +130,22 @@ pub fn App() -> Element {
                         },
                         "Clear"
                     }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.engine.previous_group(); }
+                        },
+                        "Prev group"
+                    }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.engine.next_group(); }
+                        },
+                        "Next group"
+                    }
                 }
             }
 

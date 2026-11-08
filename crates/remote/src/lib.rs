@@ -30,6 +30,8 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/first", post(first))
         .route("/api/last", post(last))
         .route("/api/clear", post(clear))
+        .route("/api/next-group", post(next_group))
+        .route("/api/previous-group", post(previous_group))
         .with_state(engine)
 }
 
@@ -73,6 +75,14 @@ async fn previous(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse 
     command(engine.previous_slide())
 }
 
+async fn next_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.next_group())
+}
+
+async fn previous_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.previous_group())
+}
+
 async fn clear(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
     command(engine.toggle_clear())
 }
@@ -104,12 +114,13 @@ async fn page(State(engine): State<Arc<SharedEngine>>) -> Html<String> {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CJCRSG Remote</title>
 <style>
-body{{margin:0;font-family:system-ui;background:#0b0d10;color:#e6e8ea;
-display:flex;flex-direction:column;height:100vh;justify-content:center;
-align-items:center;gap:1.5rem}}
-.row{{display:flex;gap:1rem}}
+body{{margin:0;padding:1rem;box-sizing:border-box;font-family:system-ui;
+background:#0b0d10;color:#e6e8ea;display:flex;flex-direction:column;height:100vh;
+justify-content:center;align-items:center;gap:1.5rem}}
+.row{{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;max-width:100%;box-sizing:border-box}}
 button{{font-size:1.5rem;padding:1.2rem 2rem;border-radius:12px;border:1px solid #2a323c;
-background:#161b22;color:#e6e8ea;min-width:8rem}}
+background:#161b22;color:#e6e8ea;min-width:7rem}}
+.row.tools button{{font-size:1rem;min-width:5.5rem;padding:0.9rem 1rem}}
 button:active{{background:#22303f}}
 .pos{{font-size:1.1rem;color:#8b949e}}
 </style></head>
@@ -123,7 +134,9 @@ button:active{{background:#22303f}}
   <button onclick="fetch('/api/first',{{method:'POST'}}).then(refresh)">⏮</button>
   <button onclick="fetch('/api/last',{{method:'POST'}}).then(refresh)">⏭</button>
 </div>
-<div class="row">
+<div class="row tools">
+  <button onclick="fetch('/api/previous-group',{{method:'POST'}}).then(refresh)">⏮ Group</button>
+  <button onclick="fetch('/api/next-group',{{method:'POST'}}).then(refresh)">Group ⏭</button>
   <button onclick="fetch('/api/clear',{{method:'POST'}}).then(refresh)">Clear</button>
 </div>
 <script>
@@ -223,6 +236,71 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::CONFLICT);
         assert_eq!(shared.revision(), 0);
+    }
+
+    fn engine_two_groups() -> Arc<SharedEngine> {
+        let slide = |id: &str| Slide {
+            id: id.to_string(),
+            name: id.to_string(),
+            ..Default::default()
+        };
+        let project = Project {
+            id: "p".into(),
+            name: "P".into(),
+            shows: vec![Show {
+                id: "s".into(),
+                name: "S".into(),
+                groups: vec![
+                    SlideGroup {
+                        id: "g1".into(),
+                        name: "One".into(),
+                        slides: vec![slide("a"), slide("b")],
+                        ..Default::default()
+                    },
+                    SlideGroup {
+                        id: "g2".into(),
+                        name: "Two".into(),
+                        slides: vec![slide("c")],
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        Arc::new(SharedEngine::new(ShowEngine::new(project)))
+    }
+
+    #[tokio::test]
+    async fn group_commands_move_by_section() {
+        let shared = engine_two_groups();
+        let app = router(shared.clone());
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/next-group")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            shared.state().slide_id,
+            "c",
+            "first slide of the next group"
+        );
+
+        let response = app
+            .oneshot(
+                Request::post("/api/previous-group")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(shared.state().slide_id, "a");
     }
 
     #[tokio::test]

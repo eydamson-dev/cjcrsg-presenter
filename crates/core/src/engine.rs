@@ -140,6 +140,53 @@ impl ShowEngine {
         true
     }
 
+    /// Jump to the first slide of the next group.
+    ///
+    /// Operators think in sections ("next song"), not in slide counts, and a
+    /// section boundary is not always one slide away.
+    pub fn next_group(&mut self) -> bool {
+        let Some(current) = self.position() else {
+            return false;
+        };
+
+        for index in self.index + 1..self.order.len() {
+            let candidate = self.order[index];
+            if candidate.show != current.show || candidate.group != current.group {
+                return self.go_to_index(index);
+            }
+        }
+
+        false
+    }
+
+    /// Jump to the first slide of the previous group.
+    pub fn previous_group(&mut self) -> bool {
+        let Some(current) = self.position() else {
+            return false;
+        };
+
+        let mut index = self.index;
+        while index > 0 {
+            index -= 1;
+            let candidate = self.order[index];
+            if candidate.show != current.show || candidate.group != current.group {
+                // Walk back to the start of that group.
+                let mut start = index;
+                while start > 0 {
+                    let before = self.order[start - 1];
+                    if before.show == candidate.show && before.group == candidate.group {
+                        start -= 1;
+                    } else {
+                        break;
+                    }
+                }
+                return self.go_to_index(start);
+            }
+        }
+
+        false
+    }
+
     /// Jump to a slide by project address. Returns whether anything changed.
     pub fn go_to(&mut self, position: Position) -> bool {
         let Some(target) = self.order.iter().position(|p| *p == position) else {
@@ -416,6 +463,44 @@ mod tests {
         let transition = state.transition.expect("transition after navigation");
         assert_eq!(transition.revision, state.revision);
         assert_eq!(transition.kind, TransitionKind::Fade);
+    }
+
+    #[test]
+    fn next_group_lands_on_the_next_sections_first_slide() {
+        let mut engine = ShowEngine::new(fixture());
+        // fixture: g1 = a1,a2 · g-empty · g2 = b1 · g3 = c1,c2
+        assert_eq!(engine.state().slide_id, "a1");
+
+        assert!(engine.next_group());
+        assert_eq!(engine.state().slide_id, "b1", "skips the empty group");
+
+        assert!(engine.next_group());
+        assert_eq!(engine.state().slide_id, "c1", "crosses into the next show");
+    }
+
+    #[test]
+    fn previous_group_lands_on_the_previous_sections_first_slide() {
+        let mut engine = ShowEngine::new(fixture());
+        engine.go_to_index(4); // c2, inside the last group
+        assert_eq!(engine.state().slide_id, "c2");
+
+        assert!(engine.previous_group());
+        assert_eq!(engine.state().slide_id, "b1");
+
+        assert!(engine.previous_group());
+        assert_eq!(engine.state().slide_id, "a1");
+        assert!(!engine.previous_group(), "no group before the first");
+    }
+
+    #[test]
+    fn group_navigation_is_a_no_op_when_there_is_nowhere_to_go() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(!engine.previous_group());
+        assert_eq!(engine.revision(), 0);
+
+        engine.go_to_index(1); // a2, last slide of the first group
+        assert!(engine.next_group());
+        assert_eq!(engine.revision(), 2);
     }
 
     #[test]
