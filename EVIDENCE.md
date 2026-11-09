@@ -168,6 +168,13 @@ Over **10 minutes**, with Preview showing the next slide (so three surfaces
 decode live video): 17,907 / 17,940 / 17,905 frames at 29.12 fps each, **0
 dropped**, every output reaching the clip's exact 600.0 s end.
 
+**Ten-minute drift, three surfaces:** Stage 5.8 ms and Confidence 1.6 ms against
+Audience over 592–595 s. The offsets (−298 ms, −792 ms) are when each window
+opened; drift is their change.
+
+Raw: `parity/reports/evidence/media/drift10m/`.
+Report: `parity/reports/media-drift-2026-11-09.md`.
+
 CPU for the same configuration, whole process tree, 60 s: **112.6 % of one
 core = 9.4 % of the machine's 12 logical CPUs**, 2.2 GB RSS across 14 processes,
 against Experiment 3's `< 60 % of the machine` target.

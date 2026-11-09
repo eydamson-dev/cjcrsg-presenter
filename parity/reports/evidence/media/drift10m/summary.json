@@ -1,0 +1,21 @@
+{
+  "reference": "Audience",
+  "outputs": {
+    "Stage": {
+      "samples": 296,
+      "seconds": 592.4,
+      "offset_start_ms": -298.4,
+      "offset_end_ms": -292.6,
+      "drift_ms": 5.8,
+      "max_abs_offset_ms": 298.4
+    },
+    "Confidence": {
+      "samples": 298,
+      "seconds": 594.8,
+      "offset_start_ms": -791.8,
+      "offset_end_ms": -790.2,
+      "drift_ms": 1.6,
+      "max_abs_offset_ms": 796.2
+    }
+  }
+}
