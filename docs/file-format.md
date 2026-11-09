@@ -143,9 +143,9 @@ relative.
 
 **FreeShow imports.** FreeShow keeps media in a central media folder, outside
 any project, so imported media arrives as `origin: "external"` with an absolute
-`path`. That is accurate, not a workaround. The import report lists how many
-entries are external, and the UI offers "copy into project" to convert them to
-`bundled`.
+`path`. That is accurate, not a workaround. The import report lists how many entries are
+external, and `cjcrsg-presenter bundle <file.cjcp>` copies them into
+`<root>/media` and rewrites them to relative `bundled` paths.
 
 **When zip packaging lands**, `bundled` entries are what goes in the archive;
 `external` entries stay references and are reported to the user. Because the

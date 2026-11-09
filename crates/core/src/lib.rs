@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod bundle;
 pub mod domain;
 pub mod engine;
 pub mod hub;
@@ -12,6 +13,7 @@ pub mod media;
 pub mod render;
 pub mod shared;
 
+pub use bundle::{bundle_media, BundleReport, BUNDLE_DIR};
 pub use domain::{
     easing_css, Project, Show, Slide, SlideElement, SlideGroup, Transition, TransitionKind, EASINGS,
 };

@@ -10,7 +10,6 @@ deviation is closed, delete the entry rather than marking it done.
 | --- | --- | --- | --- |
 | DEV-001 | The controller UI has no keyboard shortcuts (`Space`, arrows, `PageUp/Down`) | Operators using a keyboard lose speed | Add a key handler on the controller window |
 | DEV-003 | The remote speaks JSON over HTTP, not Socket.IO | Existing FreeShow remote/stage clients cannot connect | Implement the Socket.IO surface, or ship our own clients |
-| DEV-004 | Imported media is `External`; there is no copy-into-project | Projects are not portable or shareable | Provide `External → Bundled` copy with a relative path |
 | DEV-005 | No SQLite persistence | No recent-projects, no restore-on-start, no FreeShow DB import | Phase 3: project store |
 | DEV-006 | No document importers (PDF, PPTX, DOCX, ODP/ODT) | Churches cannot bring existing decks | Phase 3; evaluate LibreOffice sidecar first |
 | DEV-007 | The stage shows live, next, notes and a clock slot only | No timers, message, or layout options | Phase 2 remainder |

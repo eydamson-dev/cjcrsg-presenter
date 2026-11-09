@@ -235,6 +235,23 @@ impl Project {
     pub fn is_empty(&self) -> bool {
         self.slide_count() == 0
     }
+
+    /// Make sure every show's media also appears in the project list.
+    ///
+    /// A show imported on its own carries its own media; the project list is the
+    /// view that operators and packaging use, so it must not be short. Existing
+    /// entries win, and ids are unique.
+    pub fn collect_media(&mut self) {
+        let mut merged: Vec<crate::media::MediaAsset> = std::mem::take(&mut self.media);
+        for show in &self.shows {
+            for asset in &show.media {
+                if !merged.iter().any(|existing| existing.id == asset.id) {
+                    merged.push(asset.clone());
+                }
+            }
+        }
+        self.media = merged;
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +314,27 @@ mod tests {
         // Unknown curves degrade to FreeShow's default rather than to `linear`
         // by accident or an invalid value the browser would ignore.
         assert_eq!(easing_css("expo"), easing_css("sine"));
+    }
+
+    #[test]
+    fn collecting_media_merges_shows_without_dropping_project_entries() {
+        use crate::media::{MediaAsset, MediaKind};
+
+        let mut project = Project {
+            media: vec![MediaAsset::new("keep", MediaKind::Image, "media/keep.png")],
+            shows: vec![Show {
+                media: vec![
+                    MediaAsset::new("keep", MediaKind::Image, "media/keep.png"),
+                    MediaAsset::new("new", MediaKind::Audio, "media/new.mp3"),
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        project.collect_media();
+        let ids: Vec<&str> = project.media.iter().map(|a| a.id.as_str()).collect();
+        assert_eq!(ids, ["keep", "new"], "deduped, order preserved");
     }
 
     #[test]

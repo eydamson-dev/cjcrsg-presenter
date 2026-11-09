@@ -60,8 +60,9 @@ paths are relative and may not escape the project root; external paths may be
 absolute and are documented as non-portable. FreeShow imports therefore arrive
 as `external`.
 
-**Consequences.** Projects survive being moved. The UI must offer "copy into
-project" to make media portable, which is not implemented yet.
+**Consequences.** Projects survive being moved. Media becomes portable through
+`cjcrsg-presenter bundle`, which copies external files into `<root>/media` and
+rewrites them to relative paths; there is no controller button for it yet.
 
 ## D7 — GPL-3.0, and stay there
 

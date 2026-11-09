@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 82 -->
+**As of `main`, 2026-11-09.** <!-- tests: 91 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -187,7 +187,25 @@ media     2
 Artefacts: `evidence/project/import.txt`, `import-media.txt`,
 `inspect-media.txt`.
 
-Report: `parity/reports/data-layer-2026-11-09.md`.
+**Copy-in makes the project portable.** `bundle` copies external files into
+`<root>/media` and rewrites the paths. With the originals deleted, the un-bundled
+copy reports its missing references and the bundled copy resolves:
+
+```
+=== the un-bundled copy, after the originals are gone ===
+media     2
+  media m1 [Video External] /tmp/opencode/portable/a/source/worship.mp4
+    ! missing: /tmp/opencode/portable/a/source/worship.mp4
+=== the bundled copy, in its own folder ===
+media     2
+  media m1 [Video Bundled] media/worship.mp4
+  media m2 [Image Bundled] media/logo.png
+```
+
+Copied bytes are identical to the source (`sha256` matches for both files).
+
+Report: `parity/reports/media-copy-in-2026-11-09.md`, and
+`parity/reports/data-layer-2026-11-09.md` for the import itself.
 
 ---
 
