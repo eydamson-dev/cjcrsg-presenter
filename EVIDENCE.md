@@ -465,6 +465,16 @@ and UNC paths, with tests for each.
 This is the argument for running the library tests on Windows rather than only
 compiling there.
 
+## Windows — installed and running
+
+The first VM run installed the app and then showed
+`VCRUNTIME140.dll was not found`. Static CRT fixed it; the second run installs,
+writes the uninstall key, and launches the controller on Windows 11:
+
+![The app on Windows 11](parity/reports/evidence/windows-vm/app-running-windows.png)
+
+Report: `parity/reports/windows-verification-2026-11-09.md`.
+
 ## Windows packaging
 
 The first Windows installer, built on `windows-latest` (run `42549750166`, all

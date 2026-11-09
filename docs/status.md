@@ -58,7 +58,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 3 — data | **done for content and metadata**: single show, project with sections, whole store with categories/tags, native format, media copy-in, document import, recent/restore. No media library UI (durations, thumbnails, playlists) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
-| 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
+| 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. DPI/monitors/audio and uninstall unverified. Linux packaging not started |
 
 ## Measured, with evidence
 
@@ -88,6 +88,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Slide direction: imported bottom_top moves down, top_bottom up, default left | `parity/reports/transition-direction-2026-11-09.md` |
 | elastic/bounce sampled to 101-point `linear()`; max error 1.25 % / 0.71 %, accepted by Chromium and WebKitGTK | `parity/reports/easing-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
+| Windows install+launch on a clean VM; first build died on VCRUNTIME140.dll, static CRT fixed it; app runs | `parity/reports/windows-verification-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
 | Audio: imported audio is audible (was muted); WAV advances 1.69 s → 9.71 s, paused=false, no error | `parity/reports/audio-playback-2026-11-09.md` |
@@ -133,9 +134,8 @@ apps/desktop     4
 1. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
    per-section actions (skip, loop, notes) are still not executed, and the view
    has no drag, auto-scroll or keyboard traversal.
-2. **Windows runtime verification.** The installer builds but has never run.
-   QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
-   playback on WebView2 is also unmeasured.
+2. **Windows runtime, remainder.** Install and launch are verified; uninstall,
+   DPI, multi-monitor, fullscreen, audio and H.264/WebView2 playback are not.
 3. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
 4. **Audio routing and a shared start instant.** Drift is single-digit ms, but
@@ -143,7 +143,8 @@ apps/desktop     4
 
 ## Known gaps and hazards
 
-- **No authentication on the remote**, and it binds `0.0.0.0`. Bind it to
+- **No authentication on the remote**, and it binds `0.0.0.0` — which now
+  provably triggers a Windows Firewall prompt on first launch. Bind it to
   localhost or add auth before it runs on a shared network.
 - **FreeShow's own remote/stage clients cannot connect.** Deliberate (D12): the
   protocol carries their layout/template model. Our clients are the supported

@@ -3,11 +3,14 @@
 Developer setup on Windows (MSVC, library tests, what the desktop build needs) is
 in `CONTRIBUTING.md` under "Windows". This page is the testing plan.
 
-Status: **partly verified.** The desktop crate compiles on `windows-latest`, the
-library tests execute there, the executable carries the PerMonitorV2 manifest,
-and CI builds a per-user NSIS installer (run `42549750166`). Nothing has been
-*run* on Windows yet — no window has opened and the installer has never been
-executed — and the manual checklist at the end is untouched.
+Status: **installer and app verified on a clean Windows 11 VM.** It installs
+per-user, writes the HKCU uninstall entry, creates the shortcut and launches the
+real WebView2 controller. The first run found a release blocker — the app died on
+`VCRUNTIME140.dll` because the MSVC build linked the CRT dynamically — fixed with
+`+crt-static`. See `parity/reports/windows-verification-2026-11-09.md`.
+
+Not verified: uninstall, DPI, multi-monitor, fullscreen, audio, the
+WebView2-absent path, code signing. The manual checklist below stands.
 
 The first Windows test run immediately found a real bug: `Path::is_absolute`
 returns false for `/home/user/x.mp4` on Windows, so a Linux-authored absolute
