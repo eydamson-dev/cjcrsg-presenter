@@ -10,7 +10,7 @@ use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
 use presenter_core::{Command, Revision, StageLayout};
 
-use crate::outline::OutlinePanel;
+use crate::outline::{FocusView, OutlinePanel};
 use crate::output::{OutputProps, OutputRoot};
 use crate::recent::RecentProjects;
 use crate::runtime::{AppState, OutputKind, Shared};
@@ -83,6 +83,7 @@ pub fn App() -> Element {
     let mut open_error = use_signal(|| Option::<String>::None);
     let mut message_text = use_signal(String::new);
     let mut timer_minutes = use_signal(|| 5u64);
+    let mut focus = use_signal(|| false);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
         .iter()
@@ -102,8 +103,15 @@ pub fn App() -> Element {
         div { class: "controller",
 
             header {
-                h1 { "CJCRSG Presenter" }
-                p { class: "subtitle", "Experiment 1 · multi-window state recovery" }
+                div {
+                    h1 { "CJCRSG Presenter" }
+                    p { class: "subtitle", "Experiment 1 · multi-window state recovery" }
+                }
+                button {
+                    class: "btn",
+                    onclick: move |_| focus.toggle(),
+                    if focus() { "Exit focus" } else { "Focus" }
+                }
             }
 
             section { class: "panel",
@@ -195,6 +203,23 @@ pub fn App() -> Element {
                     }
                 }
             }
+
+            if focus() {
+                FocusView {
+                    items: app.outline(),
+                    current: app.current_show(),
+                    on_play: Some(EventHandler::new({
+                        let app = app.clone();
+                        move |index: usize| { app.go_to_show(index); }
+                    })),
+                    on_exit: Some(EventHandler::new(move |_| focus.set(false))),
+                    slide: slide_id.clone(),
+                    position,
+                    total,
+                }
+            }
+
+            div { class: if focus() { "controller-body hidden" } else { "controller-body" },
 
             OutlinePanel {
                 items: app.outline(),
@@ -372,6 +397,7 @@ pub fn App() -> Element {
                 }
                 p { "Close any output, advance the show, then reopen it. "
                     "It must return to the live slide, not the slide it left." }
+            }
             }
         }
     }

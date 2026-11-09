@@ -8,7 +8,7 @@ deviation is closed, delete the entry rather than marking it done.
 
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
-| DEV-009 | No full-screen focus view and no section actions (skip, loop, notes) | A service can be started show-by-show from a panel, but not run in FreeShow's focus mode | Build the focus view and section actions when a service needs them |
+| DEV-009 | Section actions (skip, loop, notes) are not executed; the focus view has no drag, auto-scroll or keyboard traversal | A service runs show-by-show, but FreeShow's per-section automation does not exist | Execute section actions when a service needs them |
 
 ## Rules
 

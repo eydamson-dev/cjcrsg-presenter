@@ -355,7 +355,13 @@ one is marked. Measured over the remote: `fx-1 → show 1 → tx-1 → show 0 �
 
 ![Project outline](parity/reports/evidence/outline/remote-980x780.png)
 
-Report: `parity/reports/outline-focus-2026-11-09.md`.
+**Focus view.** The controller's full-window project list: sections, large
+clickable shows, live marker and readout.
+
+![Focus view](parity/reports/evidence/focus/remote-980x780.png)
+
+Reports: `parity/reports/outline-focus-2026-11-09.md`,
+`parity/reports/focus-view-2026-11-09.md`.
 
 Section navigation over the remote:
 

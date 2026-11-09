@@ -53,7 +53,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, own remote clients, groups. Missing style-level transitions |
+| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, full-window focus view, transitions with project timing and direction, own remote clients, groups. Missing style-level transitions |
 | 3 — data | **done for content and metadata**: single show, project with sections, whole store with categories/tags, native format, media copy-in, document import, recent/restore. No media library UI (durations, thumbnails, playlists) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
@@ -80,6 +80,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Store import: 3 projects → 2 written, 1 broken project reported, others unaffected; category `Songs` and tags resolve | `parity/reports/store-import-2026-11-09.md` |
 | Sections: ordered entries; next/previous section jumps fx-1 (1/6) → tx-1 (4/6) → 409 → fx-1 | `parity/reports/sections-2026-11-09.md` |
 | Outline: play a show by index, live marker; remote fx-1 → tx-1 → fx-1 | `parity/reports/outline-focus-2026-11-09.md` |
+| Focus view: full-window project list with live marker, rendered at 980×780 | `parity/reports/focus-view-2026-11-09.md` |
 | Media tags from `media.json` attach to the imported asset (`tags=worship,background`) | `parity/reports/store-import-2026-11-09.md` |
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
@@ -126,8 +127,9 @@ apps/desktop     3
 
 ## Next, in order
 
-1. **Focus view and section actions** — DEV-009. Shows start from the outline
-   panel and the remote; the full-screen view and section actions do not exist.
+1. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
+   per-section actions (skip, loop, notes) are still not executed, and the view
+   has no drag, auto-scroll or keyboard traversal.
 2. **Windows runtime verification.** The installer builds but has never run.
    QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
    playback on WebView2 is also unmeasured.

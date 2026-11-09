@@ -101,3 +101,71 @@ pub fn OutlinePanel(
         }
     }
 }
+
+/// Full-screen focus view: the project as a large, clickable list.
+///
+/// FreeShow's focus mode replaces the controller UI rather than opening another
+/// window, so this does the same. It is the same data as [`OutlinePanel`], at a
+/// size an operator can hit from across the room.
+#[component]
+pub fn FocusView(
+    items: Vec<OutlineEntry>,
+    current: Option<usize>,
+    on_play: Option<EventHandler<usize>>,
+    on_exit: Option<EventHandler<()>>,
+    slide: String,
+    position: usize,
+    total: usize,
+) -> Element {
+    rsx! {
+        div { class: "focus-view",
+            div { class: "focus-head",
+                div {
+                    h1 { "Focus" }
+                    p { class: "focus-live", "{slide} · {position} / {total}" }
+                }
+                button {
+                    class: "btn",
+                    onclick: move |_| {
+                        if let Some(on_exit) = on_exit {
+                            on_exit.call(());
+                        }
+                    },
+                    "Exit focus"
+                }
+            }
+
+            div { class: "focus-list",
+                if items.is_empty() {
+                    p { class: "hint", "No project loaded." }
+                } else {
+                    for (position, item) in items.iter().cloned().enumerate() {
+                        match item {
+                            OutlineEntry::Section { name } => rsx! {
+                                div { key: "focus-section-{position}", class: "focus-section", "{name}" }
+                            },
+                            OutlineEntry::Show { name, index } => rsx! {
+                                button {
+                                    key: "focus-show-{index}",
+                                    class: if current == Some(index) { "focus-show current" } else { "focus-show" },
+                                    onclick: move |_| {
+                                        if let Some(on_play) = on_play {
+                                            on_play.call(index);
+                                        }
+                                    },
+                                    span { class: "focus-name", "{name}" }
+                                    if current == Some(index) {
+                                        span { class: "focus-badge", "live" }
+                                    }
+                                }
+                            },
+                            OutlineEntry::Other { label } => rsx! {
+                                div { key: "focus-other-{position}", class: "focus-other", "{label}" }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

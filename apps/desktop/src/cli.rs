@@ -403,6 +403,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                             Some("preview") => crate::render::Layout::Preview,
                             Some("confidence") => crate::render::Layout::Confidence,
                             Some("outline") => crate::render::Layout::Outline,
+                            Some("focus") => crate::render::Layout::Focus,
                             other => return Err(format!("unknown layout {other:?}")),
                         };
                     }

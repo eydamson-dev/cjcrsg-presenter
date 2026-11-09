@@ -9,7 +9,7 @@ use dioxus::prelude::*;
 use presenter_core::{Session, SharedEngine, Transition};
 
 use crate::assets::MAIN_CSS;
-use crate::outline::OutlinePanel;
+use crate::outline::{FocusView, OutlinePanel};
 use crate::recent::RecentProjects;
 use crate::slide::{SlideView, StageView};
 
@@ -23,6 +23,8 @@ pub enum Layout {
     Confidence,
     /// The project outline panel, as the controller renders it.
     Outline,
+    /// The full-screen focus view.
+    Focus,
     /// The controller's recent-projects panel. The project file is not read for
     /// this layout; it comes from the session store.
     Recent,
@@ -106,6 +108,22 @@ pub fn render(
                 }
             }
         },
+        Layout::Focus => {
+            let (slide_id, position, total) = engine.cursor();
+            rsx! {
+                div { class: "controller",
+                    FocusView {
+                        items: crate::outline::build(&engine.project()),
+                        current: engine.current_show(),
+                        on_play: None,
+                        on_exit: None,
+                        slide: slide_id,
+                        position,
+                        total,
+                    }
+                }
+            }
+        }
         // `main` renders this layout from the session store, because it has
         // nothing to do with the loaded project.
         Layout::Recent => unreachable!("recent is rendered by render_recent"),
