@@ -23,6 +23,13 @@ const actions = [];
 for (let i = 0; i < rest.length; i++) {
     if (rest[i] === "--type") actions.push({ type: "text", value: rest[++i] });
     else if (rest[i] === "--key") actions.push({ type: "key", value: rest[++i] });
+    else if (rest[i] === "--click") {
+        const [x, y] = rest[++i].split(",").map(Number);
+        actions.push({ type: "click", x, y });
+    } else if (rest[i] === "--dblclick") {
+        const [x, y] = rest[++i].split(",").map(Number);
+        actions.push({ type: "dblclick", x, y });
+    }
 }
 
 const browser = await chromium.launch();
@@ -38,7 +45,9 @@ if ((await canvas.count()) > 0) {
 
 for (const action of actions) {
     if (action.type === "text") await page.keyboard.type(action.value, { delay: 40 });
-    else await page.keyboard.press(action.value);
+    else if (action.type === "key") await page.keyboard.press(action.value);
+    else if (action.type === "click") await page.mouse.click(action.x, action.y);
+    else if (action.type === "dblclick") await page.mouse.dblclick(action.x, action.y);
     await page.waitForTimeout(400);
 }
 
