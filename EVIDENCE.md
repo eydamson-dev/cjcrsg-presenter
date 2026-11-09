@@ -299,6 +299,26 @@ and UNC paths, with tests for each.
 This is the argument for running the library tests on Windows rather than only
 compiling there.
 
+## Windows packaging
+
+The first Windows installer, built on `windows-latest` (run `42549750166`, all
+four jobs green):
+
+| Artifact | Size |
+| --- | --- |
+| `cjcrsg-presenter-windows-x64` | 2,512,133 bytes |
+| `cjcrsg-presenter-windows-x64-installer` | 3,582,951 bytes |
+
+The executable's manifest is asserted in CI by searching the built exe for
+`PerMonitorV2` and `longPathAware`, so a lost manifest fails the build rather
+than shipping a double-scaled presentation. The installer is per-user, checks
+for the WebView2 Evergreen runtime and runs its bootstrapper if it is missing.
+
+**Not run on Windows.** Installing, launching, uninstalling, DPI and
+multi-monitor behaviour are on the manual checklist in `docs/windows.md`.
+
+Report: `parity/reports/windows-packaging-2026-11-09.md`.
+
 ## Verification
 
 | Check | Result |

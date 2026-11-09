@@ -3,10 +3,11 @@
 Developer setup on Windows (MSVC, library tests, what the desktop build needs) is
 in `CONTRIBUTING.md` under "Windows". This page is the testing plan.
 
-Status: **partly verified.** The desktop crate compiles on `windows-latest`
-(3m51s, run `42543078950`) and the library tests execute there. Nothing has been
-*run* on Windows yet — no window has opened — and the manual checklist at the
-end is untouched.
+Status: **partly verified.** The desktop crate compiles on `windows-latest`, the
+library tests execute there, the executable carries the PerMonitorV2 manifest,
+and CI builds a per-user NSIS installer (run `42549750166`). Nothing has been
+*run* on Windows yet — no window has opened and the installer has never been
+executed — and the manual checklist at the end is untouched.
 
 The first Windows test run immediately found a real bug: `Path::is_absolute`
 returns false for `/home/user/x.mp4` on Windows, so a Linux-authored absolute
@@ -139,15 +140,25 @@ Distinguish **missing** media (recoverable, user problem) from **invalid** media
 
 ## Packaging
 
+Built, not yet run: `installer/windows.nsi` produces
+`dist/CJCRSG-Presenter-Setup-<version>.exe` in CI, and `installer/app.manifest`
+(embedded by `apps/desktop/build.rs`) declares PerMonitorV2 and `longPathAware`.
+
 | Tool | Licence | Verdict |
 | --- | --- | --- |
-| NSIS | zlib/libpng | **Start here** |
+| NSIS | zlib/libpng | **In use** — `installer/windows.nsi` |
 | Inno Setup | permissive | Good alternative |
 | WiX | MS-RL | Only if MSI is required |
-| `dx bundle` | Dioxus CLI | Worth evaluating for resource integration |
+| `dx bundle` | Dioxus CLI | Not used; the CSS is embedded and the binary needs no assets |
 
-Per-user install into `%LOCALAPPDATA%\Programs\…`, no admin prompt. Application
-data stays in `%APPDATA%` / `%LOCALAPPDATA%` and is **not** deleted on uninstall.
+Per-user install into `%LOCALAPPDATA%\Programs\CJCRSG Presenter`, no admin
+prompt, Start menu and desktop shortcuts, HKCU uninstall entry. Application data
+stays in `%APPDATA%` / `%LOCALAPPDATA%` and is **not** deleted on uninstall, so a
+reinstall remembers recent projects.
+
+CI asserts the manifest is present by searching the built executable for
+`PerMonitorV2` and `longPathAware`; a lost manifest fails the build instead of
+shipping a double-scaled presentation.
 
 **WebView2 Evergreen:** check whether the runtime is present; if not, run the
 ~2 MB bootstrapper (`/silent /install`) and verify the result. Do not copy the
@@ -220,9 +231,12 @@ support and context switching, which is exactly the shape of this app.
 
 ## Next actions
 
-1. Split CI into the three jobs above. **Done in the same change as this doc.**
-2. Watch the first `windows-latest` run: it is the first time this code compiles
-   outside Linux.
-3. Write `installer/windows.nsi` and an installer job once the binary builds.
-4. Add the DPI manifest and `longPathAware` before any Windows release.
-5. Set up the QEMU/KVM VM for the manual checklist.
+1. ~~Split CI into the three jobs above.~~ Done, and the first run caught a real
+   path bug.
+2. ~~Watch the first `windows-latest` run.~~ Green.
+3. ~~Write `installer/windows.nsi` and an installer job once the binary
+   builds.~~ Done; the installer is built and uploaded by CI.
+4. ~~Add the DPI manifest and `longPathAware` before any Windows release.~~
+   Done; asserted in CI.
+5. Set up the QEMU/KVM VM for the manual checklist — in particular install,
+   uninstall, and the WebView2 bootstrap path on a machine without the runtime.

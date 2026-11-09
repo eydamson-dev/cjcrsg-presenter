@@ -54,7 +54,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
 | 4 — media engine | not started |
 | 5 — professional AV | not started (needs hardware) |
-| 6 — release/packaging | not started |
+| 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
 
 ## Measured, with evidence
 
@@ -73,6 +73,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Transition timing: 1200 ms imported timing honoured; sine/linear ratio 0.571 vs 0.586 | `parity/reports/transition-timing-2026-11-09.md` |
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
+| Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -93,7 +94,9 @@ Never *run* on Windows. But it now compiles and its library tests execute there:
 the first Windows run built the desktop binary in 3m51s and caught a real path
 bug (`Path::is_absolute` is false for `/home/...` on Windows); after the fix all
 four CI jobs are green. See
-`docs/windows.md`; monitors, DPI, fullscreen and audio still need a real machine.
+`docs/windows.md`. An NSIS installer now builds in CI (run `42549750166`) and
+the manifest declares PerMonitorV2 and long paths; installing, DPI, fullscreen
+and audio still need a real machine.
 Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ## Tests
@@ -110,7 +113,10 @@ crates/remote    9
    the only untested part of the walking skeleton. Needs hardware.
 2. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
    cannot talk to us. This is the compatibility risk of Phase 2.
-3. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
+3. **Install and run the installer on Windows.** The build is green; nothing has
+   been executed. QEMU/KVM is enough for install, uninstall and the WebView2
+   bootstrap; monitors still need hardware.
+4. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
    CPU inside the app, where the process tree is stable.
 
 ## Known gaps and hazards
