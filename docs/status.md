@@ -123,16 +123,20 @@ apps/desktop     3
 
 ## Next, in order
 
-1. **Second physical display.** Experiment 1's placement and focus criteria are
+1. **FreeShow remote parity (Socket.IO)** — DEV-003. Their shipped remote and
+   stage clients cannot connect to our JSON/HTTP remote. The largest known
+   compatibility gap; it needs the Socket.IO surface, not a shim.
+2. **Sections and focus mode** — DEV-009. The engine is linear within a show;
+   FreeShow's layout/section model is richer and is what its project items are.
+3. **FreeShow metadata** — DEV-005. Categories, tags and media metadata are not
+   mapped; `import-store` migrates the content but not the organisation.
+4. **Windows runtime verification.** The installer builds but has never run.
+   QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
+   playback on WebView2 is also unmeasured.
+5. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-2. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
-   cannot talk to us. This is the compatibility risk of Phase 2.
-3. **Install and run the installer on Windows.** The build is green; nothing has
-   been executed. QEMU/KVM is enough for install, uninstall and the WebView2
-   bootstrap; monitors still need hardware.
-4. **Phase 4 media.** Items render and video plays. Next: a playback coordinator
-   behind a trait (pause/resume per slide, position), then four videos at once,
-   measured inside the app where the process tree is stable.
+6. **Audio routing and A/V sync.** Audio elements exist; routing, channels and a
+   drift measurement do not (Phase 4/5).
 
 ## Known gaps and hazards
 
