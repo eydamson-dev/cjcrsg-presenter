@@ -100,14 +100,14 @@ pub fn App() -> Element {
 
     rsx! {
         document::Style { {crate::assets::MAIN_CSS} }
-        document::Title { "CJCRSG Presenter — Experiment 1" }
+        document::Title { "CJCRSG Presenter" }
 
         div { class: "controller",
 
             header {
                 div {
                     h1 { "CJCRSG Presenter" }
-                    p { class: "subtitle", "Experiment 1 · multi-window state recovery" }
+                    p { class: "subtitle", "Controller" }
                 }
                 button {
                     class: "btn",
