@@ -465,6 +465,15 @@ and UNC paths, with tests for each.
 This is the argument for running the library tests on Windows rather than only
 compiling there.
 
+## Controller shell
+
+The controller now has FreeShow's shape — top bar, three columns, live preview —
+captured from the running window (X11 backend, window id), not a mock-up:
+
+![Controller shell](parity/reports/evidence/ui-shell/controller-shell.png)
+
+Report: `parity/reports/ui-shell-2026-11-09.md`.
+
 ## Media panel
 
 Every asset with kind, origin, size, tags and a missing flag. Top: bundled media

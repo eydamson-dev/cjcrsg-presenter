@@ -190,6 +190,10 @@ impl SharedEngine {
         self.lock().project().clone()
     }
 
+    pub fn project_name(&self) -> String {
+        self.lock().project().name.clone()
+    }
+
     /// Replace the loaded project and publish, even when the new one is empty:
     /// outputs showing the old project must be blanked, not left stale.
     pub fn replace_project(&self, project: crate::domain::Project) -> bool {

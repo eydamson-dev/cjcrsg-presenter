@@ -13,6 +13,7 @@ use presenter_core::{Command, Revision, StageLayout};
 use crate::media_panel::MediaPanel;
 use crate::outline::{FocusView, OutlinePanel};
 use crate::output::{OutputProps, OutputRoot};
+use crate::preview_pane::PreviewPane;
 use crate::recent::RecentProjects;
 use crate::runtime::{AppState, OutputKind, Shared};
 
@@ -98,117 +99,75 @@ pub fn App() -> Element {
         .filter(|(_, open, applied)| *open && *applied != Some(revision))
         .count();
 
+    let project_name = app.project_name();
+    let slide = app.slide();
+    let outline = app.outline();
+    let media = app.media();
+
     rsx! {
         document::Style { {crate::assets::MAIN_CSS} }
         document::Title { "CJCRSG Presenter" }
 
         div { class: "controller",
 
-            header {
-                div {
+            header { class: "topbar",
+                div { class: "brand",
                     h1 { "CJCRSG Presenter" }
-                    p { class: "subtitle", "Controller" }
-                }
-                button {
-                    class: "btn",
-                    onclick: move |_| focus.toggle(),
-                    if focus() { "Exit focus" } else { "Focus" }
-                }
-            }
-
-            section { class: "panel",
-                div { class: "readout",
-                    span { class: "label", "Slide" }
-                    span { class: "value", "{slide_id}" }
-                }
-                div { class: "readout",
-                    span { class: "label", "Position" }
-                    span { class: "value", "{position} / {total}" }
-                }
-                div { class: "readout",
-                    span { class: "label", "Revision" }
-                    span { class: "value", "{revision}" }
+                    p { class: "subtitle", "{project_name}" }
                 }
 
-                div { class: "controls",
+                div { class: "topbar-commands",
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.previous_slide(); }
-                        },
-                        "Previous"
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.previous_slide(); } },
+                        "◀"
                     }
                     button {
-                        class: "btn primary",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.next_slide(); }
-                        },
-                        "Next"
+                        class: "btn small primary",
+                        onclick: { let app = app.clone(); move |_| { app.next_slide(); } },
+                        "▶"
                     }
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.first_slide(); }
-                        },
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.first_slide(); } },
                         "First"
                     }
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.apply(Command::Clear); }
-                        },
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.apply(Command::Clear); } },
                         "Clear"
                     }
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.apply(Command::Restore); }
-                        },
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.apply(Command::Restore); } },
                         "Restore"
                     }
+                    span { class: "topbar-divider" }
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.engine.previous_group(); }
-                        },
-                        "Prev group"
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.previous_section(); } },
+                        "Section ◀"
                     }
                     button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.engine.next_group(); }
-                        },
-                        "Next group"
+                        class: "btn small",
+                        onclick: { let app = app.clone(); move |_| { app.next_section(); } },
+                        "Section ▶"
                     }
+                }
+
+                div { class: "topbar-actions",
+                    span { class: "readout-inline", "rev {revision} · {position} / {total}" }
                     button {
                         class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.previous_section(); }
-                        },
-                        "Prev section"
-                    }
-                    button {
-                        class: "btn",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.next_section(); }
-                        },
-                        "Next section"
+                        onclick: move |_| focus.toggle(),
+                        if focus() { "Exit focus" } else { "Focus" }
                     }
                 }
             }
 
             if focus() {
                 FocusView {
-                    items: app.outline(),
+                    items: outline.clone(),
                     current: app.current_show(),
                     on_play: Some(EventHandler::new({
                         let app = app.clone();
@@ -219,198 +178,186 @@ pub fn App() -> Element {
                     position,
                     total,
                 }
-            }
+            } else {
+                div { class: "workspace",
 
-            div { class: if focus() { "controller-body hidden" } else { "controller-body" },
-
-            OutlinePanel {
-                items: app.outline(),
-                current: app.current_show(),
-                on_play: Some(EventHandler::new({
-                    let app = app.clone();
-                    move |index: usize| {
-                        app.go_to_show(index);
-                    }
-                })),
-                project_path: app.project_path().map(|path| path.display().to_string()),
-                on_bundle: Some(EventHandler::new({
-                    let app = app.clone();
-                    move |_| match app.bundle_media() {
-                        Ok(summary) => bundle_status.set(summary),
-                        Err(error) => bundle_status.set(error),
-                    }
-                })),
-                bundle_status: bundle_status(),
-            }
-
-            MediaPanel { items: app.media() }
-
-            section { class: "panel",
-                h2 { "Stage" }
-                p { class: "hint", "The message and countdown appear on the stage display, never on an audience output." }
-
-                div { class: "controls",
-                    input {
-                        class: "text",
-                        placeholder: "Message to stage",
-                        value: "{message_text}",
-                        oninput: move |event| message_text.set(event.value()),
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.set_message(Some(&message_text())); }
-                        },
-                        "Send"
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.set_message(None); }
-                        },
-                        "Clear"
-                    }
-                }
-
-                div { class: "controls",
-                    label { class: "control-label", "Countdown" }
-                    input {
-                        class: "text number",
-                        r#type: "number",
-                        min: "1",
-                        max: "180",
-                        value: "{timer_minutes}",
-                        oninput: move |event| {
-                            if let Ok(value) = event.value().parse::<u64>() {
-                                timer_minutes.set(value.clamp(1, 180));
-                            }
-                        },
-                    }
-                    span { class: "control-label", "min" }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.set_timer(timer_minutes() * 60); }
-                        },
-                        "Set"
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.start_timer(); }
-                        },
-                        "Start"
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.pause_timer(); }
-                        },
-                        "Pause"
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.clear_timer(); }
-                        },
-                        "Clear"
-                    }
-                }
-
-                div { class: "controls",
-                    label { class: "control-label", "Layout" }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.set_stage_layout(StageLayout::Split); }
-                        },
-                        "Split"
-                    }
-                    button {
-                        class: "btn small",
-                        onclick: {
-                            let app = app.clone();
-                            move |_| { app.set_stage_layout(StageLayout::LiveOnly); }
-                        },
-                        "Live only"
-                    }
-                }
-            }
-
-            RecentProjects {
-                items: recent.clone(),
-                on_open: Some(EventHandler::new({
-                    let app = app.clone();
-                    move |path: String| {
-                        match app.open_project(std::path::Path::new(&path)) {
-                            Ok(()) => open_error.set(None),
-                            Err(error) => {
-                                tracing::error!(%error, "could not open project");
-                                open_error.set(Some(error));
-                            }
-                        }
-                    }
-                })),
-            }
-            if let Some(message) = open_error() {
-                p { class: "hint error", "{message}" }
-            }
-
-            section { class: "panel",
-                h2 { "Outputs" }
-                p { class: "hint",
-                    "{open_count} open · "
-                    if behind == 0 { "all in sync" } else { "{behind} behind revision {revision}" }
-                }
-
-                for (kind, open, applied) in rows {
-                    div { class: "output-row",
-                        span { class: "name", "{kind.label()}" }
-                        span {
-                            class: if open { "status open" } else { "status closed" },
-                            if open { "open" } else { "closed" }
-                        }
-                        span { class: "applied",
-                            match applied {
-                                Some(value) if value == revision => format!("rev {value} ✓"),
-                                Some(value) => format!("rev {value} · behind {revision}"),
-                                None => "—".to_string(),
-                            }
-                        }
-                        button {
-                            class: "btn small",
-                            onclick: {
+                    aside { class: "column left",
+                        OutlinePanel {
+                            items: outline,
+                            current: app.current_show(),
+                            on_play: Some(EventHandler::new({
                                 let app = app.clone();
-                                let window = window.clone();
-                                move |_| {
-                                    if app.is_open(kind) {
-                                        app.close_output(kind);
-                                    } else {
-                                        open_output(window.clone(), app.clone(), kind);
+                                move |index: usize| { app.go_to_show(index); }
+                            })),
+                            project_path: app.project_path().map(|path| path.display().to_string()),
+                            on_bundle: Some(EventHandler::new({
+                                let app = app.clone();
+                                move |_| match app.bundle_media() {
+                                    Ok(summary) => bundle_status.set(summary),
+                                    Err(error) => bundle_status.set(error),
+                                }
+                            })),
+                            bundle_status: bundle_status(),
+                        }
+
+                        RecentProjects {
+                            items: recent.clone(),
+                            on_open: Some(EventHandler::new({
+                                let app = app.clone();
+                                move |path: String| {
+                                    match app.open_project(std::path::Path::new(&path)) {
+                                        Ok(()) => open_error.set(None),
+                                        Err(error) => {
+                                            tracing::error!(%error, "could not open project");
+                                            open_error.set(Some(error));
+                                        }
                                     }
                                 }
-                            },
-                            if open { "Close" } else { "Open" }
+                            })),
+                        }
+
+                        if let Some(message) = open_error() {
+                            p { class: "hint error", "{message}" }
+                        }
+                    }
+
+                    main { class: "column center",
+                        PreviewPane {
+                            slide: slide,
+                            slide_id: slide_id.clone(),
+                            position,
+                            total,
+                        }
+                        MediaPanel { items: media }
+                    }
+
+                    aside { class: "column right",
+                        section { class: "panel",
+                            h2 { "Stage" }
+                            p { class: "hint", "Shown on the stage display, never on an audience output." }
+
+                            div { class: "controls",
+                                input {
+                                    class: "text",
+                                    placeholder: "Message to stage",
+                                    value: "{message_text}",
+                                    oninput: move |event| message_text.set(event.value()),
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: {
+                                        let app = app.clone();
+                                        move |_| { app.set_message(Some(&message_text())); }
+                                    },
+                                    "Send"
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: {
+                                        let app = app.clone();
+                                        move |_| { app.set_message(None); }
+                                    },
+                                    "Clear"
+                                }
+                            }
+
+                            div { class: "controls",
+                                label { class: "control-label", "Countdown" }
+                                input {
+                                    class: "text number",
+                                    r#type: "number",
+                                    min: "1",
+                                    max: "180",
+                                    value: "{timer_minutes}",
+                                    oninput: move |event| {
+                                        if let Ok(value) = event.value().parse::<u64>() {
+                                            timer_minutes.set(value.clamp(1, 180));
+                                        }
+                                    },
+                                }
+                                span { class: "control-label", "min" }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.set_timer(timer_minutes() * 60); } },
+                                    "Set"
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.start_timer(); } },
+                                    "Start"
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.pause_timer(); } },
+                                    "Pause"
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.clear_timer(); } },
+                                    "Clear"
+                                }
+                            }
+
+                            div { class: "controls",
+                                label { class: "control-label", "Layout" }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.set_stage_layout(StageLayout::Split); } },
+                                    "Split"
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: { let app = app.clone(); move |_| { app.set_stage_layout(StageLayout::LiveOnly); } },
+                                    "Live only"
+                                }
+                            }
+                        }
+
+                        section { class: "panel",
+                            h2 { "Outputs" }
+                            p { class: "hint",
+                                "{open_count} open · "
+                                if behind == 0 { "all in sync" } else { "{behind} behind revision {revision}" }
+                            }
+
+                            for (kind, open, applied) in rows {
+                                div { class: "output-row",
+                                    span { class: "name", "{kind.label()}" }
+                                    span {
+                                        class: if open { "status open" } else { "status closed" },
+                                        if open { "open" } else { "closed" }
+                                    }
+                                    span { class: "applied",
+                                        match applied {
+                                            Some(value) if value == revision => format!("rev {value} ✓"),
+                                            Some(value) => format!("rev {value} · behind {revision}"),
+                                            None => "—".to_string(),
+                                        }
+                                    }
+                                    button {
+                                        class: "btn small",
+                                        onclick: {
+                                            let app = app.clone();
+                                            let window = window.clone();
+                                            move |_| {
+                                                if app.is_open(kind) {
+                                                    app.close_output(kind);
+                                                } else {
+                                                    open_output(window.clone(), app.clone(), kind);
+                                                }
+                                            }
+                                        },
+                                        if open { "Close" } else { "Open" }
+                                    }
+                                }
+                            }
+                        }
+
+                        p { class: "keys",
+                            "Space / → / PageDown next · ← / PageUp previous · Esc clear"
                         }
                     }
                 }
-            }
-
-            footer {
-                p { class: "keys",
-                    "Space / → / PageDown next · ← / PageUp previous · Esc clear, "
-                    "any navigation restores"
-                }
-                p { "Close any output, advance the show, then reopen it. "
-                    "It must return to the live slide, not the slide it left." }
-            }
             }
         }
     }

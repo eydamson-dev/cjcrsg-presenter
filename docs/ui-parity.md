@@ -1,7 +1,9 @@
 # Controller UI parity
 
-Status: **planned, not started.** Recorded as DEV-013. The outputs already target
-FreeShow's look; the controller does not.
+Status: **started.** Milestones 1 (frame) and 2 (live preview) are done and
+screenshotted; styling, resizable columns and the comparison remain. Recorded as
+DEV-013. The outputs already target FreeShow's look; the controller is catching
+up.
 
 ## The difference, plainly
 
@@ -56,10 +58,10 @@ Columns should be resizable, with widths remembered in the session store
 
 ## Milestones
 
-1. **Frame.** Top bar and three columns; move the existing panels into their
-   target columns; screenshot at the controller's size. No styling pass yet.
-2. **Live preview.** Render `state.slide` in the centre, scaled, updated by the
-   same 250 ms tick; Focus replaces the centre rather than the whole window.
+1. ~~**Frame.** Top bar and three columns; move the existing panels into their
+   target columns; screenshot at the controller's size.~~ Done.
+2. ~~**Live preview.** Render `state.slide` in the centre, scaled, updated by the
+   same 250 ms tick.~~ Done; focus still replaces the whole window.
 3. **Styling.** Extract FreeShow's palette, spacing and type scale from its
    Svelte components and match them. This is GPL-3.0 code and so are we; record
    the attribution in `docs/provenance.md`.
@@ -67,6 +69,13 @@ Columns should be resizable, with widths remembered in the session store
    session.
 5. **Comparison evidence.** Side-by-side controller screenshots, ours and
    FreeShow's, in `EVIDENCE.md`.
+
+## Evidence method
+
+The controller is now screenshotted from the real window: run it with
+`GDK_BACKEND=x11` and use `scripts/capture_window.sh`, which captures by X
+window id. Wayland offers no window-targeted capture, and a component render is
+not the controller.
 
 ## What stays out
 

@@ -11,6 +11,7 @@ mod media_panel;
 mod media_server;
 mod outline;
 mod output;
+mod preview_pane;
 mod recent;
 mod render;
 mod runtime;
@@ -237,7 +238,7 @@ fn desktop_config() -> Config {
     Config::new().with_window(
         WindowBuilder::new()
             .with_title("CJCRSG Presenter")
-            .with_inner_size(LogicalSize::new(980.0, 780.0))
-            .with_min_inner_size(LogicalSize::new(720.0, 540.0)),
+            .with_inner_size(LogicalSize::new(1280.0, 820.0))
+            .with_min_inner_size(LogicalSize::new(1024.0, 640.0)),
     )
 }

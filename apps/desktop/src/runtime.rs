@@ -117,6 +117,15 @@ impl AppState {
         self.media.lock().expect("media lock").clone()
     }
 
+    pub fn project_name(&self) -> String {
+        self.engine.project_name()
+    }
+
+    /// The live slide, for the controller preview.
+    pub fn slide(&self) -> presenter_core::RenderSlide {
+        self.engine.snapshot().slide.clone()
+    }
+
     pub fn outline(&self) -> Vec<crate::outline::OutlineEntry> {
         self.outline.lock().expect("outline lock").clone()
     }
