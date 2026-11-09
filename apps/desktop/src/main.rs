@@ -7,6 +7,7 @@
 mod app;
 mod assets;
 mod cli;
+mod media_panel;
 mod media_server;
 mod outline;
 mod output;

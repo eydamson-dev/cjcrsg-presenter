@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 158 -->
+**As of `main`, 2026-11-09.** <!-- tests: 161 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -464,6 +464,16 @@ and UNC paths, with tests for each.
 
 This is the argument for running the library tests on Windows rather than only
 compiling there.
+
+## Media panel
+
+Every asset with kind, origin, size, tags and a missing flag. Top: bundled media
+from the demo project. Bottom: an imported external file that is not on this
+machine.
+
+![Media panel](parity/reports/evidence/media-panel/montage.png)
+
+Report: `parity/reports/media-panel-2026-11-09.md`.
 
 ## Linux package
 

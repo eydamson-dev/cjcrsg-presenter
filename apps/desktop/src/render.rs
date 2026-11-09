@@ -9,6 +9,7 @@ use dioxus::prelude::*;
 use presenter_core::{Session, SharedEngine, Transition};
 
 use crate::assets::MAIN_CSS;
+use crate::media_panel::MediaPanel;
 use crate::outline::{FocusView, OutlinePanel};
 use crate::recent::RecentProjects;
 use crate::slide::{SlideView, StageView};
@@ -25,6 +26,8 @@ pub enum Layout {
     Outline,
     /// The full-screen focus view.
     Focus,
+    /// The project's media list.
+    Media,
     /// The controller's recent-projects panel. The project file is not read for
     /// this layout; it comes from the session store.
     Recent,
@@ -125,6 +128,15 @@ pub fn render(
                         position,
                         total,
                     }
+                }
+            }
+        }
+        Layout::Media => {
+            let project = engine.project();
+            let root = project_path.and_then(|path| path.parent());
+            rsx! {
+                div { class: "controller",
+                    MediaPanel { items: crate::media_panel::build(&project, root) }
                 }
             }
         }

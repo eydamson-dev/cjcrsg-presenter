@@ -404,6 +404,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                             Some("confidence") => crate::render::Layout::Confidence,
                             Some("outline") => crate::render::Layout::Outline,
                             Some("focus") => crate::render::Layout::Focus,
+                            Some("media") => crate::render::Layout::Media,
                             other => return Err(format!("unknown layout {other:?}")),
                         };
                     }

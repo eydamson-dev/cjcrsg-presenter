@@ -31,6 +31,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 - Make media portable: `bundle` copies external files into `<root>/media` and
   rewrites them to relative paths; `inspect` reports missing and invalid ones,
   and the controller's Project panel has a **Make portable** button.
+- See the project's media in the controller: kind, origin, size, tags, and a
+  **missing** flag per file.
 - Migrate a FreeShow data folder: `import-store` writes one `.cjcp` per project
   and reports the ones it could not import.
 - Remember work: recent projects in a JSON session file; the last project opens
@@ -90,6 +92,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Windows install+launch on a clean VM; first build died on VCRUNTIME140.dll, static CRT fixed it; app runs | `parity/reports/windows-verification-2026-11-09.md` |
 | Linux tarball: desktop file validates, installs to a scratch prefix, packaged binary runs | `parity/reports/linux-packaging-2026-11-09.md` |
+| Media panel: bundled 9.4 MB video, external file flagged missing, tags shown | `parity/reports/media-panel-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
 | Audio: imported audio is audible (was muted); WAV advances 1.69 s → 9.71 s, paused=false, no error | `parity/reports/audio-playback-2026-11-09.md` |
@@ -127,7 +130,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 crates/core     99
 crates/compat   41
 crates/remote   14
-apps/desktop     4
+apps/desktop     7
 ```
 
 ## Next, in order
@@ -152,9 +155,9 @@ apps/desktop     4
   surface.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model (DEV-009).
-- **No media library UI.** Durations, thumbnails and playlists are neither shown
-  nor imported; the app plays media it can reference, it does not manage a
-  library.
+- **The media panel is read-only.** It lists assets, sizes, tags and missing
+  files, but cannot add, relink or remove; thumbnails and durations are not
+  stored.
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not

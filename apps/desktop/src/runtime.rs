@@ -70,6 +70,8 @@ pub struct AppState {
     /// The project's sections and shows, built once per open. Rendering the
     /// controller must not clone the whole project every 250 ms.
     outline: Mutex<Vec<crate::outline::OutlineEntry>>,
+    /// The project's media, resolved once per open.
+    media: Mutex<Vec<crate::media_panel::MediaItem>>,
     /// The file this project came from, if any. Needed to write it back.
     project_path: Mutex<Option<std::path::PathBuf>>,
 }
@@ -79,7 +81,9 @@ impl AppState {
         let store = session_store();
         let session = store.load();
         let engine = shared_engine();
-        let outline = crate::outline::build(&engine.project());
+        let project = engine.project();
+        let outline = crate::outline::build(&project);
+        let media = crate::media_panel::build(&project, media_root_hint());
         Self {
             engine,
             windows: Mutex::new(HashMap::new()),
@@ -87,6 +91,7 @@ impl AppState {
             store,
             session: Mutex::new(session),
             outline: Mutex::new(outline),
+            media: Mutex::new(media),
             project_path: Mutex::new(startup_project_path()),
         }
     }
@@ -106,6 +111,10 @@ impl AppState {
         let summary = bundle_project_file(&path)?;
         self.open_project(&path)?;
         Ok(summary)
+    }
+
+    pub fn media(&self) -> Vec<crate::media_panel::MediaItem> {
+        self.media.lock().expect("media lock").clone()
     }
 
     pub fn outline(&self) -> Vec<crate::outline::OutlineEntry> {
@@ -147,6 +156,8 @@ impl AppState {
             root.as_deref().unwrap_or_else(|| std::path::Path::new(".")),
         );
         *self.outline.lock().expect("outline lock") = crate::outline::build(&document.project);
+        *self.media.lock().expect("media lock") =
+            crate::media_panel::build(&document.project, root.as_deref());
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)
@@ -301,6 +312,13 @@ static STARTUP_PATH: OnceLock<std::path::PathBuf> = OnceLock::new();
 
 pub fn startup_project_path() -> Option<std::path::PathBuf> {
     STARTUP_PATH.get().cloned()
+}
+
+fn media_root_hint() -> Option<&'static std::path::Path> {
+    STARTUP_PATH
+        .get()
+        .and_then(|path| path.parent())
+        .map(|parent| parent as &'static std::path::Path)
 }
 
 /// The loopback server that lets the WebViews load project media. Started once,

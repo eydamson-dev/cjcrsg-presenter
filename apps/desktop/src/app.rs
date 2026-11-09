@@ -10,6 +10,7 @@ use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
 use presenter_core::{Command, Revision, StageLayout};
 
+use crate::media_panel::MediaPanel;
 use crate::outline::{FocusView, OutlinePanel};
 use crate::output::{OutputProps, OutputRoot};
 use crate::recent::RecentProjects;
@@ -241,6 +242,8 @@ pub fn App() -> Element {
                 })),
                 bundle_status: bundle_status(),
             }
+
+            MediaPanel { items: app.media() }
 
             section { class: "panel",
                 h2 { "Stage" }

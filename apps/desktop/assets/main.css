@@ -376,6 +376,53 @@ header h1 {
     font-size: 12px;
 }
 
+.media-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.media-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+.media-row:last-child {
+    border-bottom: none;
+}
+
+.media-row.missing .name {
+    color: #ff8a80;
+}
+
+.media-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.media-name .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.media-meta,
+.media-tags {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.media-tags {
+    color: var(--accent);
+}
+
 .keys {
     margin: 0 0 6px;
     color: var(--muted);
