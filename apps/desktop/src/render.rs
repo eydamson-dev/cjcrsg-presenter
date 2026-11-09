@@ -45,6 +45,7 @@ pub fn render(
     layout: Layout,
     transition: Transition,
     pause_at_ms: Option<u32>,
+    project_path: Option<&std::path::Path>,
 ) -> String {
     let state = engine.state();
     // A frozen frame makes a transition reviewable in a still image.
@@ -105,6 +106,9 @@ pub fn render(
                     items: crate::outline::build(&engine.project()),
                     current: engine.current_show(),
                     on_play: None,
+                    project_path: project_path.map(|path| path.display().to_string()),
+                    on_bundle: None,
+                    bundle_status: String::new(),
                 }
             }
         },

@@ -58,6 +58,10 @@ pub fn OutlinePanel(
     current: Option<usize>,
     /// Optional so the panel can be rendered headlessly for evidence.
     on_play: Option<EventHandler<usize>>,
+    /// The file the project lives in, if it has one.
+    project_path: Option<String>,
+    on_bundle: Option<EventHandler<()>>,
+    bundle_status: String,
 ) -> Element {
     rsx! {
         section { class: "panel",
@@ -96,6 +100,26 @@ pub fn OutlinePanel(
                             },
                         }
                     }
+                }
+            }
+
+            div { class: "outline-foot",
+                if let Some(path) = project_path {
+                    span { class: "outline-path", "{path}" }
+                    button {
+                        class: "btn small",
+                        onclick: move |_| {
+                            if let Some(on_bundle) = on_bundle {
+                                on_bundle.call(());
+                            }
+                        },
+                        "Make portable"
+                    }
+                } else {
+                    span { class: "outline-path", "Not saved to a file yet." }
+                }
+                if !bundle_status.is_empty() {
+                    span { class: "outline-status", "{bundle_status}" }
                 }
             }
         }

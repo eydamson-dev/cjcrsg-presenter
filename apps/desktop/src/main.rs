@@ -174,7 +174,7 @@ fn render_to_file(project: &std::path::Path, out: &std::path::Path, request: &Re
     });
 
     let shared = presenter_core::SharedEngine::new(engine);
-    let html = render::render(&shared, *layout, transition, *pause);
+    let html = render::render(&shared, *layout, transition, *pause, Some(project));
     if let Err(error) = std::fs::write(out, html) {
         eprintln!("cannot write {}: {error}", out.display());
         std::process::exit(1);

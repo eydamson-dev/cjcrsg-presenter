@@ -84,6 +84,7 @@ pub fn App() -> Element {
     let mut message_text = use_signal(String::new);
     let mut timer_minutes = use_signal(|| 5u64);
     let mut focus = use_signal(|| false);
+    let mut bundle_status = use_signal(String::new);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
         .iter()
@@ -230,6 +231,15 @@ pub fn App() -> Element {
                         app.go_to_show(index);
                     }
                 })),
+                project_path: app.project_path().map(|path| path.display().to_string()),
+                on_bundle: Some(EventHandler::new({
+                    let app = app.clone();
+                    move |_| match app.bundle_media() {
+                        Ok(summary) => bundle_status.set(summary),
+                        Err(error) => bundle_status.set(error),
+                    }
+                })),
+                bundle_status: bundle_status(),
             }
 
             section { class: "panel",

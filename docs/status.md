@@ -29,7 +29,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 - Import a FreeShow `.show`, a whole project (`projects.json` + `shows/`), or a
   native `.cjcp`/`.cjcs`; unknown fields survive a read-write cycle.
 - Make media portable: `bundle` copies external files into `<root>/media` and
-  rewrites them to relative paths; `inspect` reports missing and invalid ones.
+  rewrites them to relative paths; `inspect` reports missing and invalid ones,
+  and the controller's Project panel has a **Make portable** button.
 - Migrate a FreeShow data folder: `import-store` writes one `.cjcp` per project
   and reports the ones it could not import.
 - Remember work: recent projects in a JSON session file; the last project opens
@@ -123,7 +124,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 crates/core     99
 crates/compat   41
 crates/remote   14
-apps/desktop     3
+apps/desktop     4
 ```
 
 ## Next, in order

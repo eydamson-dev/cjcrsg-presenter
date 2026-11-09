@@ -70,6 +70,8 @@ pub struct AppState {
     /// The project's sections and shows, built once per open. Rendering the
     /// controller must not clone the whole project every 250 ms.
     outline: Mutex<Vec<crate::outline::OutlineEntry>>,
+    /// The file this project came from, if any. Needed to write it back.
+    project_path: Mutex<Option<std::path::PathBuf>>,
 }
 
 impl AppState {
@@ -85,7 +87,25 @@ impl AppState {
             store,
             session: Mutex::new(session),
             outline: Mutex::new(outline),
+            project_path: Mutex::new(startup_project_path()),
         }
+    }
+
+    pub fn project_path(&self) -> Option<std::path::PathBuf> {
+        self.project_path.lock().expect("path lock").clone()
+    }
+
+    /// Copy the project's external media into it and write the file back.
+    ///
+    /// Re-opens afterwards so the engine, the media allowlist and the outline
+    /// all see the relative paths.
+    pub fn bundle_media(&self) -> Result<String, String> {
+        let Some(path) = self.project_path() else {
+            return Err("This project has not been saved to a file yet.".to_string());
+        };
+        let summary = bundle_project_file(&path)?;
+        self.open_project(&path)?;
+        Ok(summary)
     }
 
     pub fn outline(&self) -> Vec<crate::outline::OutlineEntry> {
@@ -114,6 +134,8 @@ impl AppState {
             .map_err(|error| format!("cannot open {}: {error}", path.display()))?;
 
         let name = document.project.name.clone();
+        *self.project_path.lock().expect("path lock") =
+            Some(std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf()));
         let root = std::path::absolute(path)
             .ok()
             .and_then(|absolute| absolute.parent().map(|parent| parent.to_path_buf()));
@@ -274,6 +296,13 @@ impl AppState {
 /// same instance the windows do; two engines would mean two shows.
 static SHARED: OnceLock<Arc<SharedEngine>> = OnceLock::new();
 
+/// The file the app opened at launch, when it came from one.
+static STARTUP_PATH: OnceLock<std::path::PathBuf> = OnceLock::new();
+
+pub fn startup_project_path() -> Option<std::path::PathBuf> {
+    STARTUP_PATH.get().cloned()
+}
+
 /// The loopback server that lets the WebViews load project media. Started once,
 /// before the engine exists, because the engine's media URLs contain its port.
 static MEDIA: OnceLock<crate::media_server::MediaServer> = OnceLock::new();
@@ -337,10 +366,14 @@ fn load_project() -> Option<(Project, std::path::PathBuf)> {
                 }
             }
             // Media paths in a `.cjcp` are relative to the file's folder.
-            let root = std::path::absolute(std::path::Path::new(&path))
-                .ok()
+            let absolute = std::path::absolute(std::path::Path::new(&path)).ok();
+            let root = absolute
+                .as_ref()
                 .and_then(|absolute| absolute.parent().map(|parent| parent.to_path_buf()))
                 .unwrap_or_else(|| std::path::PathBuf::from("."));
+            if let Some(absolute) = absolute {
+                let _ = STARTUP_PATH.set(absolute);
+            }
             Some((document.project, root))
         }
         Err(error) => {
@@ -417,5 +450,69 @@ fn demo_project() -> Project {
             ..Default::default()
         }],
         ..Default::default()
+    }
+}
+
+/// Bundle a `.cjcp` in place. Split out of [`AppState`] so it can be tested
+/// without a window, an engine or the process-wide media server.
+pub fn bundle_project_file(path: &std::path::Path) -> Result<String, String> {
+    let root = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| std::path::Path::new("."));
+
+    let mut document = presenter_compat::cjcp::read(path)
+        .map_err(|error| format!("cannot read {}: {error}", path.display()))?;
+    let report = presenter_core::bundle_media(&mut document.project, root);
+    presenter_compat::cjcp::write(path, &document)
+        .map_err(|error| format!("cannot write {}: {error}", path.display()))?;
+
+    let mut summary = format!("copied {}", report.copied());
+    if !report.missing.is_empty() {
+        summary.push_str(&format!(", missing {}", report.missing.len()));
+    }
+    if !report.failed.is_empty() {
+        summary.push_str(&format!(", failed {}", report.failed.len()));
+    }
+    Ok(summary)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bundling_a_project_file_copies_and_rewrites_in_place() {
+        let root = std::env::temp_dir().join(format!("cjcp-bundle-app-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("outside")).unwrap();
+        let clip = root.join("outside/clip.mp4");
+        std::fs::write(&clip, b"video bytes").unwrap();
+
+        let project = presenter_core::Project {
+            id: "p".into(),
+            name: "Sunday".into(),
+            media: vec![presenter_core::MediaAsset::external(
+                "m1",
+                presenter_core::MediaKind::Video,
+                clip.to_string_lossy().to_string(),
+            )],
+            ..Default::default()
+        };
+        let path = root.join("sunday.cjcp");
+        presenter_compat::cjcp::write(&path, &presenter_compat::cjcp::Document::new(project))
+            .unwrap();
+
+        let summary = bundle_project_file(&path).unwrap();
+        assert_eq!(summary, "copied 1");
+
+        let document = presenter_compat::cjcp::read(&path).unwrap();
+        assert_eq!(document.project.media[0].path, "media/clip.mp4");
+        assert_eq!(
+            std::fs::read(root.join("media/clip.mp4")).unwrap(),
+            b"video bytes"
+        );
+
+        std::fs::remove_dir_all(&root).ok();
     }
 }

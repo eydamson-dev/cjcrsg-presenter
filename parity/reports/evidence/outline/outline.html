@@ -266,6 +266,120 @@ header h1 {
     font-size: 12px;
 }
 
+.hidden {
+    display: none;
+}
+
+.focus-view {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: calc(100vh - 120px);
+}
+
+.focus-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.focus-head h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.focus-live {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.focus-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 6px;
+}
+
+.focus-section {
+    margin-top: 18px;
+    padding-bottom: 6px;
+    color: var(--muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-bottom: 1px solid var(--line);
+}
+
+.focus-section:first-child {
+    margin-top: 0;
+}
+
+.focus-show {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #14181d;
+    color: var(--text);
+    font-size: 22px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.focus-show:hover {
+    background: #1b222a;
+}
+
+.focus-show.current {
+    border-color: var(--accent);
+    background: rgb(64 132 214 / 0.18);
+}
+
+.focus-badge {
+    color: var(--accent);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.focus-other {
+    padding: 8px 18px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.outline-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+}
+
+.outline-path {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.outline-status {
+    color: var(--accent);
+    font-size: 12px;
+}
+
 .keys {
     margin: 0 0 6px;
     color: var(--muted);
@@ -680,7 +794,7 @@ footer p {
 </style>
 
 <style>html,body,#main{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000}</style>
-</head><body><div id="main"><div class="controller"><section class="panel"><h2>Project</h2><div class="outline"><div class="outline-section">Opening</div><div class="outline-show current"><span class="name">Parity Fixture</span><span class="outline-badge">live</span><button class="btn small">Play</button></div><div class="outline-section">Sermon</div><div class="outline-show"><span class="name">Transition Fixture</span><button class="btn small">Play</button></div></div></section></div></div>
+</head><body><div id="main"><div class="controller"><section class="panel"><h2>Project</h2><div class="outline"><div class="outline-section">Opening</div><div class="outline-show current"><span class="name">Parity Fixture</span><span class="outline-badge">live</span><button class="btn small">Play</button></div><div class="outline-section">Sermon</div><div class="outline-show"><span class="name">Transition Fixture</span><button class="btn small">Play</button></div></div><div class="outline-foot"><span class="outline-path">/tmp/opencode/sections2/service.cjcp</span><button class="btn small">Make portable</button></div></section></div></div>
 <script>
   // Lay out at 1920x1080 and scale to the window, the way an output does.
   const fit = () => document.documentElement.style.setProperty(

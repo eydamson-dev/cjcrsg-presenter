@@ -78,6 +78,22 @@ Copied bytes are identical to the sources:
 8650fa3ad33b680c77fdf3067057857d38ade7f3ce31806131530d3a4d027052  media/logo.png
 ```
 
+## From the controller
+
+The Project panel shows the file the project was opened from and a **Make
+portable** button. It runs the same copy-in as the CLI, writes the `.cjcp`, then
+re-opens it so the engine, the media allowlist and the outline all see the
+relative paths.
+
+![Project panel with Make portable](evidence/outline/remote-980x780.png)
+
+The action itself is a plain function, `bundle_project_file`, so it is tested
+without a window: a temporary project with one external clip is bundled, the
+file re-read, and the asset path is `media/clip.mp4` with the bytes copied.
+
+The click itself is not automated — no window automation on this Wayland
+session — but the function it calls is.
+
 ## Tests
 
 - an external file is copied, becomes `Bundled`, keeps a relative path that
@@ -91,7 +107,9 @@ Copied bytes are identical to the sources:
 - names are sanitised and keep their extension;
 - a relative external path resolves against the project root;
 - `collect_media` merges show media into the project list without dropping
-  existing entries or duplicating ids.
+  existing entries or duplicating ids;
+- `bundle_project_file` copies and rewrites a real `.cjcp` in place, returning
+  `copied 1`.
 
 ## Not done
 

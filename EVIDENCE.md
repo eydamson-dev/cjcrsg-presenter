@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 157 -->
+**As of `main`, 2026-11-09.** <!-- tests: 158 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -351,7 +351,8 @@ Media tags come with it: `[Video External] /srv/media/worship-bg.mp4
 tags=worship,background`.
 
 **Project outline.** Sections and shows in order; Play starts a show, the live
-one is marked. Measured over the remote: `fx-1 → show 1 → tx-1 → show 0 → fx-1`.
+one is marked, and **Make portable** runs copy-in for the open file. Measured
+over the remote: `fx-1 → show 1 → tx-1 → show 0 → fx-1`.
 
 ![Project outline](parity/reports/evidence/outline/remote-980x780.png)
 
