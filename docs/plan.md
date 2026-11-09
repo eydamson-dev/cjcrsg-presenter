@@ -3,7 +3,7 @@
 Organised by user-visible capability and architectural risk, not by module.
 Something must be usable at every milestone.
 
-## Phase 0 — Architecture validation (**current**)
+## Phase 0 — Architecture validation (done)
 
 **Goal:** prove the Dioxus multi-window foundation before writing product code.
 
