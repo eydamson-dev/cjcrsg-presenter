@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 150 -->
+**As of `main`, 2026-11-09.** <!-- tests: 151 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -346,6 +346,9 @@ entries   4
   section Sermon (sec-sermon)
   item    image (img-1)
 ```
+
+Media tags come with it: `[Video External] /srv/media/worship-bg.mp4
+tags=worship,background`.
 
 Report: `parity/reports/sections-2026-11-09.md`.
 

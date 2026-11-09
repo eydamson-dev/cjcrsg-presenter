@@ -252,8 +252,13 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 .filter(|parent| !parent.as_os_str().is_empty())
                 .unwrap_or_else(|| std::path::Path::new("."));
             for asset in &document.project.media {
+                let tags = if asset.tags.is_empty() {
+                    String::new()
+                } else {
+                    format!(" tags={}", asset.tags.join(","))
+                };
                 out(format!(
-                    "  media {} [{:?} {:?}] {}",
+                    "  media {} [{:?} {:?}] {}{tags}",
                     asset.id, asset.kind, asset.origin, asset.path
                 ));
                 if let Err(error) = asset.validate() {

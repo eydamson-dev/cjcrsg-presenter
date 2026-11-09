@@ -51,6 +51,9 @@ pub struct MediaAsset {
     /// silently: two files called `bg.mp4` would be indistinguishable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relink_hint: Option<String>,
+    /// FreeShow's media tags, imported from its `media.json`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -73,6 +76,7 @@ impl MediaAsset {
             size: None,
             hash: None,
             relink_hint: None,
+            tags: Vec::new(),
         }
     }
 

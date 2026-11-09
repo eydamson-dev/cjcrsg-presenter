@@ -53,6 +53,7 @@ pub fn import_store(store: &Path, out_dir: &Path) -> Result<StoreReport, StoreEr
     let projects = project_list(&projects_json)?;
     let shows_dir = store.join("shows");
     let categories = read_categories(store);
+    let media_tags = read_media_tags(store);
 
     std::fs::create_dir_all(out_dir).map_err(|source| StoreError::Io {
         path: out_dir.display().to_string(),
@@ -66,6 +67,7 @@ pub fn import_store(store: &Path, out_dir: &Path) -> Result<StoreReport, StoreEr
         match import_project(&projects_json, &shows_dir, Some(&project.id)) {
             Ok(mut imported) => {
                 imported.categories = categories.clone();
+                apply_media_tags(&mut imported, &media_tags);
                 let mut file_name = sanitise(&project.name);
                 if used_names.contains(&file_name) {
                     file_name = format!("{file_name}-{}", sanitise(&project.id));
@@ -112,6 +114,43 @@ fn read_categories(store: &Path) -> BTreeMap<String, String> {
         .filter(|(_, category)| !category.name.is_empty())
         .map(|(id, category)| (id, category.name))
         .collect()
+}
+
+/// FreeShow keeps media tags in `media.json`, keyed by path.
+fn read_media_tags(store: &Path) -> BTreeMap<String, Vec<String>> {
+    #[derive(Deserialize)]
+    struct Style {
+        #[serde(default)]
+        tags: Vec<String>,
+    }
+
+    let Ok(json) = std::fs::read_to_string(store.join("media.json")) else {
+        return BTreeMap::new();
+    };
+    let Ok(styles) = serde_json::from_str::<BTreeMap<String, Style>>(&json) else {
+        return BTreeMap::new();
+    };
+
+    styles
+        .into_iter()
+        .filter(|(_, style)| !style.tags.is_empty())
+        .map(|(path, style)| (path, style.tags))
+        .collect()
+}
+
+fn apply_media_tags(project: &mut presenter_core::Project, tags: &BTreeMap<String, Vec<String>>) {
+    for asset in project.media.iter_mut() {
+        if let Some(found) = tags.get(&asset.path) {
+            asset.tags = found.clone();
+        }
+    }
+    for show in project.shows.iter_mut() {
+        for asset in show.media.iter_mut() {
+            if let Some(found) = tags.get(&asset.path) {
+                asset.tags = found.clone();
+            }
+        }
+    }
 }
 
 fn sanitise(name: &str) -> String {
@@ -202,6 +241,46 @@ mod tests {
             document.project.categories.get("talk").map(String::as_str),
             Some("Talks")
         );
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn media_tags_attach_to_the_matching_path() {
+        let root = scratch("mediatags");
+        let store = root.join("store");
+        std::fs::write(
+            store.join("shows/With Media.show"),
+            r#"["media-show", {
+                "name": "With Media", "settings": {"activeLayout": "lay"},
+                "slides": {"s": {"group": ".", "items": []}},
+                "layouts": {"lay": {"slides": [{"id": "s"}]}},
+                "media": {"m1": {"path": "/srv/media/bg.mp4"}}
+            }]"#,
+        )
+        .unwrap();
+        std::fs::write(
+            store.join("projects.json"),
+            r#"{"projects":{"a":{"name":"Sunday","shows":[{"id":"media-show"}]}}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            store.join("media.json"),
+            r#"{"/srv/media/bg.mp4":{"tags":["worship","loop"]},"/srv/media/other.png":{"tags":[]}}"#,
+        )
+        .unwrap();
+
+        let report = import_store(&store, &root.join("out")).unwrap();
+        assert_eq!(report.imported.len(), 1);
+
+        let document = cjcp::read(&root.join("out/Sunday.cjcp")).unwrap();
+        let asset = document
+            .project
+            .media
+            .iter()
+            .find(|asset| asset.path == "/srv/media/bg.mp4")
+            .expect("the media asset imported");
+        assert_eq!(asset.tags, ["worship", "loop"]);
 
         std::fs::remove_dir_all(&root).ok();
     }

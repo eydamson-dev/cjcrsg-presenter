@@ -54,7 +54,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, own remote clients, groups. Missing style-level transitions |
-| 3 — data | import (single show, project with sections, whole store with categories and tags) + native format + media copy-in + document import + recent/restore. Missing FreeShow media metadata |
+| 3 — data | **done for content and metadata**: single show, project with sections, whole store with categories/tags, native format, media copy-in, document import, recent/restore. No media library UI (durations, thumbnails, playlists) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
@@ -79,6 +79,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
 | Store import: 3 projects → 2 written, 1 broken project reported, others unaffected; category `Songs` and tags resolve | `parity/reports/store-import-2026-11-09.md` |
 | Sections: a project with 2 sections + 1 show + 1 image imports with ordered entries | `parity/reports/sections-2026-11-09.md` |
+| Media tags from `media.json` attach to the imported asset (`tags=worship,background`) | `parity/reports/store-import-2026-11-09.md` |
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
 | Slide direction: imported bottom_top moves down, top_bottom up, default left | `parity/reports/transition-direction-2026-11-09.md` |
@@ -99,7 +100,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — two entries, each with an impact and a way to close it.
+`docs/deviations.md` — one entry, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -117,7 +118,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ```
 crates/core     96
-crates/compat   39
+crates/compat   40
 crates/remote   12
 apps/desktop     3
 ```
@@ -126,14 +127,12 @@ apps/desktop     3
 
 1. **Sections and focus mode** — DEV-009. Sections now import as ordered
    markers; focus mode and section actions (skip, loop, notes) do not exist.
-2. **FreeShow metadata** — DEV-005. Categories, tags and media metadata are not
-   mapped; `import-store` migrates the content but not the organisation.
-3. **Windows runtime verification.** The installer builds but has never run.
+2. **Windows runtime verification.** The installer builds but has never run.
    QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
    playback on WebView2 is also unmeasured.
-4. **Second physical display.** Experiment 1's placement and focus criteria are
+3. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-5. **Audio routing and A/V sync.** Audio elements exist; routing, channels and a
+4. **Audio routing and A/V sync.** Audio elements exist; routing, channels and a
    drift measurement do not (Phase 4/5).
 
 ## Known gaps and hazards
@@ -145,6 +144,9 @@ apps/desktop     3
   surface.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model (DEV-009).
+- **No media library UI.** Durations, thumbnails and playlists are neither shown
+  nor imported; the app plays media it can reference, it does not manage a
+  library.
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not

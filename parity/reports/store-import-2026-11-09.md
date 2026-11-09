@@ -71,12 +71,29 @@ Raw: `evidence/store/inspect-metadata.txt`, `settings_synced.json`.
 - a malformed synced-settings file does not fail the migration;
 - names are sanitised and duplicates would differ.
 
+## Media tags
+
+FreeShow's `media.json` is keyed by path and carries tags. They attach to the
+matching imported asset:
+
+```text
+media     1
+  media m1 [Video External] /srv/media/worship-bg.mp4 tags=worship,background
+```
+
+`! missing` is printed because that path does not exist on this machine; the
+tag import does not depend on the file being present.
+
+Raw: `evidence/store/inspect-media-tags.txt`, `media.json`.
+
 ## What DEV-005 still is
 
-DEV-005 is now only **media metadata**: durations, thumbnails and playlists are
-not imported. Content, categories and tags are:
+DEV-005 is closed. What FreeShow calls media metadata is now imported where the
+app can use it:
 
 - projects and their shows migrate;
 - category names resolve from the store's synced settings;
-- show-level tags import and round-trip;
-- the media folder itself is still copied per project by `bundle`, not here.
+- show-level tags and media tags import and round-trip;
+- durations and thumbnails are caches the app does not consume yet, and
+  playlists are a feature rather than per-file metadata. Both are listed as
+  gaps in `docs/status.md` rather than pretended.

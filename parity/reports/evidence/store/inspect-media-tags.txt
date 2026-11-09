@@ -1,0 +1,15 @@
+project   Sunday Morning
+format    cjcp v1
+app       0.1.0
+shows     1
+slides    3
+entries   1
+media     1
+  media m1 [Video External] /srv/media/worship-bg.mp4 tags=worship,background
+    ! missing: /srv/media/worship-bg.mp4
+preserved 0 unknown key(s)
+  show  Parity Fixture (fx-show) category=none
+    group Group 1 — 3 slide(s)
+      fx-1 — "Verse one, line one"
+      fx-2 — "Verse one, line three"
+      fx-3 — "Verse two, line one"
