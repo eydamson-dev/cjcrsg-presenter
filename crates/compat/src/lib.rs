@@ -16,8 +16,10 @@ pub mod cjcp;
 pub mod documents;
 pub mod freeshow;
 pub mod project;
+pub mod store;
 
 pub use cjcp::{Document, FormatError, SUPPORTED_VERSION};
 pub use documents::{import_deck, import_pdf, ImportOptions};
 pub use freeshow::{import_show, ImportError};
-pub use project::{import_project, ProjectImportError};
+pub use project::{import_project, project_list, ProjectImportError, ProjectSummary};
+pub use store::{import_store, StoreError, StoreReport};

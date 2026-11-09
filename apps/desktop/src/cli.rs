@@ -113,6 +113,26 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Handled)
         }
 
+        [command, rest @ ..] if command == "import-store" => {
+            let [store, out_dir] = rest else {
+                return Err(
+                    "usage: cjcrsg-presenter import-store <freeshow-data-dir> <out-dir>".into(),
+                );
+            };
+            let report = presenter_compat::import_store(Path::new(store), Path::new(out_dir))
+                .map_err(|error| format!("cannot import store: {error}"))?;
+
+            out(format!("imported {}", report.imported.len()));
+            for (name, path) in &report.imported {
+                out(format!("  {name} -> {}", path.display()));
+            }
+            out(format!("failed   {}", report.failed.len()));
+            for (name, reason) in &report.failed {
+                out(format!("  {name}: {reason}"));
+            }
+            Ok(Action::Handled)
+        }
+
         [command, rest @ ..] if command == "import-pdf" || command == "import-deck" => {
             let deck = command == "import-deck";
             if rest.len() < 2 {
@@ -466,6 +486,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter import <in.show> <out.cjcp>\n  \
              cjcrsg-presenter inspect <file.cjcp>\n  \
              cjcrsg-presenter import-project <projects.json> <shows-dir> <out.cjcp> [--id ID]\n  \
+             cjcrsg-presenter import-store <freeshow-data-dir> <out-dir>\n  \
              cjcrsg-presenter import-pdf <in.pdf> <out.cjcp> [--dpi N]\n  \
              cjcrsg-presenter import-deck <in.pptx|odp|docx> <out.cjcp> [--dpi N]\n  \
              cjcrsg-presenter bundle <file.cjcp>  copy external media into <dir>/media\n  \

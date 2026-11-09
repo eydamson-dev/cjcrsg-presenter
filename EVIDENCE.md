@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 139 -->
+**As of `main`, 2026-11-09.** <!-- tests: 143 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -319,6 +319,19 @@ LibreOffice into the same path.
 ![A PDF page on an output](parity/reports/evidence/documents/remote-1920x1080.png)
 
 Report: `parity/reports/documents-2026-11-09.md`.
+
+**A whole FreeShow data folder.** Three projects, two shows, one reference
+deliberately broken:
+
+```text
+imported 2
+  Midweek -> /tmp/opencode/store/out/Midweek.cjcp
+  Sunday Morning -> /tmp/opencode/store/out/Sunday Morning.cjcp
+failed   1
+  Broken One: project "Broken One" references show "nope", which is not in the shows folder
+```
+
+Report: `parity/reports/store-import-2026-11-09.md`.
 
 **Recent projects are remembered.** Two launches recorded two projects, newest
 first; launching with no arguments restored the newest. The panel, rendered by

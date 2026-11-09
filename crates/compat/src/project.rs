@@ -61,6 +61,23 @@ struct RawRef {
     id: String,
 }
 
+/// One entry in `projects.json`, as the store importer needs it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectSummary {
+    pub id: String,
+    pub name: String,
+}
+
+/// Every project named in `projects.json`, in file order.
+pub fn project_list(projects_json: &str) -> Result<Vec<ProjectSummary>, ProjectImportError> {
+    let file: ProjectFile = serde_json::from_str(projects_json)?;
+    Ok(file
+        .projects
+        .into_iter()
+        .map(|(id, raw)| ProjectSummary { id, name: raw.name })
+        .collect())
+}
+
 /// Import one project by id, or the first project when `project_id` is `None`.
 pub fn import_project(
     projects_json: &str,

@@ -1,0 +1,5 @@
+imported 2
+  Midweek -> /tmp/opencode/store/out/Midweek.cjcp
+  Sunday Morning -> /tmp/opencode/store/out/Sunday Morning.cjcp
+failed   1
+  Broken One: project "Broken One" references show "nope", which is not in the shows folder

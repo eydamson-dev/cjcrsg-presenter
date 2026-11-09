@@ -1,0 +1,9 @@
+project   Midweek
+format    cjcp v1
+app       0.1.0
+shows     1
+slides    3
+media     0
+preserved 0 unknown key(s)
+  show  Transition Fixture (tx-show)
+    group Group 1 — 3 slide(s)

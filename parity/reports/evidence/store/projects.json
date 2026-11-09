@@ -1,0 +1,5 @@
+{"projects":{
+  "sunday":{"name":"Sunday Morning","shows":[{"id":"fx-show"}]},
+  "midweek":{"name":"Midweek","shows":[{"id":"tx-show"}]},
+  "broken":{"name":"Broken One","shows":[{"id":"nope"}]}
+}}
