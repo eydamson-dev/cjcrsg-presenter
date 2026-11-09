@@ -1,0 +1,14 @@
+{
+  "recent": [
+    {
+      "name": "Drawer Scratch",
+      "path": "/tmp/opencode/ui-drawer-scratch/drawer-scratch.cjcp",
+      "opened_at": 1794217060199
+    }
+  ],
+  "layout": {
+    "left_width": 280,
+    "right_width": 360,
+    "drawer_height": 520
+  }
+}

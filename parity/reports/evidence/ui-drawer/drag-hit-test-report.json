@@ -1,0 +1,218 @@
+{
+  "1280x800": {
+    "geometry": {
+      "top": 500,
+      "height": 300,
+      "bottom": 800
+    },
+    "barCenterHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab"
+    },
+    "barOverTabHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab active"
+    },
+    "centerDrag": {
+      "before": {
+        "top": 500,
+        "height": 300,
+        "bottom": 800
+      },
+      "after": {
+        "top": 298,
+        "height": 502,
+        "bottom": 800
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 502,
+          "inner_height": 800,
+          "top_bar": 56
+        }
+      ]
+    },
+    "tabDrag": {
+      "before": {
+        "top": 500,
+        "height": 300,
+        "bottom": 800
+      },
+      "after": {
+        "top": 298,
+        "height": 502,
+        "bottom": 800
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 502,
+          "inner_height": 800,
+          "top_bar": 56
+        }
+      ]
+    },
+    "clickWithoutMove": 1,
+    "clickAfterDrag": 0,
+    "offset": {
+      "grabY": 502,
+      "pointerAfter": 500,
+      "before": {
+        "top": 500,
+        "height": 300,
+        "bottom": 800
+      },
+      "after": {
+        "top": 498,
+        "height": 302,
+        "bottom": 800
+      },
+      "pointerMinusTop": 2
+    }
+  },
+  "1024x640": {
+    "geometry": {
+      "top": 340,
+      "height": 300,
+      "bottom": 640
+    },
+    "barCenterHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab"
+    },
+    "barOverTabHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab active"
+    },
+    "centerDrag": {
+      "before": {
+        "top": 340,
+        "height": 300,
+        "bottom": 640
+      },
+      "after": {
+        "top": 298,
+        "height": 342,
+        "bottom": 640
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 342,
+          "inner_height": 640,
+          "top_bar": 56
+        }
+      ]
+    },
+    "tabDrag": {
+      "before": {
+        "top": 340,
+        "height": 300,
+        "bottom": 640
+      },
+      "after": {
+        "top": 298,
+        "height": 342,
+        "bottom": 640
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 342,
+          "inner_height": 640,
+          "top_bar": 56
+        }
+      ]
+    },
+    "clickWithoutMove": 1,
+    "clickAfterDrag": 0,
+    "offset": {
+      "grabY": 342,
+      "pointerAfter": 340,
+      "before": {
+        "top": 340,
+        "height": 300,
+        "bottom": 640
+      },
+      "after": {
+        "top": 338,
+        "height": 302,
+        "bottom": 640
+      },
+      "pointerMinusTop": 2
+    }
+  },
+  "400x600": {
+    "geometry": {
+      "top": 300,
+      "height": 300,
+      "bottom": 600
+    },
+    "barCenterHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab"
+    },
+    "barOverTabHit": {
+      "tag": "BUTTON",
+      "className": "drawer-tab active"
+    },
+    "centerDrag": {
+      "before": {
+        "top": 300,
+        "height": 300,
+        "bottom": 600
+      },
+      "after": {
+        "top": 298,
+        "height": 302,
+        "bottom": 600
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 302,
+          "inner_height": 600,
+          "top_bar": 56
+        }
+      ]
+    },
+    "tabDrag": {
+      "before": {
+        "top": 300,
+        "height": 300,
+        "bottom": 600
+      },
+      "after": {
+        "top": 298,
+        "height": 302,
+        "bottom": 600
+      },
+      "sent": [
+        {
+          "kind": "drawer_resize",
+          "height": 302,
+          "inner_height": 600,
+          "top_bar": 56
+        }
+      ]
+    },
+    "clickWithoutMove": 1,
+    "clickAfterDrag": 0,
+    "offset": {
+      "grabY": 302,
+      "pointerAfter": 300,
+      "before": {
+        "top": 300,
+        "height": 300,
+        "bottom": 600
+      },
+      "after": {
+        "top": 298,
+        "height": 302,
+        "bottom": 600
+      },
+      "pointerMinusTop": 2
+    }
+  }
+}

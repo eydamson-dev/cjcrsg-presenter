@@ -224,7 +224,11 @@ impl AppState {
         *self.outline.lock().expect("outline lock") = crate::outline::build(&document.project);
         *self.media.lock().expect("media lock") =
             crate::media_panel::build(&document.project, root.as_deref());
-        *self.shows.lock().expect("shows lock") = crate::drawer::build_shows(&document.project);
+        if let Ok(mut shows) = self.shows.lock() {
+            *shows = crate::drawer::build_shows(&document.project);
+        } else {
+            tracing::warn!("could not update the drawer shows; lock poisoned");
+        }
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)

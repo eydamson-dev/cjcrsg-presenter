@@ -80,7 +80,7 @@ impl LayoutPrefs {
     /// The remembered open height, clamped for a hand-edited session.
     ///
     /// The window may be shorter than this; the controller clamps again to
-    /// `innerHeight - 40` when it renders.
+    /// `innerHeight - measured top bar` when it renders.
     pub fn remembered_drawer_height(&self) -> u32 {
         self.drawer_height
             .clamp(MIN_DRAWER_HEIGHT, MAX_DRAWER_HEIGHT)

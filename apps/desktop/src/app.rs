@@ -169,19 +169,28 @@ pub fn App() -> Element {
                             let target = step.trim_start_matches("drag:").parse::<u32>().unwrap_or(300);
                             format!(
                                 "(() => {{
+                                    const drawer = document.querySelector('.drawer');
                                     const strip = document.querySelector('.drawer-top');
-                                    if (!strip) return;
-                                    const startY = strip.getBoundingClientRect().top + 20;
-                                    const endY = window.innerHeight - {target};
-                                    strip.dispatchEvent(new PointerEvent('pointerdown', {{
+                                    if (!drawer || !strip) return;
+                                    const inner = Math.round(window.innerHeight);
+                                    const startY = strip.getBoundingClientRect().top + 2;
+                                    const startHeight = drawer.getBoundingClientRect().height;
+                                    const offset = inner - startHeight - startY;
+                                    const endY = inner - {target} - offset;
+                                    const x = Math.round(window.innerWidth / 2);
+                                    // Hit-test at the bar centre, which is over a
+                                    // tab at ordinary widths; dispatch on the real
+                                    // hit target, as a pointer would.
+                                    const hit = document.elementFromPoint(x, startY) || strip;
+                                    hit.dispatchEvent(new PointerEvent('pointerdown', {{
                                         bubbles: true, cancelable: true, button: 0,
-                                        clientX: 900, clientY: startY,
+                                        clientX: x, clientY: startY,
                                     }}));
                                     window.dispatchEvent(new PointerEvent('pointermove', {{
-                                        bubbles: true, clientX: 900, clientY: endY,
+                                        bubbles: true, clientX: x, clientY: endY,
                                     }}));
                                     window.dispatchEvent(new PointerEvent('pointerup', {{
-                                        bubbles: true, clientX: 900, clientY: endY,
+                                        bubbles: true, clientX: x, clientY: endY,
                                     }}));
                                 }})();"
                             )

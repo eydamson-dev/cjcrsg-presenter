@@ -1,70 +1,107 @@
 Drawer evidence measurements
 ============================
 
-Capture: real controller window, GDK_BACKEND=x11, scripts/capture_window.sh.
-X11 client window: 1280x827. Native menu bar inside the window: 27 px.
-WebView content box measured by window.innerWidth x window.innerHeight: 1280x800.
-Content crops in this folder are the WebView area only: 1280x800.
+Capture method: real controller window, GDK_BACKEND=x11, scripts/capture_window.sh.
+The app has a 27 px native menu bar inside its X11 client window. Every image in
+this folder is cropped to the WebView content box below that bar; the content-box
+size is given per image below. No image contains the native menu bar.
 
-Maximum derived from the shell
-------------------------------
-The page measures `.topbar` itself; in the steady layout it is 56 px
-(44 px bar + 6 px padding top/bottom). `--topbar-h` is set to that measurement,
-and CSS uses `max-height: calc(100vh - var(--topbar-h))`. The drag script and
-the Rust clamp use the same number. At innerHeight 800 the maximum is 744.
+Image map
+---------
+All drawer heights are measured from the 4 px accent-tinted grab bar to the
+bottom of the image.
 
-drawer-max-1280x800.png: the drawer top bar starts at y=56 and the bottom row of
-y=799 is still drawer panel (36,40,50): the full 744 px drawer is visible, with
-its bottom edge on the window edge. Content height = 744 - 40 = 704.
+| Image | Content box | Drawer top | Drawer height | Note |
+| --- | --- | --- | --- | --- |
+| drawer-media-1280x800.png | 1280x800 | 500 | 300 | default, Media |
+| drawer-collapsed-1280x800.png | 1280x800 | 760 | 40 | strip only, Media active |
+| drawer-shows-1280x800.png | 1280x800 | 500 | 300 | Shows |
+| drawer-audio-1280x800.png | 1280x800 | 500 | 300 | Audio, two rows |
+| drawer-overlays-1280x800.png | 1280x800 | 500 | 300 | empty state |
+| drawer-drag-520-1280x800.png | 1280x800 | 280 | 520 | drag release at 520 |
+| drawer-reopened-520-1280x800.png | 1280x800 | 280 | 520 | restart at remembered 520 |
+| drawer-max-1280x800.png | 1280x800 | 56 | 744 | dragged to the maximum |
+| drawer-overflow-1280x800.png | 1280x800 | 500 | 300 | 45 rows scroll |
+| drawer-narrow-1024x640.png | 1024x640 | 340 | 300 | minimum window |
+| drawer-clamp-1200-1280x1302.png | 1280x1302 | 102 | 1200 | 1201 -> 1200 session clamp |
+| drawer-clamp-1201-1280x800.png | 1280x800 | 56 | 744 | 1201 -> window maximum |
+| drawer-clamp-39-1280x800.png | 1280x800 | 500 | 300 | 39 -> 40 -> reopen 300 |
+| drawer-drag-79-1280x800.png | 1280x800 | 760 | 40 | sub-80 release collapses |
+| drawer-drag-80-1280x800.png | 1280x800 | 720 | 80 | 80 release is kept |
+| drawer-remembered-80-1280x800.png | 1280x800 | 500 | 300 | relaunch with remembered 80 -> 300 floor |
 
-The workspace is wrapped in an inner frame so its 12 px padding cannot force the
-drawer past the window bottom; at the maximum the three columns have no height.
+Content-crop check: pixel (5,10) is (18,18,28) in every image above; the native
+menu bar would be (41,44,48) or (32,35,38).
 
-Default and collapsed
----------------------
-4 px accent-tinted grab bar: rows 500..503 at x=500, colour (145,15,96).
-Strip background below it: (30,34,43); 4 + 36 = 40 px.
-drawer-media-1280x800.png: open drawer top y=500, content starts y=540,
-default height 300, content 260.
-drawer-collapsed-1280x800.png: drawer top y=760, height 40, Media still active,
-no content below it.
+The 400x600 content box is not reachable: the app enforces a 1024x640 minimum
+inner size, so the narrow capture is 1024x640 (its X11 window was 1024x667).
 
-Active tab background at (120,520): (47,53,66).
-Inactive tab background at (300,520): (30,34,43).
-Active underline rows y=538..539: (240,0,140) / (240,0,140) (2 px, accent
-#f0008c).
+Default and maximum geometry
+----------------------------
+4 px accent-tinted grab bar: rows 500..503 in the default Media image at x=500,
+colour (145,15,96). Strip background below it (30,34,43); 4 + 36 = 40 px.
+Default: drawer top y=500, content starts y=540, height 300, content 260.
+Info column: left border x=990; spans x=990..1279 = 290 px.
+Clock time glyphs: accent #f0008c, bbox x=1064..1200, y=644..669, centred in
+the 290 px column.
 
-Info column left border at x=990; column spans x=990..1279 = 290 px.
-Clock time glyphs: accent #f0008c, bounding box x=1064..1200, y=644..669 in the
-open-Media capture; centred in x=990..1279 (column centre 1134.5).
+Maximum: the page measures `.topbar` (56 px in the steady layout), sets
+`--topbar-h`, and reports the same value to Rust. CSS uses
+`max-height: calc(100vh - var(--topbar-h))`; the drag and Rust clamps use the
+same measurement. At innerHeight 800 the maximum is 744; the max image starts
+at y=56 and ends at y=799, so the whole drawer is visible. The workspace inner
+frame lets the outer flex item shrink to zero instead of pushing the drawer off
+the bottom.
 
-Clock: same session, captures 1.4 s apart, 16:29:18 -> 16:29:19 (clock-tick.png).
+Drag hit-test and grab offset
+-----------------------------
+`drag-hit-test-probe.mjs` loads the shipped `main.css` and `DRAWER_SCRIPT` in
+headless Chromium and uses real Playwright mouse input (not a synthetic pointer
+dispatched at a chosen element). `drag-hit-test-report.json` records:
+
+- at 1280x800, 1024x640 and 400x600, a press at the bar centre hits
+  `BUTTON.drawer-tab`, and dragging it (and a press at x=40 over a tab) sends a
+  `drawer_resize`: height 502/342/302 respectively. The empty strip also
+  resizes. This is the D1 fix.
+- a press/release on the tab with no movement fires its click (count 1); a
+  press with a pointermove suppresses the click (count 0).
+- grabbing the strip 2 px below its top and moving the pointer 2 px up changes
+  the drawer from 300 to 302 and leaves the pointer exactly 2 px below the new
+  top at every viewport; the offset is preserved (D5).
+
+Session and release measurements (D7)
+-------------------------------------
+Raw session files are next to this file.
+
+| State | Session file / value | Rendered result |
+| --- | --- | --- |
+| drag release at 79 | session-drag-79.json, drawer_height 300 | collapsed to 40 (unchanged remembered) |
+| drag release at 80 | session-drag-80.json, drawer_height 80 | open at 80 |
+| relaunch with remembered 80 | session-remembered-80-at-launch.json, drawer_height 80 | opens at 300 (B5 floor) |
+| drag release at 520 | session-drag-520.json, drawer_height 520 | open at 520 |
+| restart at remembered 520 | session-restarted-520.json, drawer_height 520 | open at 520 (image 1280x800) |
+| maximum drag at 800 | session-max-744.json, drawer_height 744 | drawer 744, bottom edge at y=799 |
+| hand-edited 1201 at 800 | session-clamp-1201-at-800.json, drawer_height 1201 | rendered at the 744 maximum |
+| hand-edited 39 at 800 | session-clamp-39-at-800.json, drawer_height 39 | read-clamped to 40, reopened at 300 |
+| hand-edited 1201 at 1302 | session-clamp-1201-at-1302.json, drawer_height 1201 | session clamp wins: rendered 1200, fully visible |
+
+The 1280x1400 content-box half of the clamp-high scenario is not reachable on
+this machine: the window manager caps the client at 1329 px tall (WebView 1302)
+on the 4480x1440 display. The 1280x1302 capture shows the 1200 session clamp
+against a 1246 maximum; the 800 captures show the window maximum. The 1400
+value is not asserted.
 
 Content overflow
 ----------------
-drawer-overflow-1280x800.png: a 45-asset project on the Media tab at the default
-300 px height. The content area is 260 px, a vertical scrollbar is visible at
-x=983, rows are clipped at the drawer boundary, and the drawer stays at 300
-(top y=500). The 290 px clock column is not pushed sideways.
+drawer-overflow-1280x800.png: 45-asset project on Media at the default 300 px.
+A vertical scrollbar is visible at x=983, rows are clipped at the drawer
+boundary, the drawer stays at 300 (top y=500), and the 290 px clock column is
+not pushed.
 
-Session clamp and remembered heights
-------------------------------------
-Persistence (session.json observed):
-  drag release at 520 -> layout.drawer_height = 520
-  drag release at 79  -> collapsed to 40; remembered stayed 300 (sub-80 release
-                         is not persisted)
-  drag release at 80  -> open at 80; layout.drawer_height = 80
-  remembered 80 at launch -> drawer opened at 300 (B5 floor); session stayed 80
-  drag to the maximum at innerHeight 800 -> layout.drawer_height = 744
-  hand-edited 1201 at innerHeight 800 -> rendered at the 744 maximum
-  hand-edited 1201 at innerHeight 1302 -> session clamp wins: drawer 1200,
-    top y=102, bottom y=1301 (drawer-clamp-1200-1280x1302.png)
-
-Narrow width
-------------
-The window's minimum inner size is 1024x640 (main.rs), so 400x600 could not be
-reached; at 1024x640 all eight labels are visible and the strip does not wrap
-(drawer-narrow-1024x640.png).
+Clock
+-----
+Two captures of the same session 1.4 s apart read 16:29:18 and 16:29:19
+(clock-tick.png).
 
 Keyboard
 --------

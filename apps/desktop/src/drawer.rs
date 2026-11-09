@@ -360,13 +360,16 @@ pub const DRAWER_SCRIPT: &str = r#"
             if (event.button !== 0) return;
             const strip = event.target.closest && event.target.closest('.drawer-top');
             if (!strip) return;
-            if (event.target.closest('button, a, input, textarea, select')) return;
             const drawer = document.querySelector('.drawer');
             if (!drawer) return;
 
             const startY = event.clientY;
             let height = Math.round(drawer.getBoundingClientRect().height);
             let moved = false;
+            // Keep the drawer top under the grab point, as FreeShow does. A
+            // pointerdown 2 px below the top edge must not teleport the edge to
+            // the pointer.
+            const offsetY = Math.round(window.innerHeight) - height - startY;
             const maxHeight = Math.max(
                 40,
                 Math.round(window.innerHeight) - syncTopBar(),
@@ -376,9 +379,10 @@ pub const DRAWER_SCRIPT: &str = r#"
             document.body.classList.add('drawer-dragging');
 
             const move = (ev) => {
-                height = Math.round(window.innerHeight - ev.clientY);
+                height = Math.round(window.innerHeight - ev.clientY - offsetY);
                 height = Math.max(40, Math.min(maxHeight, height));
-                if (Math.abs(ev.clientY - startY) >= 2) moved = true;
+                // Any pointermove means the gesture is a drag, not a click.
+                moved = true;
                 root.style.setProperty('--drawer-drag-h', height + 'px');
             };
             const up = () => {
@@ -521,6 +525,29 @@ mod tests {
         assert_eq!(clamp_drag_height(-20, 744), 40);
         assert_eq!(clamp_drag_height(520, 744), 520);
         assert_eq!(clamp_drag_height(2000, 744), 744);
+    }
+
+    /// The page's drag formula, mirrored here so the grab offset is checked
+    /// without a window: offset = innerHeight - height - grabY at pointerdown,
+    /// then height = innerHeight - pointerY - offset on every move.
+    #[test]
+    fn drag_height_keeps_the_pointer_at_its_grab_offset() {
+        let inner = 800i64;
+        let start_height = 300u32;
+        let grab_y = 520i64; // 20 px below the drawer top at 500
+        let offset = inner - start_height as i64 - grab_y;
+
+        let height_at = |pointer_y: i64| inner - pointer_y - offset;
+        assert_eq!(height_at(grab_y), 300, "no move keeps the height");
+        assert_eq!(height_at(grab_y - 1), 301, "one px up grows by one");
+        assert_eq!(height_at(grab_y + 1), 299, "one px down shrinks by one");
+
+        // The grab point stays 20 px below the drawer top at every position.
+        for pointer_y in [200, 400, 520, 700] {
+            let height = height_at(pointer_y);
+            let top = inner - height;
+            assert_eq!(pointer_y - top, 20, "grab offset at pointer y={pointer_y}");
+        }
     }
 
     #[test]
