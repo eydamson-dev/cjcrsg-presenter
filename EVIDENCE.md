@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 71 -->
+**As of `main`, 2026-11-09.** <!-- tests: 82 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -81,8 +81,29 @@ scale, slide, spin.
 
 ![Transitions](parity/reports/evidence/transitions/montage.png)
 
+**Transition timing comes from the project.** Four frames, all frozen 300 ms
+into the transition, at 1920×1080. Top-left: the imported slide transition
+(`slide`, 1200 ms, cubic). Top-right: the same instant with a 400 ms linear
+override. Bottom: fade at 1200 ms with linear, then sine easing.
+
+![Transition timing](parity/reports/evidence/transition-timing/montage.png)
+
+| Frame | Mean brightness |
+| --- | --- |
+| imported, slide 1200 ms cubic | 0.006 |
+| same slide, 400 ms linear override | 0.908 |
+| fade 1200 ms linear | 0.224 |
+| fade 1200 ms sine | 0.128 |
+
+Measured sine-to-linear ratio **0.571** against 0.586 expected for a quarter of
+the way through, so the curve is applied, not just the duration. Capturing this
+also uncovered that a transition keyframe replaced the slide's `scale()`: at
+1280×720 mid-effect the surface measured **1920×1080** before the fix and
+**1280×720** after it.
+
 Reports: `parity/reports/stage-2026-11-09.md`,
-`parity/reports/transitions-2026-11-09.md`.
+`parity/reports/transitions-2026-11-09.md`,
+`parity/reports/transition-timing-2026-11-09.md`.
 
 ---
 

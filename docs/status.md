@@ -30,7 +30,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
   clear/blank (which keeps the position).
 - Four independent output windows; the stage shows live + next + operator notes
   + a clock slot.
-- All eight of FreeShow's transitions.
+- All eight of FreeShow's transitions, with each slide's own duration and easing
+  from the project; the project default is FreeShow's fade/500 ms/sine.
 - An HTTP remote that drives all of the above, returning 409 for a no-op.
 - Close any output, keep presenting, reopen it and it returns to the live slide
   in ~180 ms.
@@ -41,7 +42,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs, clear, stage, transitions, remote, groups. Missing per-transition duration/easing, stage timers, output layout options |
+| 2 — presentation engine | mostly: outputs, clear, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references. Missing persistence, media copy-in, document importers |
 | 4 — media engine | not started |
 | 5 — professional AV | not started (needs hardware) |
@@ -60,6 +61,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Remote commands | `parity/reports/remote-2026-11-09.md` |
 | Stage | `parity/reports/stage-2026-11-09.md` |
 | Transitions | `parity/reports/transitions-2026-11-09.md` |
+| Transition timing: 1200 ms imported timing honoured; sine/linear ratio 0.571 vs 0.586 | `parity/reports/transition-timing-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -85,26 +87,23 @@ four CI jobs are green. See
 ## Tests
 
 ```
-crates/core     43
-crates/compat   20
+crates/core     51
+crates/compat   23
 crates/remote    8
 ```
 
 ## Next, in order
 
-1. **Per-transition duration and easing.** FreeShow stores `duration` and
-   `easing` per transition; we hardcode 400 ms ease-out. Small, closes a known
-   deviation.
-2. **Media copy-in.** Turn an `External` asset into a `Bundled` one by copying
+1. **Media copy-in.** Turn an `External` asset into a `Bundled` one by copying
    it into the project and rewriting the path. Needed before a project can be
    shared or zipped.
-3. **Persistence.** Recent projects, restore-on-start. The format is settled;
+2. **Persistence.** Recent projects, restore-on-start. The format is settled;
    this is UI and storage plumbing.
-4. **Second physical display.** Experiment 1's placement and focus criteria are
+3. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-5. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
+4. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
    cannot talk to us. This is the compatibility risk of Phase 2.
-6. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
+5. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
    CPU inside the app, where the process tree is stable.
 
 ## Known gaps and hazards
@@ -115,7 +114,9 @@ crates/remote    8
   FreeShow's full layout/section model.
 - **`nav.bounds.next-at-end` is unverified** against the reference. Ours ignores
   next at the end; FreeShow may wrap or stop.
-- **Transition timing is fixed** at 400 ms ease-out for every effect.
+- **Style-level transitions are not modelled.** FreeShow resolves slide → style
+  → global; we resolve slide → default. A project that keeps its timing in
+  `styles.json` gets the default (DEV-012 covers the related direction gap).
 - **Experiment 3 measured dropped frames only.** CPU cost per surface is
   unmeasured; the proxy harness could not attribute it. Measure in-app.
 - **Desktop automation is unreliable on this machine.** Prefer headless

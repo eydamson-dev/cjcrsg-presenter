@@ -255,6 +255,31 @@ mod tests {
     }
 
     #[test]
+    fn transition_fields_we_do_not_model_round_trip() {
+        let json = r#"{
+            "format": "cjcp", "format_version": 1, "app_version": "1",
+            "project": {"id": "p", "name": "n", "shows": [{"id": "s", "name": "S",
+                "groups": [{"id": "g", "name": "G", "slides": [{
+                    "id": "sl", "name": "1", "elements": [],
+                    "transition": {"type": "slide", "duration": 1200, "easing": "cubic",
+                                   "custom": {"direction": "bottom_top"}, "fadeInOffset": 30}
+                }]}]
+            }]}
+        }"#;
+
+        let document = from_json(json).unwrap();
+        let transition = document.project.shows[0].groups[0].slides[0]
+            .transition
+            .as_ref()
+            .expect("a transition was read");
+        assert_eq!(transition.duration_ms, 1200);
+
+        let out = to_json(&document).unwrap();
+        assert!(out.contains("fadeInOffset"), "{out}");
+        assert!(out.contains("bottom_top"), "{out}");
+    }
+
+    #[test]
     fn refuses_a_newer_format_version() {
         let json = r#"{"format":"cjcp","format_version":2,"app_version":"1","project":{"id":"p","name":"n","shows":[]}}"#;
         match from_json(json) {

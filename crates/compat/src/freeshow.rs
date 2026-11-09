@@ -7,8 +7,9 @@
 
 use std::collections::BTreeMap;
 
-use presenter_core::{MediaAsset, MediaKind, Show, Slide, SlideElement, SlideGroup};
+use presenter_core::{MediaAsset, MediaKind, Show, Slide, SlideElement, SlideGroup, Transition};
 use serde::Deserialize;
+use serde_json::Value;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportError {
@@ -164,8 +165,20 @@ fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
         },
         notes: slide.notes.clone(),
         elements,
+        transition: convert_transition(slide.transition.as_ref()),
         ..Default::default()
     }
+}
+
+/// FreeShow only applies a slide's transition when it declares a `type`; an
+/// object without one is metadata, not an instruction. Anything malformed is
+/// dropped rather than failing the whole import.
+fn convert_transition(raw: Option<&Value>) -> Option<Transition> {
+    let object = raw?.as_object()?;
+    if !object.contains_key("type") && !object.contains_key("kind") {
+        return None;
+    }
+    serde_json::from_value(Value::Object(object.clone())).ok()
 }
 
 #[derive(Debug, Deserialize)]
@@ -204,6 +217,10 @@ struct RawSlide {
     group: Option<String>,
     #[serde(default)]
     notes: String,
+    /// Kept as raw JSON so a transition without a `type` can be ignored the way
+    /// FreeShow ignores it, instead of being defaulted into a real transition.
+    #[serde(default)]
+    transition: Option<Value>,
     #[serde(default)]
     items: Vec<RawItem>,
 }
@@ -242,8 +259,38 @@ struct RawRef {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use presenter_core::TransitionKind;
 
     const FIXTURE: &str = include_str!("../../../parity/fixtures/parity-three-slides.show");
+    const TRANSITIONS: &str = include_str!("../../../parity/fixtures/parity-transitions.show");
+
+    #[test]
+    fn imports_a_slides_transition() {
+        let show = import_show(TRANSITIONS).unwrap();
+        let second = show.slides().nth(1).unwrap().1;
+        let transition = second.transition.as_ref().expect("a transition");
+        assert_eq!(transition.kind, TransitionKind::Slide);
+        assert_eq!(transition.duration_ms, 1200);
+        assert_eq!(transition.easing, "cubic");
+        assert!(
+            transition.extra.contains_key("custom"),
+            "a direction we do not model is kept, not dropped"
+        );
+    }
+
+    #[test]
+    fn a_transition_without_a_type_is_ignored_like_freeshow_does() {
+        let show = import_show(TRANSITIONS).unwrap();
+        let slides: Vec<&Slide> = show.slides().map(|(_, slide)| slide).collect();
+        assert!(
+            slides[0].transition.is_none(),
+            "{{\"duration\":300}} carries no type, so it is not an instruction"
+        );
+        assert!(
+            slides[2].transition.is_none(),
+            "no transition object at all"
+        );
+    }
 
     #[test]
     fn imports_the_fixture() {

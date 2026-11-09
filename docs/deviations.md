@@ -9,7 +9,6 @@ deviation is closed, delete the entry rather than marking it done.
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
 | DEV-001 | The controller UI has no keyboard shortcuts (`Space`, arrows, `PageUp/Down`) | Operators using a keyboard lose speed | Add a key handler on the controller window |
-| DEV-002 | Transition duration and easing are fixed at 400 ms ease-out for every effect | An imported project's timing is not honoured | Import `Transition.duration`/`easing` and pass them in `TransitionState` |
 | DEV-003 | The remote speaks JSON over HTTP, not Socket.IO | Existing FreeShow remote/stage clients cannot connect | Implement the Socket.IO surface, or ship our own clients |
 | DEV-004 | Imported media is `External`; there is no copy-into-project | Projects are not portable or shareable | Provide `External → Bundled` copy with a relative path |
 | DEV-005 | No SQLite persistence | No recent-projects, no restore-on-start, no FreeShow DB import | Phase 3: project store |
@@ -18,6 +17,8 @@ deviation is closed, delete the entry rather than marking it done.
 | DEV-008 | `next` on the last slide is a no-op; FreeShow's behaviour is unverified | Could differ at the end of a service | Observe the reference, then match it |
 | DEV-009 | The engine is linear inside a show; groups are navigation only | FreeShow's layout/section model is richer | Model layout sections when a feature needs them |
 | DEV-010 | Experiment 3 measured dropped frames, not CPU cost | Media budget is unknown | Measure inside the app in Phase 4 |
+| DEV-011 | `elastic` and `bounce` easings are approximated by one cubic-bézier | Those two curves are not exactly FreeShow's | Keyframes with intermediate stops per curve |
+| DEV-012 | The `slide` transition always enters from the right | FreeShow's default enters from the left and `custom.direction` selects an edge | Apply `custom.direction` in the renderer |
 
 ## Rules
 

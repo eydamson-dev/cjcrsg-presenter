@@ -23,7 +23,10 @@ down the slide subtree.
 
 ## Evidence
 
-Frozen at 200 ms into each 400 ms transition, rendered by the real component:
+Frozen at 200 ms, rendered by the real component. These frames were captured
+when duration was a fixed 400 ms; timing is now project data
+(`transition-timing-2026-11-09.md`), so 200 ms is a point on each slide's own
+curve rather than the midpoint.
 
 ![All eight transitions](evidence/transitions/montage.png)
 
@@ -44,9 +47,12 @@ cjcrsg-presenter render <file.cjcp> out.html \
 - names match FreeShow's spelling (`none`, `crossfade`);
 - `none` has no animation while `slide` maps to `slide`.
 
+## Done since
+
+Duration and easing are now imported per slide and applied by the renderer —
+see `transition-timing-2026-11-09.md`.
+
 ## Not done
 
-- Duration and easing are still a fixed 400 ms ease-out. FreeShow stores them
-  per transition (`duration`, `easing`) and they need importing.
 - FreeShow also supports separate `in`/`out` transitions and a `between`
   transition for media; only the whole-slide case is modelled.

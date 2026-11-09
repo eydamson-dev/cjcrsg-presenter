@@ -159,10 +159,10 @@ One command, animated locally:
 ```rust
 pub struct TransitionState {
     pub revision: u64,
-    pub id: TransitionId,
     pub kind: TransitionKind,
     pub duration_ms: u32,
-    pub started_at: Option<Instant>,
+    /// The authored easing name; the renderer resolves it to a CSS curve.
+    pub easing: String,
 }
 ```
 

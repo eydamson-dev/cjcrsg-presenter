@@ -80,7 +80,7 @@ fn render_to_file(
     out: &std::path::Path,
     layout: render::Layout,
     slide: Option<usize>,
-    transition: presenter_core::TransitionKind,
+    requested: Option<presenter_core::Transition>,
     pause: Option<u32>,
 ) {
     let document = match presenter_compat::cjcp::read(project) {
@@ -95,6 +95,17 @@ fn render_to_file(
     if let Some(index) = slide {
         engine.go_to_index(index);
     }
+
+    // A slide's own timing is what an imported project carries, so it is the
+    // default for evidence renders; `--transition` overrides it.
+    let transition = requested.unwrap_or_else(|| {
+        engine
+            .state()
+            .transition
+            .as_ref()
+            .map(|transition| transition.spec())
+            .unwrap_or_else(presenter_core::Transition::none)
+    });
 
     let shared = presenter_core::SharedEngine::new(engine);
     let html = render::render(&shared, layout, transition, pause);

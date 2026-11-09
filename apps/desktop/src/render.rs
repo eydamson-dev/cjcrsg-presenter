@@ -6,7 +6,7 @@
 //! makes visual regression testing possible on a machine in use.
 
 use dioxus::prelude::*;
-use presenter_core::{SharedEngine, TransitionKind};
+use presenter_core::{SharedEngine, Transition};
 
 use crate::assets::MAIN_CSS;
 use crate::slide::{SlideView, StageView};
@@ -19,7 +19,7 @@ pub enum Layout {
 pub fn render(
     engine: &SharedEngine,
     layout: Layout,
-    transition: TransitionKind,
+    transition: Transition,
     pause_at_ms: Option<u32>,
 ) -> String {
     let state = engine.state();
@@ -52,7 +52,10 @@ pub fn render(
 fn wrap(body: &str, pause_at_ms: Option<u32>) -> String {
     let pause = match pause_at_ms {
         Some(ms) => format!(
-            "<style>.slide {{ animation-delay: -{ms}ms; animation-play-state: paused; }}</style>"
+            // Freeze the animated layer, not the scaled surface: since the
+            // transition moved to `.slide-body`, that is where the animation
+            // lives.
+            "<style>.slide-body {{ animation-delay: -{ms}ms; animation-play-state: paused; }}</style>"
         ),
         None => String::new(),
     };

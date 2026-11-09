@@ -5,6 +5,8 @@
 
 use serde::{Deserialize, Serialize};
 
+pub use crate::domain::TransitionKind;
+
 pub type Revision = u64;
 
 /// The complete, self-sufficient state of one presentation instant.
@@ -50,54 +52,32 @@ pub struct RenderElement {
     pub style: String,
 }
 
-/// The transitions FreeShow offers, so a project's transition survives import.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum TransitionKind {
-    None,
-    Blur,
-    #[default]
-    Fade,
-    Crossfade,
-    Fly,
-    Scale,
-    Slide,
-    Spin,
-}
-
-impl TransitionKind {
-    /// The CSS animation stem, or `None` for an instant cut.
-    pub fn animation(self) -> Option<&'static str> {
-        match self {
-            TransitionKind::None => None,
-            TransitionKind::Blur => Some("blur"),
-            TransitionKind::Fade => Some("fade"),
-            TransitionKind::Crossfade => Some("crossfade"),
-            TransitionKind::Fly => Some("fly"),
-            TransitionKind::Scale => Some("scale"),
-            TransitionKind::Slide => Some("slide"),
-            TransitionKind::Spin => Some("spin"),
-        }
-    }
-
-    pub const ALL: [TransitionKind; 8] = [
-        TransitionKind::None,
-        TransitionKind::Blur,
-        TransitionKind::Fade,
-        TransitionKind::Crossfade,
-        TransitionKind::Fly,
-        TransitionKind::Scale,
-        TransitionKind::Slide,
-        TransitionKind::Spin,
-    ];
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// How the state that produced `revision` should animate.
+///
+/// The transition *kind* lives in [`crate::domain`] because it is persisted
+/// project data; this type is the per-revision instruction to a renderer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TransitionState {
     /// The revision this transition belongs to. Not the revision it starts from.
     pub revision: Revision,
     pub kind: TransitionKind,
     pub duration_ms: u32,
+    /// The authored easing name (`sine`, `cubic`, …). Kept as a name, not a
+    /// resolved CSS curve, so the state stays renderer-neutral; a renderer
+    /// resolves it with [`crate::domain::easing_css`].
+    pub easing: String,
+}
+
+impl TransitionState {
+    /// The authored transition this state describes.
+    pub fn spec(&self) -> crate::domain::Transition {
+        crate::domain::Transition {
+            kind: self.kind,
+            duration_ms: self.duration_ms,
+            easing: self.easing.clone(),
+            extra: Default::default(),
+        }
+    }
 }
 
 impl RenderSlide {

@@ -12,11 +12,11 @@ pub mod media;
 pub mod render;
 pub mod shared;
 
-pub use domain::{Project, Show, Slide, SlideElement, SlideGroup};
+pub use domain::{
+    easing_css, Project, Show, Slide, SlideElement, SlideGroup, Transition, TransitionKind, EASINGS,
+};
 pub use engine::{Position, ShowEngine};
 pub use hub::RenderHub;
 pub use media::{MediaAsset, MediaError, MediaKind, MediaOrigin};
-pub use render::{
-    RenderElement, RenderSlide, RenderState, Revision, TransitionKind, TransitionState,
-};
+pub use render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
 pub use shared::SharedEngine;

@@ -86,6 +86,11 @@ pub fn OutputRoot(props: OutputProps) -> Element {
 
     let state = current.read().clone();
     let animate = state.revision != first_revision;
+    let transition = state
+        .transition
+        .as_ref()
+        .map(|transition| transition.spec())
+        .unwrap_or_else(presenter_core::Transition::none);
 
     rsx! {
         document::Style { {crate::assets::MAIN_CSS} }
@@ -104,7 +109,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 output: kind.label().to_string(),
                 animate,
                 revision: state.revision,
-                transition: state.transition.map(|t| t.kind).unwrap_or_default(),
+                transition,
             }
         }
     }

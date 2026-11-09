@@ -17,7 +17,8 @@ pub enum Action {
         out: PathBuf,
         layout: crate::render::Layout,
         slide: Option<usize>,
-        transition: presenter_core::TransitionKind,
+        /// `None` means "use the transition the engine published".
+        transition: Option<presenter_core::Transition>,
         pause: Option<u32>,
     },
 }
@@ -134,7 +135,21 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                             .first()
                             .map(|element| element.text.split('\n').next().unwrap_or(""))
                             .unwrap_or("");
-                        out(format!("      {} — {first:?}", slide.id));
+                        let timing = slide
+                            .transition
+                            .as_ref()
+                            .map(|transition| {
+                                format!(
+                                    " [{} {}ms {}]",
+                                    serde_json::to_string(&transition.kind)
+                                        .unwrap()
+                                        .trim_matches('"'),
+                                    transition.duration_ms,
+                                    transition.easing
+                                )
+                            })
+                            .unwrap_or_default();
+                        out(format!("      {} — {first:?}{timing}", slide.id));
                     }
                 }
             }
@@ -163,14 +178,15 @@ pub fn run(args: &[String]) -> Result<Action, String> {
         [command, rest @ ..] if command == "render" => {
             if rest.len() < 2 {
                 return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
-                     [--layout stage|audience] [--slide N]"
+                     [--layout stage|audience] [--slide N] [--transition NAME] \
+                     [--duration MS] [--easing NAME]"
                     .into());
             }
             let project = PathBuf::from(&rest[0]);
             let out = PathBuf::from(&rest[1]);
             let mut layout = crate::render::Layout::Audience;
             let mut slide = None;
-            let mut transition = presenter_core::TransitionKind::None;
+            let mut transition: Option<presenter_core::Transition> = None;
             let mut pause = None;
 
             let mut args = rest[2..].iter();
@@ -185,12 +201,34 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                     }
                     "--transition" => {
                         let name = args.next().ok_or("--transition needs a name")?;
-                        transition = presenter_core::TransitionKind::ALL
+                        let chosen = transition
+                            .get_or_insert_with(presenter_core::Transition::default);
+                        chosen.kind = presenter_core::TransitionKind::ALL
                             .into_iter()
                             .find(|kind| {
                                 serde_json::to_string(kind).unwrap().trim_matches('"') == name
                             })
                             .ok_or_else(|| format!("unknown transition {name:?}"))?;
+                    }
+                    "--duration" => {
+                        let value = args.next().ok_or("--duration needs milliseconds")?;
+                        let chosen = transition
+                            .get_or_insert_with(presenter_core::Transition::default);
+                        chosen.duration_ms = value
+                            .parse()
+                            .map_err(|_| format!("not a number: {value:?}"))?;
+                    }
+                    "--easing" => {
+                        let name = args.next().ok_or("--easing needs a name")?;
+                        if !presenter_core::EASINGS.iter().any(|known| *known == name) {
+                            return Err(format!(
+                                "unknown easing {name:?}; expected one of {}",
+                                presenter_core::EASINGS.join(", ")
+                            ));
+                        }
+                        let chosen = transition
+                            .get_or_insert_with(presenter_core::Transition::default);
+                        chosen.easing = name.to_string();
                     }
                     "--pause" => {
                         let value = args.next().ok_or("--pause needs milliseconds")?;
@@ -233,7 +271,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter inspect <file.cjcp>\n  \
              cjcrsg-presenter import-project <projects.json> <shows-dir> <out.cjcp> [--id ID]\n  \
              cjcrsg-presenter serve [--port N]   headless remote server\n  \
-             cjcrsg-presenter render <in.cjcp> <out.html> [--layout stage|audience] [--slide N]"
+             cjcrsg-presenter render <in.cjcp> <out.html> [--layout stage|audience] [--slide N] \\n  \
+             [--transition NAME] [--duration MS] [--easing NAME]"
         )),
     }
 }

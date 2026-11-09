@@ -133,6 +133,10 @@ The desktop app needs `webkit2gtk4.1-devel`, `libsoup3-devel` and
   Embed CSS with `include_str!`.
 - **`calc()` cannot divide a length by a number inside `scale()`.** Slides use a
   `--slide-scale` variable set by script instead.
+- **A transition keyframe that sets `transform` replaces the slide's `scale()`.**
+  The slide snaps to 1920×1080 for the duration of the effect, which is
+  invisible at a 1920-wide window and obvious on every other size. Animate
+  `.slide-body`, never `.slide`.
 - **Wayland refuses focus stealing and offers no capture-by-window-id.** An app
   cannot focus its own window; `spectacle -u` needs a cursor; KWin scripting
   matched the wrong window twice and captured unrelated work. Use

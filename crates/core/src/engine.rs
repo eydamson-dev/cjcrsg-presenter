@@ -5,10 +5,8 @@
 
 use tracing::debug;
 
-use crate::domain::{Project, Show, Slide, SlideGroup};
-use crate::render::{
-    RenderElement, RenderSlide, RenderState, Revision, TransitionKind, TransitionState,
-};
+use crate::domain::{Project, Show, Slide, SlideGroup, Transition};
+use crate::render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
 
 /// A slide's address inside the project.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,21 +14,6 @@ pub struct Position {
     pub show: usize,
     pub group: usize,
     pub slide: usize,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TransitionPolicy {
-    pub kind: TransitionKind,
-    pub duration_ms: u32,
-}
-
-impl Default for TransitionPolicy {
-    fn default() -> Self {
-        Self {
-            kind: TransitionKind::Fade,
-            duration_ms: 400,
-        }
-    }
 }
 
 /// The authoritative owner of "which slide is live".
@@ -44,7 +27,9 @@ pub struct ShowEngine {
     order: Vec<Position>,
     index: usize,
     revision: Revision,
-    policy: TransitionPolicy,
+    /// Applies when a slide does not declare its own transition. FreeShow's
+    /// default text transition: fade, 500 ms, sine.
+    policy: Transition,
     transition: Option<TransitionState>,
     /// Blanked output. The show position is untouched: clearing is a display
     /// state, not a navigation event.
@@ -59,7 +44,7 @@ impl ShowEngine {
             order,
             index: 0,
             revision: 0,
-            policy: TransitionPolicy::default(),
+            policy: Transition::default(),
             transition: None,
             cleared: false,
         }
@@ -77,7 +62,7 @@ impl ShowEngine {
         order
     }
 
-    pub fn with_transition_policy(mut self, policy: TransitionPolicy) -> Self {
+    pub fn with_transition_policy(mut self, policy: Transition) -> Self {
         self.policy = policy;
         self
     }
@@ -210,14 +195,14 @@ impl ShowEngine {
     }
 
     /// Blank or restore the output. Returns whether anything changed.
+    ///
+    /// Clearing is not a slide change, so it uses the project default rather
+    /// than the transition the incoming slide declares.
     pub fn toggle_clear(&mut self) -> bool {
         self.cleared = !self.cleared;
         self.revision += 1;
-        self.transition = Some(TransitionState {
-            revision: self.revision,
-            kind: self.policy.kind,
-            duration_ms: self.policy.duration_ms,
-        });
+        let policy = self.policy.clone();
+        self.transition = Some(self.describe(&policy));
         true
     }
 
@@ -246,11 +231,23 @@ impl ShowEngine {
 
     fn bump(&mut self) {
         self.revision += 1;
-        self.transition = Some(TransitionState {
+        // FreeShow resolves the *incoming* slide's transition (slide → style →
+        // global). We model the two ends: the slide's own, else the default.
+        let transition = self
+            .position()
+            .and_then(|position| self.slide_at(position))
+            .and_then(|slide| slide.transition.clone())
+            .unwrap_or_else(|| self.policy.clone());
+        self.transition = Some(self.describe(&transition));
+    }
+
+    fn describe(&self, transition: &Transition) -> TransitionState {
+        TransitionState {
             revision: self.revision,
-            kind: self.policy.kind,
-            duration_ms: self.policy.duration_ms,
-        });
+            kind: transition.kind,
+            duration_ms: transition.duration_ms,
+            easing: transition.easing.clone(),
+        }
     }
 
     /// The state every output should show right now.
@@ -275,7 +272,7 @@ impl ShowEngine {
                 notes: slide.notes.clone(),
                 slide: RenderSlide::default(),
                 next,
-                transition: self.transition,
+                transition: self.transition.clone(),
             };
         }
 
@@ -286,7 +283,7 @@ impl ShowEngine {
             slide: project_slide(slide),
             notes: slide.notes.clone(),
             next,
-            transition: self.transition,
+            transition: self.transition.clone(),
         }
     }
 }
@@ -311,7 +308,7 @@ fn project_slide(slide: &Slide) -> RenderSlide {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::SlideElement;
+    use crate::domain::{SlideElement, TransitionKind};
 
     fn slide(id: &str, text: &str) -> Slide {
         Slide {
@@ -463,6 +460,62 @@ mod tests {
         let transition = state.transition.expect("transition after navigation");
         assert_eq!(transition.revision, state.revision);
         assert_eq!(transition.kind, TransitionKind::Fade);
+        assert_eq!(
+            transition.duration_ms, 500,
+            "FreeShow's default text timing"
+        );
+        assert_eq!(transition.easing, "sine", "FreeShow's default curve");
+    }
+
+    #[test]
+    fn a_slides_own_transition_wins_over_the_default() {
+        let mut project = fixture();
+        project.shows[0].groups[0].slides[1].transition = Some(Transition {
+            kind: TransitionKind::Slide,
+            duration_ms: 1200,
+            easing: "cubic".to_string(),
+            ..Default::default()
+        });
+
+        let mut engine = ShowEngine::new(project);
+        engine.next_slide();
+        let transition = engine.state().transition.expect("a transition");
+        assert_eq!(transition.kind, TransitionKind::Slide);
+        assert_eq!(transition.duration_ms, 1200);
+        assert_eq!(transition.easing, "cubic");
+    }
+
+    #[test]
+    fn a_slide_without_a_transition_uses_the_project_default() {
+        let mut engine = ShowEngine::new(fixture()).with_transition_policy(Transition {
+            kind: TransitionKind::None,
+            duration_ms: 0,
+            easing: "linear".to_string(),
+            ..Default::default()
+        });
+        engine.next_slide();
+        let transition = engine.state().transition.expect("a transition");
+        assert_eq!(transition.kind, TransitionKind::None);
+        assert_eq!(transition.duration_ms, 0);
+    }
+
+    #[test]
+    fn clearing_uses_the_default_not_the_slides_transition() {
+        // A slide transition describes arriving at that slide; blanking is not
+        // arriving anywhere, so the project default applies.
+        let mut project = fixture();
+        project.shows[0].groups[0].slides[0].transition = Some(Transition {
+            kind: TransitionKind::Spin,
+            duration_ms: 900,
+            easing: "back".to_string(),
+            ..Default::default()
+        });
+
+        let mut engine = ShowEngine::new(project);
+        engine.toggle_clear();
+        let transition = engine.state().transition.expect("a transition");
+        assert_eq!(transition.kind, TransitionKind::Fade);
+        assert_eq!(transition.duration_ms, 500);
     }
 
     #[test]
