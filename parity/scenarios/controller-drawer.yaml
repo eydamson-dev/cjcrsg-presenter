@@ -38,7 +38,7 @@
 #   maps them to the UI.
 # - `viewports` are the WebView **content box** (`innerWidth` × `innerHeight`),
 #   not the outer window. `1280x800` therefore means `innerHeight == 800` and
-#   `max_height == 760`.
+#   `max_height == 744` (B1: innerHeight − 56 px top bar).
 # - Tabs are named by id in actions (`action: select_tab` with `tab: media`).
 #   The visible labels, which include the digit, are asserted separately.
 # - `expect` is the normalised state after the preceding step. `drawer`,
@@ -89,7 +89,8 @@
 #
 # ---------------------------------------------------------------------------
 
-# Geometry: collapsed 40, default open 300, maximum innerHeight - 40.
+# Geometry: collapsed 40, default open 300, maximum innerHeight − top-bar
+# height (56 px, so 744 at an 800 px innerHeight).
 #
 # The initial open/collapsed state after `start_session: fresh` is not asserted:
 # the contract states the default *open* height, not whether the drawer starts
@@ -119,7 +120,7 @@ steps:
         height: 300          # B1 default open height
         strip_height: 40     # B1
         content_height: 260  # B1: height - 40
-        max_height: 760      # B1: innerHeight 800 - 40
+        max_height: 744      # B1: innerHeight 800 - top bar 56
         spans_window_width: true    # scope; CAPABILITY: layout measurement
         below_main_columns: true    # scope; CAPABILITY: layout measurement
         active_tab: shows
@@ -161,16 +162,16 @@ steps:
     grab: strip_background   # B1: the whole strip is the drag surface
   - expect:
       drawer:
-        height: 760            # clamped to innerHeight - 40
-        max_height: 760
+        height: 744            # B1: clamped to the maximum
+        max_height: 744
         remembered_height: 300 # B4: persisted after release, not during
   - action: release_drag
   - expect:
       drawer:
         open: true
-        height: 760
-        content_height: 720
-        remembered_height: 760
+        height: 744
+        content_height: 704    # B1: height - 40
+        remembered_height: 744
   - action: drag_hold
     to_height: 0
     grab: top_edge_bar        # B1: the 4 px bar is a grab point too
@@ -536,17 +537,17 @@ steps:
   - expect:
       drawer: { open: false, height: 40, remembered_height: 80 }
   - action: select_tab
-    tab: media                 # B3: a remembered height below 300 is used
+    tab: media                 # B5: a remembered height below 300 reopens at 300
   - expect:
       drawer:
         open: true
-        height: 80
-        remembered_height: 80
+        height: 300
+        remembered_height: 80  # B5: the stored value is not rewritten by reopen
         active_tab: media
   - action: select_tab
     tab: shows                 # back to Shows for the next drag
   - expect:
-      drawer: { open: true, height: 80, active_tab: shows }
+      drawer: { open: true, height: 300, active_tab: shows }
   - action: drag_drawer
     to_height: 81
   - expect:
@@ -559,15 +560,15 @@ steps:
   - expect:
       drawer:
         open: true
-        height: 760              # upper clamp at innerHeight 800 - 40
-        max_height: 760
+        height: 744              # B1 maximum: innerHeight 800 - 56
+        max_height: 744
         remembered_height: 81    # still not persisted during the drag
   - action: release_drag
   - expect:
       drawer:
         open: true
-        height: 760
-        remembered_height: 760
+        height: 744
+        remembered_height: 744
 ```
 
 # Remembered height across a restart. The drawer's current height immediately
@@ -616,10 +617,10 @@ steps:
 ```
 
 # Hand-edited session value above the 40..=1200 range. The tall viewport makes
-# innerHeight - 40 (1360) larger than 1200, so the rendered height proves the
-# 1200 clamp rather than the window clamp.
+# the B1 maximum, innerHeight − 56 (1344), larger than 1200, so the rendered
+# height proves the 1200 clamp rather than the window clamp.
 #
-# CAPABILITY: this needs a WebView content height above 1240 px. A 1080p desktop
+# CAPABILITY: this needs a WebView content height above 1256 px. A 1080p desktop
 # cannot show it; use a virtual display, a DOM adapter, or an oversized window.
 # If none is available, record the measured max and do not claim the 1200 clamp.
 
@@ -647,14 +648,15 @@ steps:
       drawer:
         open: true
         height: 1200           # B5: clamped to 40..=1200
-        max_height: 1360       # innerHeight 1400 - 40, so not the window clamp
+        max_height: 1344       # B1: innerHeight 1400 - 56, not the window clamp
         # remembered_height is not asserted: the contract does not say whether
         # the clamped value is written back to the session or only used.
 ```
 
 # Hand-edited session value above the range, at a viewport where the window
-# clamp is the tighter one: 1201 -> 1200 by the session clamp, then 760 by
-# innerHeight - 40. This is the "then again when rendered" half of B5.
+# clamp is the tighter one: 1201 -> 1200 by the session clamp, then 744 by the
+# B1 maximum (innerHeight − 56). This is the "then again when rendered" half of
+# B5.
 
 ```yaml
 id: controller-drawer-session-clamp-max
@@ -679,16 +681,15 @@ steps:
   - expect:
       drawer:
         open: true
-        height: 760             # innerHeight 800 - 40 wins over the 1200 clamp
-        max_height: 760
+        height: 744             # B1 maximum wins over the 1200 clamp
+        max_height: 744
 ```
 
-# Hand-edited session value below the range.
-#
-# Height 40 is the collapsed height, so `open` is not asserted here: B1 defines
-# collapsed as 40 and B5 allows a remembered value of 40, and the contract does
-# not say which state wins when they coincide. Only the rendered height is a
-# well-defined check.
+# Hand-edited session value below the range. 39 is clamped up to 40 at read,
+# then B5's sub-300 rule reopens the drawer at 300 px, so the lower-bound clamp
+# is not visible as a rendered height. remembered_height is not asserted: the
+# contract does not say whether the read-clamped value or the reopened 300 is
+# written back.
 
 ```yaml
 id: controller-drawer-session-clamp-low
@@ -712,8 +713,9 @@ steps:
     tab: shows
   - expect:
       drawer:
-        height: 40             # B5: clamped up to the lower bound
-        content_height: 0
+        open: true
+        height: 300            # B5: a remembered height below 300 reopens at 300
+        content_height: 260    # B1: height - 40
 ```
 
 # Ctrl+1..8 select the tab at that position. All eight are exercised, then a
@@ -1301,12 +1303,12 @@ steps:
   not used. The contract does not say whether 79 is recorded or discarded, so
   the 79 px case asserts the collapsed height only. The next drag (80 px)
   overwrites the remembered value, so nothing downstream depends on it.
-- **B3/B5 remembered height below 300.** The reference reopens at `stored`
-  only when it is >= 300, otherwise at 300 (reader report §1.2). The contract
-  says a tab click opens to "the remembered open height", allows a remembered
-  value from 40, and B4 records an 80 px release. The drag scenario therefore
-  asserts that a remembered 80 opens at 80. If the reference's 300 px floor was
-  intended, the contract needs to say so.
+- **B3/B5 remembered height below 300.** B5 reopens a remembered height below
+  300 at 300 (the reference's `Drawer.svelte:95` rule; reader report §1.2). Two
+  scenarios exercise it: `controller-drawer-drag-resize` records an 80 px
+  release, collapses, and reopens at 300 without rewriting the stored 80;
+  `controller-drawer-session-clamp-low` clamps a hand-edited 39 to 40 at read,
+  then reopens at 300.
 - **B5 hand-edited value write-back.** The contract says the value is clamped
   before use; it does not say whether the clamped 1200 is written back to the
   session. Only the rendered height is asserted.
@@ -1324,9 +1326,9 @@ steps:
 - **B3 active tab after a double-click.** A double click contains two clicks;
   the contract does not say whether the first selects the tab before the drawer
   closes. The double-click scenario avoids asserting the active tab.
-- **B1 open state at exactly 40 px.** B1 calls 40 the collapsed height and B5
-  allows a remembered value of 40; the contract does not say which wins. The
-  low-clamp scenario asserts the height only.
+- **B1 open state at exactly 40 px.** B5 resolves this: a remembered height of
+  40 is below 300, so it reopens at 300. No scenario asserts an open drawer at
+  exactly 40; the low-clamp scenario covers the hand-edited 39 path.
 - **B6 textarea and select.** B6 names `input`, `textarea` and `select`. Only
   the stage-message input exists in this milestone's surface, so only that case
   is exercised. If a textarea or select is added to the controller, extend
