@@ -21,6 +21,34 @@ pub struct Session {
     /// Newest first. `recent[0]` is what "restore on start" opens.
     #[serde(default)]
     pub recent: Vec<RecentProject>,
+    /// Controller column widths in pixels.
+    #[serde(default)]
+    pub layout: LayoutPrefs,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LayoutPrefs {
+    pub left_width: u32,
+    pub right_width: u32,
+}
+
+impl Default for LayoutPrefs {
+    fn default() -> Self {
+        Self {
+            left_width: 280,
+            right_width: 360,
+        }
+    }
+}
+
+impl LayoutPrefs {
+    /// Keep both columns usable, whatever a hand-edited session says.
+    pub fn clamped(left: u32, right: u32) -> Self {
+        Self {
+            left_width: left.clamp(200, 480),
+            right_width: right.clamp(260, 520),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -218,6 +246,25 @@ mod tests {
             "the temporary file is gone after a successful save"
         );
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn column_widths_have_defaults_and_are_clamped() {
+        let prefs = LayoutPrefs::default();
+        assert_eq!((prefs.left_width, prefs.right_width), (280, 360));
+
+        let wide = LayoutPrefs::clamped(9000, 1);
+        assert_eq!((wide.left_width, wide.right_width), (480, 260));
+
+        let narrow = LayoutPrefs::clamped(10, 9000);
+        assert_eq!((narrow.left_width, narrow.right_width), (200, 520));
+    }
+
+    #[test]
+    fn a_session_without_layout_reads_default_widths() {
+        let json = r#"{"recent":[]}"#;
+        let session: Session = serde_json::from_str(json).unwrap();
+        assert_eq!(session.layout, LayoutPrefs::default());
     }
 
     #[test]

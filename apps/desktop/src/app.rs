@@ -99,6 +99,26 @@ pub fn App() -> Element {
         .filter(|(_, open, applied)| *open && *applied != Some(revision))
         .count();
 
+    // Column widths live in the page while dragging and are persisted on
+    // release; the grid reads them from these custom properties.
+    use_hook({
+        let app = app.clone();
+        move || {
+            spawn(async move {
+                let mut eval = document::eval(RESIZE_SCRIPT);
+                while let Ok(raw) = eval.recv::<String>().await {
+                    let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) else {
+                        continue;
+                    };
+                    let left = value["left"].as_u64().unwrap_or(280) as u32;
+                    let right = value["right"].as_u64().unwrap_or(360) as u32;
+                    app.set_column_widths(left, right);
+                }
+            });
+        }
+    });
+
+    let (left_width, right_width) = app.column_widths();
     let project_name = app.project_name();
     let slide = app.slide();
     let outline = app.outline();
@@ -179,7 +199,9 @@ pub fn App() -> Element {
                     total,
                 }
             } else {
-                div { class: "workspace",
+                div {
+                    class: "workspace",
+                    style: "--left-w: {left_width}px; --right-w: {right_width}px;",
 
                     aside { class: "column left",
                         OutlinePanel {
@@ -221,6 +243,8 @@ pub fn App() -> Element {
                         }
                     }
 
+                    div { class: "resize-handle", "data-side": "left" }
+
                     main { class: "column center",
                         PreviewPane {
                             slide: slide,
@@ -230,6 +254,8 @@ pub fn App() -> Element {
                         }
                         MediaPanel { items: media }
                     }
+
+                    div { class: "resize-handle", "data-side": "right" }
 
                     aside { class: "column right",
                         section { class: "panel",
@@ -399,6 +425,54 @@ pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: Outpu
         }
     });
 }
+
+/// Drag the two handles between the columns and report the widths to Rust.
+///
+/// Delegated from the document and guarded, because the handles are re-rendered
+/// when focus mode is toggled and a per-element listener would be lost.
+const RESIZE_SCRIPT: &str = r#"
+    (() => {
+        if (window.__cjcpResize) return;
+        window.__cjcpResize = true;
+        const px = (workspace, name, fallback) => {
+            const value = parseInt(getComputedStyle(workspace).getPropertyValue(name));
+            return Number.isFinite(value) ? value : fallback;
+        };
+        document.addEventListener('pointerdown', (event) => {
+            const handle = event.target.closest && event.target.closest('.resize-handle');
+            if (!handle) return;
+            const workspace = document.querySelector('.workspace');
+            if (!workspace) return;
+            event.preventDefault();
+
+            const startX = event.clientX;
+            const startLeft = px(workspace, '--left-w', 280);
+            const startRight = px(workspace, '--right-w', 360);
+            const side = handle.dataset.side;
+
+            const move = (ev) => {
+                const dx = ev.clientX - startX;
+                if (side === 'left') {
+                    const width = Math.min(480, Math.max(200, startLeft + dx));
+                    workspace.style.setProperty('--left-w', width + 'px');
+                } else {
+                    const width = Math.min(520, Math.max(260, startRight - dx));
+                    workspace.style.setProperty('--right-w', width + 'px');
+                }
+            };
+            const up = () => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                dioxus.send(JSON.stringify({
+                    left: px(workspace, '--left-w', 280),
+                    right: px(workspace, '--right-w', 360),
+                }));
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+        });
+    })();
+"#;
 
 /// FreeShow's controller bindings, delivered from the page so they work without
 /// the window having focus ownership. The script is a separate file so the

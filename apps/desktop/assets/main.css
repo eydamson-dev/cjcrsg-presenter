@@ -3,13 +3,17 @@
    which is one of the properties Experiment 1 verifies. */
 
 :root {
+    /* FreeShow's palette, from public/global.css: --primary #242832,
+       --primary-darker #191923, --secondary #f0008c, --accent #90caf9. */
     color-scheme: dark;
-    --bg: #0b0d10;
-    --panel: #14181d;
-    --line: #232a32;
-    --text: #e6e8ea;
-    --muted: #8b949e;
-    --accent: #4c8dff;
+    --bg: #191923;
+    --panel: #242832;
+    --panel-2: #2f3542;
+    --line: rgb(255 255 255 / 0.08);
+    --text: #f0f0ff;
+    --muted: #9298ab;
+    --accent: #f0008c;
+    --info: #90caf9;
     --ok: #3fb950;
     --warn: #d29922;
 }
@@ -27,8 +31,27 @@ body,
 body {
     background: var(--bg);
     color: var(--text);
-    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans,
+        Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     font-size: 14px;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgb(255 255 255 / 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.3);
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(255 255 255 / 0.5);
 }
 
 /* ---------- controller ---------- */
@@ -46,15 +69,17 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    min-height: 44px;
+    padding: 6px 14px;
+    background: #12121c;
+    box-shadow: 0 0 4px rgb(0 0 0 / 0.4);
 }
 
 .topbar .brand h1 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: -0.01em;
+    color: var(--accent);
 }
 
 .topbar .brand .subtitle {
@@ -95,10 +120,21 @@ body {
 .workspace {
     flex: 1 1 auto;
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr) 360px;
-    gap: 12px;
+    grid-template-columns: var(--left-w, 280px) 6px minmax(0, 1fr) 6px var(--right-w, 360px);
+    gap: 6px;
     padding: 12px;
     min-height: 0;
+}
+
+.resize-handle {
+    width: 6px;
+    cursor: col-resize;
+    border-radius: 3px;
+    background: transparent;
+}
+
+.resize-handle:hover {
+    background: var(--line);
 }
 
 .column {
@@ -168,17 +204,17 @@ header h1 {
 .panel {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 18px 20px;
+    border-radius: 6px;
+    padding: 16px 18px;
     margin-bottom: 18px;
 }
 
 .panel h2 {
     margin: 0 0 12px;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
+    letter-spacing: 0.08em;
+    color: var(--accent);
 }
 
 .readout {
@@ -212,16 +248,16 @@ header h1 {
 .btn {
     appearance: none;
     border: 1px solid var(--line);
-    background: #1b222a;
+    background: var(--panel-2);
     color: var(--text);
-    border-radius: 7px;
+    border-radius: 6px;
     padding: 9px 16px;
     font-size: 14px;
     cursor: pointer;
 }
 
 .btn:hover {
-    background: #232c36;
+    background: #3a4150;
 }
 
 .btn.primary {

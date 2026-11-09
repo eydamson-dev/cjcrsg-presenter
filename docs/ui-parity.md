@@ -1,9 +1,9 @@
 # Controller UI parity
 
-Status: **started.** Milestones 1 (frame) and 2 (live preview) are done and
-screenshotted; styling, resizable columns and the comparison remain. Recorded as
-DEV-013. The outputs already target FreeShow's look; the controller is catching
-up.
+Status: **mostly done.** Frame, live preview, FreeShow palette and resizable
+columns are in and screenshotted; focus-in-centre and a side-by-side comparison
+remain. Recorded as DEV-013. The outputs already targeted FreeShow's look; the
+controller has caught up structurally.
 
 ## The difference, plainly
 
@@ -62,11 +62,14 @@ Columns should be resizable, with widths remembered in the session store
    target columns; screenshot at the controller's size.~~ Done.
 2. ~~**Live preview.** Render `state.slide` in the centre, scaled, updated by the
    same 250 ms tick.~~ Done; focus still replaces the whole window.
-3. **Styling.** Extract FreeShow's palette, spacing and type scale from its
-   Svelte components and match them. This is GPL-3.0 code and so are we; record
-   the attribution in `docs/provenance.md`.
-4. **Resizable columns.** Drag handles, minimum widths, persisted in the
-   session.
+3. ~~**Styling.** Extract FreeShow's palette, spacing and type scale from
+   `public/global.css` and match them.~~ Done: `--primary #242832`,
+   `--primary-darker #191923`, `--secondary #f0008c`, `--accent #90caf9`, the
+   system font stack, 6 px radii, 40 px top bar.
+4. ~~**Resizable columns.** Drag handles, minimum widths, persisted in the
+   session.~~ Done: two 6 px handles, widths clamped to 200–480 / 260–520 and
+   saved in the session. The drag itself was not automated; clamping and
+   session round-trip are tested.
 5. **Comparison evidence.** Side-by-side controller screenshots, ours and
    FreeShow's, in `EVIDENCE.md`.
 

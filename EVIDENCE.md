@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 161 -->
+**As of `main`, 2026-11-09.** <!-- tests: 163 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -470,7 +470,7 @@ compiling there.
 The controller now has FreeShow's shape — top bar, three columns, live preview —
 captured from the running window (X11 backend, window id), not a mock-up:
 
-![Controller shell](parity/reports/evidence/ui-shell/controller-shell.png)
+![Controller shell](parity/reports/evidence/ui-shell/controller-shell-styled.png)
 
 Report: `parity/reports/ui-shell-2026-11-09.md`.
 

@@ -113,6 +113,25 @@ impl AppState {
         Ok(summary)
     }
 
+    pub fn column_widths(&self) -> (u32, u32) {
+        let session = self.session.lock().expect("session lock");
+        (session.layout.left_width, session.layout.right_width)
+    }
+
+    /// Persist the controller's column widths. Clamped here as well as in the
+    /// page, because a saved file can be edited.
+    pub fn set_column_widths(&self, left: u32, right: u32) {
+        let prefs = presenter_core::LayoutPrefs::clamped(left, right);
+        let mut session = self.session.lock().expect("session lock");
+        if session.layout == prefs {
+            return;
+        }
+        session.layout = prefs;
+        if let Err(error) = self.store.save(&session) {
+            tracing::warn!(%error, "could not save column widths");
+        }
+    }
+
     pub fn media(&self) -> Vec<crate::media_panel::MediaItem> {
         self.media.lock().expect("media lock").clone()
     }

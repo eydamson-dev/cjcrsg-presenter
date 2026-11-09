@@ -30,5 +30,5 @@ pub use render::{
     RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageLayout, StageTimer,
     TransitionState,
 };
-pub use session::{RecentProject, Session, SessionStore, MAX_RECENT};
+pub use session::{LayoutPrefs, RecentProject, Session, SessionStore, MAX_RECENT};
 pub use shared::SharedEngine;
