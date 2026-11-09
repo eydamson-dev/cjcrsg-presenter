@@ -58,4 +58,6 @@ The agent files exist under `.opencode/agents/`, and OpenCode lists all five.
 The first full run (controller drawer, 2026-11-09) used reader →
 scenario-author → implementer (worktree `dev-013-drawer`) → verifier (separate
 worktree at the candidate SHA), with one failed verdict sent back and a second
-pass that passed. The orchestrator accepted on `b969f82`.
+pass that passed. The orchestrator accepted on `b969f82`. The second run (left
+project browser) passed verification first time on `9be245f`; its only upstream
+correction was a scenario that asserted app state without launching.

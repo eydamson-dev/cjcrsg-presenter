@@ -1,10 +1,11 @@
 # Controller UI parity
 
-Status: **shell and drawer done.** Frame, live preview, FreeShow palette,
-resizable columns, focus-in-centre, the eight-tab bottom drawer with its clock,
-and side-by-side comparisons against FreeShow are in. What remains is the left
-project browser and the slide editor, recorded as DEV-013; the text-only tabs
-are DEV-014.
+Status: **shell, drawer and project browser done.** Frame, live preview,
+FreeShow palette, resizable columns, focus-in-centre, the eight-tab bottom
+drawer with its clock, the left Projects column, and side-by-side comparisons
+against FreeShow are in. What remains for DEV-013 is a project catalogue behind
+the browser (folders, create, rename, import) and the slide editor; the
+text-only tabs are DEV-014.
 
 ## The difference, plainly
 
@@ -13,14 +14,15 @@ FreeShow's controller is a **top bar with three resizable columns**:
 | Region | FreeShow (`src/frontend/MainLayout.svelte`) | Ours today |
 | --- | --- | --- |
 | Top | `Top` — project, profiles, add, settings | title, transport, sections, Focus |
-| Left | Projects, navigation, stage layouts, draw tabs or settings — switches with the page | Project outline and recent projects |
+| Left | Projects, navigation, stage layouts, draw tabs or settings — switches with the page | Projects: open project plus recent, newest first |
 | Centre | the show: slide grid, editor, or focus mode | live preview of the live slide, or focus mode |
 | Right | **Preview** plus page-specific tools | Stage controls and the output registry |
 | Bottom | drawer / timeline when enabled | eight-tab drawer, no timeline |
 
-The three columns and the drawer now match. What differs is which surfaces
-exist: FreeShow's left column browses projects and its centre edits a slide
-grid; ours lists the open project's shows and previews the live slide.
+The three columns, the drawer and the left column's job now match. What differs
+is underneath: FreeShow's browser is a folder tree over a project catalogue, and
+its centre edits a slide grid; ours lists the session's projects and previews
+the live slide.
 
 The window also said "Experiment 1 · multi-window state recovery" until
 2026-11-09; it now says "Controller".
@@ -39,21 +41,24 @@ media layers depends on this layout; moving it is a UI change only.
 │ CJCRSG Presenter · project   [◀][▶][First][Clear]  [Section]  │
 │                                                   [Focus]     │
 ├───────────────┬───────────────────────────────┬───────────────┤
-│ Project       │ Live preview                  │ Stage         │
-│  Section      │  (SlideView, scaled)          │  message      │
-│  ▸ Show       │                               │  countdown    │
-│  ▸ Show       │                               │  layout       │
-│ Recent        │                               │ Outputs       │
+│ Projects      │ Live preview                  │ Stage         │
+│  ▸ Current    │  (SlideView, scaled)          │  message      │
+│  ▸ Recent     │                               │  countdown    │
+│  ▸ Recent     │                               │  layout       │
+│               │                               │ Outputs       │
 ├───────────────┴───────────────────────────────┴───────────────┤
 │ [Shows][Media][Audio][Overlays][Templates][Scripture]…  clock │
 └───────────────────────────────────────────────────────────────┘
 ```
 
 - **Top bar** carries the commands currently in the readout panel.
-- **Left** is the project outline, with recent projects beneath it.
-- **Centre** is a live preview of the published `RenderState.slide`, the media
-  list, and (in focus mode) the focus list. The preview renders the same
-  `SlideView` the outputs use — it is a consumer of state, never a decider.
+- **Left** is Projects: the open project first, then recent projects newest
+  first, with a missing-file flag and Forget.
+- **Centre** is a live preview of the published `RenderState.slide`, and (in
+  focus mode) the focus list. The preview renders the same `SlideView` the
+  outputs use — it is a consumer of state, never a decider.
+- **Bottom** is the drawer: the project outline is the Shows tab, media and
+  audio have their own tabs, and the clock sits on the right.
 - **Right** is stage control, output registry and revisions.
 
 Columns should be resizable, with widths remembered in the session store
@@ -83,6 +88,18 @@ Columns should be resizable, with widths remembered in the session store
    date. Contract `docs/contracts/ui-drawer.md`, scenarios
    `parity/scenarios/controller-drawer.yaml`, evidence
    `parity/reports/ui-drawer-2026-11-09.md`, verifier pass on `b969f82`.
+7. ~~**Left project browser.**~~ Done: the left column is Projects — the open
+   project marked, recent projects newest first, missing files flagged, Forget,
+   Make portable in its foot, and the outline moved into the drawer's Shows
+   tab. Contract `docs/contracts/ui-project-browser.md`, scenarios
+   `parity/scenarios/controller-project-browser.yaml`, evidence
+   `parity/reports/ui-project-browser-2026-11-09.md`, verifier pass on
+   `9be245f`.
+
+What is still missing under DEV-013 is a **project catalogue**: FreeShow's
+folder tree, New/rename/duplicate/delete/archive and import all need somewhere
+to write projects, which this build does not have. The slide editor remains a
+different phase.
 
 ## Evidence method
 

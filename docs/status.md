@@ -36,7 +36,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 - Migrate a FreeShow data folder: `import-store` writes one `.cjcp` per project
   and reports the ones it could not import.
 - Remember work: recent projects in a JSON session file; the last project opens
-  on start, and the controller has an Open button per entry.
+  on start, and the left column is a project browser with the open project
+  marked, recent projects newest first, a missing-file flag and Forget.
 - Drive it from the keyboard with FreeShow's bindings (`Space`/arrows/`PageUp`/
   `PageDown`, `Esc` to blank); any navigation restores a blanked output.
 - Navigate: next, previous, first, last, next/previous **group**, goto by index,
@@ -64,7 +65,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. Linux: per-user tarball with desktop entry, icon and install script, built in CI. DPI/monitors/audio, Windows uninstall and AppImage/Flatpak unverified |
-| 7 — controller UI parity | **shell and drawer done.** Top bar, three columns, live preview, FreeShow palette, resizable persisted columns, focus-in-centre, the eight-tab bottom drawer with clock, and side-by-side comparisons against FreeShow 1.6.8. Remaining: the left project browser and the slide editor (DEV-013) |
+| 7 — controller UI parity | **shell, drawer and project browser done.** Top bar, three columns, live preview, FreeShow palette, resizable persisted columns, focus-in-centre, the eight-tab bottom drawer with clock, the left project browser, and side-by-side comparisons against FreeShow 1.6.8. Remaining: a folder tree and project store behind the browser, and the slide editor (DEV-013) |
 
 ## Measured, with evidence
 
@@ -105,6 +106,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Stage message + countdown: 120 s set, pause holds 90 s, remote reports 299 994 ms running; split and live-only layouts | `parity/reports/stage-message-timer-2026-11-09.md` |
 | Output kinds: preview renders the next slide, confidence the live slide + clock | `parity/reports/output-kinds-2026-11-09.md` |
 | Controller drawer: 8 tabs, 40/300/744 px geometry, 79/80 px drag threshold, remembered height across restart, 17 images and 9 session files | `parity/reports/ui-drawer-2026-11-09.md` |
+| Project browser: open project first, recents newest first, missing-file flag, Forget, and the outline in the Shows tab | `parity/reports/ui-project-browser-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -136,14 +138,16 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 crates/core    105
 crates/compat   41
 crates/remote   14
-apps/desktop    17
+apps/desktop    24
 ```
 
 ## Next, in order
 
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
-   tab strip and clock are done. The left project browser and the slide editor
-   are not; the editor stays out until a later phase (`docs/ui-parity.md`).
+   tab strip, clock and project browser are done. Behind the browser there is
+   still no project catalogue (folders, create, rename, import), and the left
+   column cannot show more than the session's recent list. The slide editor
+   stays out until a later phase (`docs/ui-parity.md`).
 2. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
    per-section actions (skip, loop, notes) are still not executed, and the view
    has no drag, auto-scroll or keyboard traversal.
@@ -157,15 +161,19 @@ apps/desktop    17
 ## Controller UI
 
 The **outputs** target FreeShow's look (renderer parity 0.35 % differing
-pixels). The **controller** now has FreeShow's shell and its bottom drawer: top
-bar, three columns, live preview, palette, resizable columns, focus-in-centre,
-eight drawer tabs and the clock, compared side-by-side with FreeShow 1.6.8 in
-`parity/reports/ui-shell-2026-11-09.md` and `parity/reports/ui-drawer-2026-11-09.md`.
+pixels). The **controller** now has FreeShow's shell, bottom drawer and left
+project browser: top bar, three columns, live preview, palette, resizable
+columns, focus-in-centre, eight drawer tabs, the clock, and a Projects column
+with the open project marked, recent projects and Forget. Compared side-by-side
+with FreeShow 1.6.8 in `parity/reports/ui-shell-2026-11-09.md`,
+`parity/reports/ui-drawer-2026-11-09.md` and
+`parity/reports/ui-project-browser-2026-11-09.md`.
 
-What still differs is information architecture, not layout: FreeShow has a left
-project browser and an editable slide grid; we have the open project's shows and
-a live preview. The five drawer tabs with no library behind them say so
-explicitly (DEV-014). DEV-013 and `docs/ui-parity.md` record the boundary.
+What still differs is information architecture: FreeShow's left column is a
+folder tree over a project catalogue with create, rename, delete and import; ours
+is the session's recent list. The centre is a live preview, not an editable
+slide grid. The five drawer tabs with no library behind them say so explicitly
+(DEV-014). DEV-013 and `docs/ui-parity.md` record the boundary.
 
 ## Known gaps and hazards
 
@@ -183,6 +191,9 @@ explicitly (DEV-014). DEV-013 and `docs/ui-parity.md` record the boundary.
 - **Five drawer tabs are empty by design.** Overlays, Templates, Scripture,
   Calendar and Functions each say there is no library behind them; only Shows,
   Media and Audio have content (DEV-014).
+- **The project browser only knows the session.** It lists the open project and
+  the ten most recent; there are no folders, no create/rename/delete, and no
+  file picker or import dialog (DEV-013).
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not

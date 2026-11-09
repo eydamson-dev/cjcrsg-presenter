@@ -22,6 +22,7 @@ reports/      evidence: preflight, calibration, experiment runs
 | Static Chromium captures are bit-identical across runs | `reports/calibration-2026-11-09.md` |
 | Four-window state recovery works in our app | `reports/experiment-1-2026-11-09.md` |
 | FreeShow's controller drawer is read, contracted, implemented and verified | `reports/reader/controller-layout-2026-11-09.md`, `../docs/contracts/ui-drawer.md`, `reports/ui-drawer-2026-11-09.md` |
+| The left project browser is contracted, implemented and verified | `../docs/contracts/ui-project-browser.md`, `reports/ui-project-browser-2026-11-09.md` |
 
 ## Running the reference
 

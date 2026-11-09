@@ -136,3 +136,23 @@ Out, with reasons:
 - **No provider icons** — no icon set (DEV-014) and no provider model.
 - **Forget instead of a context menu** — the simplest reversible control that
   fits a list of ten.
+
+## Acceptance
+
+Accepted by the orchestrator on 2026-11-09.
+
+- Candidate: `9be245f4938ca58d7cc2098043c924f1d095a82c`
+  (`dev-013-project-browser`, merged to `main`), `scripts/check.sh` exit 0,
+  184 tests.
+- Verifier: pass, no contract defects. Independent checks included opening a
+  forgotten project (it returns), Forget on the open row (no-op), missing
+  detection for a permission-denied file, a directory and an absent path, the
+  shipped CSS hit targets, and the Experiment-1 smoke on the demo (7/7,
+  191 ms).
+  Report: `parity/reports/verifier/ui-project-browser-2026-11-09.md`.
+- Evidence index: `EVIDENCE.md` § Controller project browser.
+- Recorded gaps at acceptance: no controller adapter, so the 12 scenarios are
+  manual; the scenario fixtures still do not exist; two evidence states
+  (failed open, `copied 1, missing 1`) exist only in the implementer's scratch
+  captures, not in the committed set. The evidence manifest does not name the
+  candidate commit; this record does.
