@@ -225,11 +225,21 @@ attempt put the VM's storage there (`/tmp/opencode/win-storage`). The Windows IS
 and disk image consumed **15 GB of RAM** as shared memory; with the desktop's
 other services the machine had 1.5 GB available and swap fully used.
 
-The run was stopped before Windows finished installing. What it proved: the
-container boots Windows 11 unattended and exposes the console at `:8006`. What it
-did **not** prove: the installer, the app, DPI, or uninstall. Put `-v
-<storage>` on a real disk (for example `~/var/windows-vm`) and re-run before
-claiming any of those.
+The first run proved the installer and the app **do not work out of the box**:
+the app installed, created its shortcut and HKCU uninstall key, started — and
+died with `VCRUNTIME140.dll was not found`. The MSVC build linked the Visual C++
+runtime dynamically. `.cargo/config.toml` now sets `+crt-static` for the Windows
+target; a clean Windows needs no redistributable.
+
+**Re-running the OEM script is not possible.** `/oem` is consumed during setup:
+`C:\OEM` is removed afterwards and `install.bat` does not run again on restart.
+To test a new build, either rebuild the VM (delete the storage; the ISO is
+deleted too, so it re-downloads) or transfer the installer over the network.
+Console automation (noVNC via Playwright) can screenshot and type, but the Run
+dialog keeps a sticky "administrative privileges" flag and loses focus — for an
+unattended install test, the OEM script is the reliable path.
+
+Put VM storage on a real disk (for example `~/var/windows-vm`), never `/tmp`.
 
 Good enough for: MSVC builds, WebView2 install and launch, native menus, tray,
 basic fullscreen, filesystem behaviour, installer testing, font rendering
