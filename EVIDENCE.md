@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 143 -->
+**As of `main`, 2026-11-09.** <!-- tests: 144 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -332,6 +332,12 @@ failed   1
 ```
 
 Report: `parity/reports/store-import-2026-11-09.md`.
+
+**Elastic and bounce are sampled, not guessed.** 101-point CSS `linear()` from
+Svelte's exact functions: 1.25 % worst error for bounce, 0.71 % for elastic.
+Chromium samples the curve to within 0.011; WebKitGTK accepts `linear()`.
+
+Report: `parity/reports/easing-2026-11-09.md`.
 
 **Recent projects are remembered.** Two launches recorded two projects, newest
 first; launching with no arguments restored the newest. The panel, rendered by

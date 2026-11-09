@@ -64,17 +64,21 @@ pub const EASINGS: [&str; 7] = [
 /// Resolve an authored easing name to a CSS timing function.
 ///
 /// FreeShow's curves are Svelte's *inOut* functions. `linear`, `sine`, `cubic`,
-/// `circ` and `back` map to exact cubic-béziers. `elastic` and `bounce` cannot
-/// be expressed by one cubic-bézier; they are approximated by an overshooting
-/// curve, recorded as DEV-011.
+/// `circ` and `back` map to exact cubic-béziers. `elastic` and `bounce` cannot be
+/// expressed by one cubic-bézier, so they are sampled into CSS `linear()` lists
+/// by `parity/tools/generate_easing.py` (101 points; worst error 0.7 % and 1.3 %
+/// against the exact functions). The strings below are that tool's output.
+const ELASTIC_CSS: &str = "linear(0, 0.0002, 0.0005, 0.0007, 0.0008, 0.0009, 0.0007, 0.0004, -0.0002, -0.0009, -0.0016, -0.0022, -0.0025, -0.0024, -0.0018, -0.0006, 0.0011, 0.0032, 0.0052, 0.0068, 0.0074, 0.0067, 0.0044, 0.0004, -0.005, -0.011, -0.0167, -0.0206, -0.0214, -0.018, -0.0097, 0.0034, 0.0199, 0.0374, 0.0527, 0.0617, 0.0606, 0.0464, 0.0178, -0.0237, -0.0735, -0.1236, -0.1636, -0.1819, -0.1677, -0.1135, -0.018, 0.1117, 0.2594, 0.3995, 0.5, 0.6005, 0.7406, 0.8883, 1.018, 1.1135, 1.1677, 1.1819, 1.1636, 1.1236, 1.0735, 1.0237, 0.9822, 0.9536, 0.9394, 0.9383, 0.9473, 0.9626, 0.9801, 0.9966, 1.0097, 1.018, 1.0214, 1.0206, 1.0167, 1.011, 1.005, 0.9996, 0.9956, 0.9933, 0.9926, 0.9932, 0.9948, 0.9968, 0.9989, 1.0006, 1.0018, 1.0024, 1.0025, 1.0022, 1.0016, 1.0009, 1.0002, 0.9996, 0.9993, 0.9991, 0.9992, 0.9993, 0.9995, 0.9998, 1)";
+const BOUNCE_CSS: &str = "linear(0, 0.0086, 0.013, 0.013, 0.0086, 0, 0.0184, 0.032, 0.0408, 0.0448, 0.0439, 0.0382, 0.0276, 0.0123, 0.0118, 0.0416, 0.0679, 0.0905, 0.1094, 0.1248, 0.1365, 0.1446, 0.149, 0.1499, 0.1471, 0.1406, 0.1306, 0.1169, 0.0995, 0.0786, 0.054, 0.0258, 0.01, 0.0629, 0.1128, 0.1597, 0.2035, 0.2444, 0.2822, 0.317, 0.3488, 0.3775, 0.4032, 0.4259, 0.4456, 0.4622, 0.4758, 0.4864, 0.494, 0.4985, 0.5, 0.5015, 0.506, 0.5136, 0.5242, 0.5378, 0.5545, 0.5741, 0.5968, 0.6225, 0.6512, 0.683, 0.7178, 0.7556, 0.7965, 0.8403, 0.8872, 0.9371, 0.9901, 0.9742, 0.946, 0.9214, 0.9005, 0.8831, 0.8694, 0.8594, 0.8529, 0.8501, 0.851, 0.8554, 0.8635, 0.8752, 0.8906, 0.9095, 0.9321, 0.9584, 0.9882, 0.9877, 0.9724, 0.9618, 0.9561, 0.9552, 0.9592, 0.968, 0.9816, 1, 0.9914, 0.987, 0.987, 0.9914, 1)";
+
 pub fn easing_css(name: &str) -> &'static str {
     match name {
         "linear" => "linear",
         "back" => "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
         "cubic" => "cubic-bezier(0.65, 0, 0.35, 1)",
         "circ" => "cubic-bezier(0.85, 0, 0.15, 1)",
-        "elastic" => "cubic-bezier(0.68, -0.6, 0.32, 1.6)",
-        "bounce" => "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "elastic" => ELASTIC_CSS,
+        "bounce" => BOUNCE_CSS,
         // "sine", and anything authored by a build we do not know.
         _ => "cubic-bezier(0.37, 0, 0.63, 1)",
     }
@@ -389,6 +393,26 @@ mod tests {
             json,
             "a curve we do not model must survive"
         );
+    }
+
+    #[test]
+    fn the_sampled_curves_are_css_linear_lists() {
+        for name in ["elastic", "bounce"] {
+            let css = easing_css(name);
+            assert!(
+                css.starts_with("linear("),
+                "{name}: {}",
+                &css[..20.min(css.len())]
+            );
+            assert!(css.ends_with(')'));
+            assert_eq!(
+                css.matches(',').count(),
+                100,
+                "{name} should carry 101 sampled points"
+            );
+        }
+        assert_eq!(easing_css("elastic"), ELASTIC_CSS);
+        assert_eq!(easing_css("bounce"), BOUNCE_CSS);
     }
 
     #[test]

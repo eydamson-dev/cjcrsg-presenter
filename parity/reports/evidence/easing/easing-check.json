@@ -1,0 +1,31 @@
+{
+  "browsers": {
+    "chromium": {
+      "bounce": {
+        "supported": true,
+        "at25": 0.141,
+        "at75": 0.859,
+        "expected25": 0.1406,
+        "expected75": 0.8594,
+        "error25": 0,
+        "error75": 0,
+        "pass": true
+      },
+      "elastic": {
+        "supported": true,
+        "at25": 0,
+        "at75": 1,
+        "expected25": -0.011,
+        "expected75": 1.011,
+        "error25": 0.011,
+        "error75": 0.011,
+        "pass": true
+      }
+    },
+    "webkit": {
+      "available": false,
+      "reason": "Error: browserType.launch: "
+    }
+  },
+  "passed": true
+}

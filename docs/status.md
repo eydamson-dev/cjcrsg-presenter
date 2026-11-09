@@ -81,6 +81,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
 | Slide direction: imported bottom_top moves down, top_bottom up, default left | `parity/reports/transition-direction-2026-11-09.md` |
+| elastic/bounce sampled to 101-point `linear()`; max error 1.25 % / 0.71 %, accepted by Chromium and WebKitGTK | `parity/reports/easing-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
@@ -97,7 +98,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — four entries, each with an impact and a way to close it.
+`docs/deviations.md` — three entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -114,7 +115,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     95
+crates/core     96
 crates/compat   33
 crates/remote   12
 apps/desktop     3

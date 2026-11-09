@@ -30,18 +30,35 @@ def samples(path: Path):
         if not match:
             continue
         report = json.loads(match.group("report"))
-        if not report:
+        # Older probes sent a bare array; newer ones send {linear, videos}.
+        if isinstance(report, list):
+            videos, linear = report, None
+        else:
+            videos, linear = report.get("videos", []), report.get("linear")
+        if not videos:
+            yield (
+                datetime.datetime.fromisoformat(match.group(1)),
+                match.group("output"),
+                None,
+                linear,
+            )
             continue
         yield (
             datetime.datetime.fromisoformat(match.group(1)),
             match.group("output"),
-            report[0],
+            videos[0],
+            linear,
         )
 
 
 def summarise(path: Path) -> dict:
     by_output: dict[str, list] = {}
-    for timestamp, output, video in samples(path):
+    css_linear = None
+    for timestamp, output, video, linear in samples(path):
+        if linear is not None:
+            css_linear = linear
+        if video is None:
+            continue
         by_output.setdefault(output, []).append((timestamp, video))
 
     summary = {}
@@ -65,6 +82,8 @@ def summarise(path: Path) -> dict:
             "final_t": round(last["t"], 2),
         }
 
+    if css_linear is not None:
+        summary["_css_linear_supported"] = css_linear
     summary["_all_four_playing"] = all(
         summary.get(name, {}).get("fps", 0) > 20
         for name in ("Audience", "Stage", "Preview", "Confidence")

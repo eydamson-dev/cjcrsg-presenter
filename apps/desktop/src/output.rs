@@ -79,7 +79,9 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                     r#"
                     (() => {
                         const videos = [...document.querySelectorAll('video')];
-                        dioxus.send(JSON.stringify(videos.map((video) => {
+                        dioxus.send(JSON.stringify({
+                          linear: CSS.supports('animation-timing-function', 'linear(0, 0.5, 1)'),
+                          videos: videos.map((video) => {
                             const quality = video.getVideoPlaybackQuality();
                             return {
                                 href: location.href,
@@ -93,7 +95,8 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                                 paused: video.paused,
                                 seeking: video.seeking,
                             };
-                        })));
+                          }),
+                        }));
                     })();
                     "#,
                 );
