@@ -1,0 +1,8 @@
+state   wed-1 cleared=False
+clear   200
+state   wed-1 cleared=True
+clear   409  (409 = already blank)
+restore 200
+state   wed-1 cleared=False
+next    200  (after clear, navigation restores)
+state   wed-2 cleared=False

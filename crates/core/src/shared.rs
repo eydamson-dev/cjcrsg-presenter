@@ -36,7 +36,7 @@ impl SharedEngine {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
-    fn apply(&self, change: impl FnOnce(&mut ShowEngine) -> bool) -> bool {
+    fn apply_engine(&self, change: impl FnOnce(&mut ShowEngine) -> bool) -> bool {
         let mut engine = self.lock();
         let changed = change(&mut engine);
         if changed {
@@ -46,34 +46,43 @@ impl SharedEngine {
     }
 
     pub fn next_slide(&self) -> bool {
-        self.apply(ShowEngine::next_slide)
+        self.apply_engine(ShowEngine::next_slide)
     }
 
     pub fn previous_slide(&self) -> bool {
-        self.apply(ShowEngine::previous_slide)
+        self.apply_engine(ShowEngine::previous_slide)
     }
 
     pub fn first_slide(&self) -> bool {
-        self.apply(|engine| engine.go_to_index(0))
+        self.apply_engine(|engine| engine.go_to_index(0))
     }
 
     pub fn last_slide(&self) -> bool {
-        self.apply(|engine| {
+        self.apply_engine(|engine| {
             let last = engine.len().saturating_sub(1);
             engine.go_to_index(last)
         })
     }
 
     pub fn next_group(&self) -> bool {
-        self.apply(ShowEngine::next_group)
+        self.apply_engine(ShowEngine::next_group)
     }
 
     pub fn previous_group(&self) -> bool {
-        self.apply(ShowEngine::previous_group)
+        self.apply_engine(ShowEngine::previous_group)
+    }
+
+    /// Apply an operator command; see [`crate::input::Command`].
+    pub fn apply(&self, command: crate::input::Command) -> bool {
+        self.apply_engine(|engine| engine.apply(command))
+    }
+
+    pub fn set_cleared(&self, cleared: bool) -> bool {
+        self.apply_engine(|engine| engine.set_cleared(cleared))
     }
 
     pub fn toggle_clear(&self) -> bool {
-        self.apply(ShowEngine::toggle_clear)
+        self.apply_engine(ShowEngine::toggle_clear)
     }
 
     pub fn is_cleared(&self) -> bool {
@@ -81,7 +90,7 @@ impl SharedEngine {
     }
 
     pub fn go_to_index(&self, index: usize) -> bool {
-        self.apply(|engine| engine.go_to_index(index))
+        self.apply_engine(|engine| engine.go_to_index(index))
     }
 
     pub fn state(&self) -> Arc<RenderState> {
@@ -119,7 +128,7 @@ impl SharedEngine {
     /// outputs showing the old project must be blanked, not left stale.
     pub fn replace_project(&self, project: crate::domain::Project) -> bool {
         let mut loaded = false;
-        self.apply(|engine| {
+        self.apply_engine(|engine| {
             loaded = engine.replace_project(project);
             true
         });

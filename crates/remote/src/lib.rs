@@ -30,6 +30,7 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/first", post(first))
         .route("/api/last", post(last))
         .route("/api/clear", post(clear))
+        .route("/api/restore", post(restore))
         .route("/api/next-group", post(next_group))
         .route("/api/goto", post(goto))
         .route("/api/previous-group", post(previous_group))
@@ -97,8 +98,14 @@ async fn previous_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoRes
     command(engine.previous_group())
 }
 
+/// Blank the output. Idempotent, and navigation restores it.
 async fn clear(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
-    command(engine.toggle_clear())
+    command(engine.set_cleared(true))
+}
+
+/// Show the live slide again without moving.
+async fn restore(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.set_cleared(false))
 }
 
 async fn first(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
@@ -152,6 +159,7 @@ button:active{{background:#22303f}}
   <button onclick="fetch('/api/previous-group',{{method:'POST'}}).then(refresh)">⏮ Group</button>
   <button onclick="fetch('/api/next-group',{{method:'POST'}}).then(refresh)">Group ⏭</button>
   <button onclick="fetch('/api/clear',{{method:'POST'}}).then(refresh)">Clear</button>
+  <button onclick="fetch('/api/restore',{{method:'POST'}}).then(refresh)">Restore</button>
 </div>
 <script>
 async function refresh(){{const r=await fetch('/api/state');const s=await r.json();
@@ -349,9 +357,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn clear_toggles_without_moving() {
+    async fn clear_blanks_and_restore_reveals_without_moving() {
         let shared = engine();
         let app = router(shared.clone());
+
         let response = app
             .clone()
             .oneshot(Request::post("/api/clear").body(Body::empty()).unwrap())
@@ -361,15 +370,52 @@ mod tests {
 
         let snapshot = shared.state();
         assert!(snapshot.slide.is_blank());
-        assert_eq!(snapshot.slide_id, "a");
+        assert_eq!(snapshot.slide_id, "a", "clearing does not move");
+
+        let repeated = app
+            .clone()
+            .oneshot(Request::post("/api/clear").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(
+            repeated.status(),
+            StatusCode::CONFLICT,
+            "clearing twice is a no-op, not an unblank"
+        );
 
         let body = body_text(
-            app.oneshot(Request::get("/api/state").body(Body::empty()).unwrap())
+            app.clone()
+                .oneshot(Request::get("/api/state").body(Body::empty()).unwrap())
                 .await
                 .unwrap(),
         )
         .await;
         assert!(body.contains("\"cleared\":true"), "{body}");
+
+        let restored = app
+            .oneshot(Request::post("/api/restore").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(restored.status(), StatusCode::OK);
+        assert!(!shared.is_cleared());
+        assert_eq!(shared.state().slide_id, "a");
+    }
+
+    #[tokio::test]
+    async fn next_after_clear_restores_the_output() {
+        let shared = engine();
+        let app = router(shared.clone());
+        app.clone()
+            .oneshot(Request::post("/api/clear").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert!(shared.is_cleared());
+
+        app.oneshot(Request::post("/api/next").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert!(!shared.is_cleared(), "navigation reveals the slide");
+        assert_eq!(shared.state().slide_id, "b");
     }
 
     #[tokio::test]

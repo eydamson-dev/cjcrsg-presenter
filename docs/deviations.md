@@ -8,7 +8,6 @@ deviation is closed, delete the entry rather than marking it done.
 
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
-| DEV-001 | The controller UI has no keyboard shortcuts (`Space`, arrows, `PageUp/Down`) | Operators using a keyboard lose speed | Add a key handler on the controller window |
 | DEV-003 | The remote speaks JSON over HTTP, not Socket.IO | Existing FreeShow remote/stage clients cannot connect | Implement the Socket.IO surface, or ship our own clients |
 | DEV-005 | FreeShow's own database is not imported | Migrating a library loses its categories, tags and media metadata | Read FreeShow's store and map it to a project |
 | DEV-006 | No document importers (PDF, PPTX, DOCX, ODP/ODT) | Churches cannot bring existing decks | Phase 3; evaluate LibreOffice sidecar first |

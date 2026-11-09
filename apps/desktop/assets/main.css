@@ -132,6 +132,13 @@ header h1 {
     font-size: 13px;
 }
 
+.keys {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+}
+
 .hint.error {
     color: #ff8a80;
     white-space: pre-wrap;

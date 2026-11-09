@@ -6,6 +6,7 @@
 use tracing::debug;
 
 use crate::domain::{Project, Show, Slide, SlideGroup, Transition};
+use crate::input::Command;
 use crate::render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
 
 /// A slide's address inside the project.
@@ -244,7 +245,25 @@ impl ShowEngine {
             .get(position.slide)
     }
 
+    /// Apply an operator command. Returns whether anything changed.
+    pub fn apply(&mut self, command: Command) -> bool {
+        match command {
+            Command::Next => self.next_slide(),
+            Command::Previous => self.previous_slide(),
+            Command::NextGroup => self.next_group(),
+            Command::PreviousGroup => self.previous_group(),
+            Command::First => self.go_to_index(0),
+            Command::Last => self.go_to_index(self.order.len().saturating_sub(1)),
+            Command::Clear => self.set_cleared(true),
+            Command::Restore => self.set_cleared(false),
+        }
+    }
+
     fn bump(&mut self) {
+        // Navigating reveals the output again. In FreeShow the cleared state is
+        // derived from whether an output has content, so any slide change
+        // restores it; leaving it blank would make Escape a trap.
+        self.cleared = false;
         self.revision += 1;
         // FreeShow resolves the *incoming* slide's transition (slide → style →
         // global). We model the two ends: the slide's own, else the default.
@@ -628,6 +647,47 @@ mod tests {
         assert!(state.slide.is_blank());
         assert_eq!(state.revision, 0);
         assert!(!engine.is_loaded());
+    }
+
+    #[test]
+    fn navigating_after_clear_restores_the_output() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.apply(Command::Clear));
+        assert!(engine.is_cleared());
+        assert!(engine.state().slide.is_blank());
+
+        assert!(engine.apply(Command::Next));
+        assert!(!engine.is_cleared(), "navigation reveals the slide again");
+        assert_eq!(engine.state().slide_id, "a2");
+        assert!(!engine.state().slide.is_blank());
+    }
+
+    #[test]
+    fn clear_blanks_and_restore_reveals_without_moving() {
+        let mut engine = ShowEngine::new(fixture());
+        engine.next_slide();
+
+        assert!(engine.apply(Command::Clear));
+        assert!(engine.is_cleared());
+        assert_eq!(engine.state().slide_id, "a2", "position is kept");
+
+        assert!(!engine.apply(Command::Clear), "clearing twice is a no-op");
+        assert!(engine.apply(Command::Restore));
+        assert!(!engine.is_cleared());
+        assert_eq!(engine.state().slide_id, "a2");
+        assert!(
+            !engine.apply(Command::Restore),
+            "restoring twice is a no-op"
+        );
+    }
+
+    #[test]
+    fn first_and_last_are_reachable_as_commands() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.apply(Command::Last));
+        assert_eq!(engine.state().slide_id, "c2");
+        assert!(engine.apply(Command::First));
+        assert_eq!(engine.state().slide_id, "a1");
     }
 
     #[test]

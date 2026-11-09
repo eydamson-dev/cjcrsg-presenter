@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
-use presenter_core::Revision;
+use presenter_core::{Command, Revision};
 
 use crate::output::{OutputProps, OutputRoot};
 use crate::recent::RecentProjects;
@@ -33,6 +33,23 @@ pub fn App() -> Element {
 
     let window = use_window();
     let app: Rc<AppState> = shared.read().0.clone();
+
+    // Global keyboard shortcuts, with FreeShow's bindings. The listener lives in
+    // the page rather than on a focused element: an operator must not have to
+    // click the window first, and focus can sit on any button.
+    use_hook({
+        let app = app.clone();
+        move || {
+            spawn(async move {
+                let mut keys = document::eval(KEY_SCRIPT);
+                while let Ok(key) = keys.recv::<String>().await {
+                    if let Some(command) = Command::from_key(&key) {
+                        app.apply(command);
+                    }
+                }
+            });
+        }
+    });
 
     // Screenshot and manual-test convenience: open outputs on start.
     // `CJCRSG_DEMO_OPEN=audience|stage|preview|confidence|all`
@@ -129,9 +146,17 @@ pub fn App() -> Element {
                         class: "btn",
                         onclick: {
                             let app = app.clone();
-                            move |_| { app.engine.toggle_clear(); }
+                            move |_| { app.apply(Command::Clear); }
                         },
                         "Clear"
+                    }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.apply(Command::Restore); }
+                        },
+                        "Restore"
                     }
                     button {
                         class: "btn",
@@ -212,6 +237,10 @@ pub fn App() -> Element {
             }
 
             footer {
+                p { class: "keys",
+                    "Space / → / PageDown next · ← / PageUp previous · Esc clear, "
+                    "any navigation restores"
+                }
                 p { "Close any output, advance the show, then reopen it. "
                     "It must return to the live slide, not the slide it left." }
             }
@@ -255,3 +284,8 @@ pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: Outpu
         }
     });
 }
+
+/// FreeShow's controller bindings, delivered from the page so they work without
+/// the window having focus ownership. The script is a separate file so the
+/// browser-level test runs exactly what ships.
+const KEY_SCRIPT: &str = include_str!("../assets/keys.js");

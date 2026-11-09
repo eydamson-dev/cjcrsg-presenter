@@ -30,6 +30,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
   rewrites them to relative paths; `inspect` reports missing and invalid ones.
 - Remember work: recent projects in a JSON session file; the last project opens
   on start, and the controller has an Open button per entry.
+- Drive it from the keyboard with FreeShow's bindings (`Space`/arrows/`PageUp`/
+  `PageDown`, `Esc` to blank); any navigation restores a blanked output.
 - Navigate: next, previous, first, last, next/previous **group**, goto by index,
   clear/blank (which keeps the position).
 - Four independent output windows; the stage shows live + next + operator notes
@@ -46,7 +48,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs, clear, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
+| 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
 | 4 — media engine | not started |
 | 5 — professional AV | not started (needs hardware) |
@@ -63,6 +65,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | FreeShow navigation lives on the controller (5512) | `parity/reports/preflight-2026-11-09.md` |
 | Import, formats, media | `parity/reports/data-layer-2026-11-09.md` |
 | Remote commands | `parity/reports/remote-2026-11-09.md` |
+| Keyboard capture: 15/15 cases in Chromium; clear/restore live on the remote | `parity/reports/keyboard-2026-11-09.md` |
 | Stage | `parity/reports/stage-2026-11-09.md` |
 | Transitions | `parity/reports/transitions-2026-11-09.md` |
 | Transition timing: 1200 ms imported timing honoured; sine/linear ratio 0.571 vs 0.586 | `parity/reports/transition-timing-2026-11-09.md` |
@@ -79,7 +82,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — ten entries, each with an impact and a way to close it.
+`docs/deviations.md` — nine entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -93,9 +96,9 @@ four CI jobs are green. See
 ## Tests
 
 ```
-crates/core     70
+crates/core     76
 crates/compat   23
-crates/remote    8
+crates/remote    9
 ```
 
 ## Next, in order

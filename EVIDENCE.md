@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 101 -->
+**As of `main`, 2026-11-09.** <!-- tests: 108 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -155,7 +155,33 @@ A command that changes nothing returns **409**, so a client can tell "done" from
 | `remote/state.json` | `/api/state` before and after a `next` |
 | `remote/smoke.txt` | curl transcript: `next` → 200, `clear` → 200, `previous` at the first slide → 409 |
 
+**Clear blanks; restore reveals; navigation restores.** Measured against the
+live remote:
+
+```text
+state   wed-1 cleared=False
+clear   200
+state   wed-1 cleared=True
+clear   409  (409 = already blank)
+restore 200
+state   wed-1 cleared=False
+next    200  (after clear, navigation restores)
+state   wed-2 cleared=False
+```
+
 Report: `parity/reports/remote-2026-11-09.md`.
+
+---
+
+## Keyboard
+
+FreeShow's controller bindings: `Space` / `→` / `PageDown` next, `←` / `PageUp`
+previous, `Esc` clear. The capture script the app ships was run in headless
+Chromium against the same file, dispatching real key events: 15/15 cases pass —
+bound keys forwarded and prevented, unbound keys and typing in an input ignored.
+
+Raw: `parity/reports/evidence/keys/keys-report.json`.
+Report: `parity/reports/keyboard-2026-11-09.md`.
 
 ---
 

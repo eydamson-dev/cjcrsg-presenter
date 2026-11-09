@@ -120,6 +120,11 @@ impl AppState {
 
     // ---- presentation commands -------------------------------------------------
 
+    /// Apply an operator command from the keyboard or a button.
+    pub fn apply(&self, command: presenter_core::Command) -> bool {
+        self.engine.apply(command)
+    }
+
     pub fn next_slide(&self) -> bool {
         self.engine.next_slide()
     }

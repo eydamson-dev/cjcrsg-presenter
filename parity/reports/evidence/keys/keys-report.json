@@ -1,0 +1,138 @@
+{
+  "script": "../../apps/desktop/assets/keys.js",
+  "passed": true,
+  "cases": [
+    {
+      "key": " ",
+      "on": "body",
+      "forwarded": [
+        " "
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "ArrowRight",
+      "on": "body",
+      "forwarded": [
+        "ArrowRight"
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "PageDown",
+      "on": "body",
+      "forwarded": [
+        "PageDown"
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "ArrowLeft",
+      "on": "body",
+      "forwarded": [
+        "ArrowLeft"
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "PageUp",
+      "on": "body",
+      "forwarded": [
+        "PageUp"
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "Escape",
+      "on": "body",
+      "forwarded": [
+        "Escape"
+      ],
+      "prevented": true,
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "a",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "ArrowUp",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Enter",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Home",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "End",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Tab",
+      "on": "body",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": " ",
+      "on": "#text",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "ArrowLeft",
+      "on": "#text",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Escape",
+      "on": "#text",
+      "forwarded": [],
+      "prevented": false,
+      "shouldForward": false,
+      "pass": true
+    }
+  ]
+}

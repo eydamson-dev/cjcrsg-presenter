@@ -9,6 +9,7 @@ pub mod bundle;
 pub mod domain;
 pub mod engine;
 pub mod hub;
+pub mod input;
 pub mod media;
 pub mod render;
 pub mod session;
@@ -20,6 +21,7 @@ pub use domain::{
 };
 pub use engine::{Position, ShowEngine};
 pub use hub::RenderHub;
+pub use input::Command;
 pub use media::{MediaAsset, MediaError, MediaKind, MediaOrigin};
 pub use render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
 pub use session::{RecentProject, Session, SessionStore, MAX_RECENT};
