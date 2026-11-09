@@ -73,8 +73,9 @@
 # - `files` reports whether a fixture's file exists on disk:
 #   `{present: true|false}`. `confirmation_shown` reports any confirmation
 #   dialog.
-# - `start_session: fresh` means launch with an empty session directory
-#   (`CJCRSG_DATA_DIR`): no recents, no remembered width.
+# - `start_session: fresh` prepares an empty session directory
+#   (`CJCRSG_DATA_DIR`) for the next launch: no recents, no remembered width.
+#   It does not launch the app; `launch_app` or `open_project` does.
 # - `set_session_value` names a semantic session field; `recent` takes an
 #   ordered list of project names, newest first, and is written before the next
 #   launch. The adapter resolves each name to its fixture's absolute path; the
@@ -718,6 +719,7 @@ fixture: fixtures/controller-project-browser-main.cjcp
 viewports: ["1280x800"]
 steps:
   - start_session: fresh
+  - action: launch_app                # CAPABILITY: lifecycle control
   - expect:
       project: null                  # the built-in demo has no file and is not a row
       left_column:
@@ -945,6 +947,7 @@ fixture: fixtures/controller-project-browser-main.cjcp
 viewports: ["1280x800"]
 steps:
   - start_session: fresh
+  - action: launch_app                # CAPABILITY: lifecycle control
   - expect:
       project: null
       left_column:

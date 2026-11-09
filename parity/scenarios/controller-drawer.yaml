@@ -57,9 +57,10 @@
 # - Clock assertions use a deterministic clock (`freeze_clock`, `advance_clock`)
 #   so the seconds are stable. A manual run uses the real clock and checks the
 #   format plus that the seconds tick.
-# - `start_session: fresh` means launch with an empty session directory
+# - `start_session: fresh` prepares an empty session directory
 #   (`CJCRSG_DATA_DIR`), so there is no remembered height and no recent
-#   projects. `restart_app` reuses the same directory.
+#   projects. It does not launch the app; `launch_app` or `open_project` does.
+#   `restart_app` reuses the same directory.
 # - `set_session_value` names a semantic session field
 #   (`drawer_remembered_height`); the adapter maps it to the session file's key.
 # - The fixtures named here are proposed by this stage and are **not created**
