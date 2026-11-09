@@ -5,6 +5,9 @@ hour to work out; do not rediscover it.
 
 ## Checkout
 
+The short setup version is in `CONTRIBUTING.md` ("Parity harness"). This section
+keeps the detail and the reasons; change both if the pinned commit moves.
+
 ```
 ~/projects/reference/freeshow    # outside this repo
 commit ff784eb388c7baef60d67e6d4e7c504f4322bca3   (1.6.8-beta.3)

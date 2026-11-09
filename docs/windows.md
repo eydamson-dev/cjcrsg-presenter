@@ -1,5 +1,8 @@
 # Testing on Windows
 
+Developer setup on Windows (MSVC, library tests, what the desktop build needs) is
+in `CONTRIBUTING.md` under "Windows". This page is the testing plan.
+
 Status: **partly verified.** The desktop crate compiles on `windows-latest`
 (3m51s, run `42543078950`) and the library tests execute there. Nothing has been
 *run* on Windows yet — no window has opened — and the manual checklist at the

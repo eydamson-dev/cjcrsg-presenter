@@ -17,6 +17,9 @@ Read in this order, and stop when you have what you need:
 8. **`docs/windows.md`** — the Windows plan, its traps, and what CI can and
    cannot prove.
 
+For setting up a new machine (Rust, system libraries, Windows, the parity
+tooling) and the contribution rules in summary, see `CONTRIBUTING.md`.
+
 `docs/status.md` is the only place that describes current state. Do not restate
 it here: this file drifted once already by carrying a "current phase" that was
 weeks out of date.
@@ -102,6 +105,8 @@ look at it, and say what you saw.
   project root.
 
 ## Build and test
+
+Setup from a clean machine is in `CONTRIBUTING.md`. Once set up:
 
 ```bash
 scripts/check.sh                                          # fmt + clippy + tests + evidence count

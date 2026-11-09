@@ -16,6 +16,8 @@ Runs rustfmt, clippy (`-D warnings`), the test suite, and a check that
 `EVIDENCE.md` declares the correct test count. CI runs the same script on
 `ubuntu-24.04` and is green.
 
+To set up a new machine first, follow `CONTRIBUTING.md`.
+
 ## What works end to end
 
 ```bash
@@ -92,6 +94,7 @@ the first Windows run built the desktop binary in 3m51s and caught a real path
 bug (`Path::is_absolute` is false for `/home/...` on Windows); after the fix all
 four CI jobs are green. See
 `docs/windows.md`; monitors, DPI, fullscreen and audio still need a real machine.
+Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ## Tests
 

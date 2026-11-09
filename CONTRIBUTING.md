@@ -243,6 +243,26 @@ Setup:
    cargo build -p cjcrsg-presenter
    ```
 
+The DPI manifest (`installer/app.manifest`) is embedded automatically by
+`apps/desktop/build.rs` when the target is Windows. You do not need to do anything
+for it. CI checks that the manifest is present in the built `.exe`.
+
+To build the installer locally (optional; CI does this on every push):
+
+```powershell
+choco install nsis -y                         # or install NSIS from nsis.sourceforge.io
+Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" `
+  -OutFile "installer/MicrosoftEdgeWebview2Setup.exe"
+cargo build --release -p cjcrsg-presenter
+New-Item -ItemType Directory -Force dist | Out-Null   # NSIS will not create it
+$version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+& "C:\Program Files (x86)\NSIS\makensis.exe" "/DAPP_VERSION=$version" "installer\windows.nsi"
+```
+
+The bootstrapper is a download, not a file in the repo; it is ignored by git.
+CI builds the installer but does not run it. Installing and uninstalling on a real
+machine is the manual checklist in [docs/windows.md](docs/windows.md).
+
 Notes:
 
 - Compiling does **not** need the WebView2 runtime. Running the app does. The

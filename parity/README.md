@@ -24,6 +24,10 @@ reports/      evidence: preflight, calibration, experiment runs
 
 ## Running the reference
 
+Setup from a clean machine (cloning and building FreeShow, installing the tools,
+the Playwright browser, and ffmpeg for test clips) is in `CONTRIBUTING.md`,
+under "Parity harness".
+
 ```bash
 # 1. FreeShow must be built and running with a scratch profile
 cd ~/projects/reference/freeshow
@@ -33,6 +37,7 @@ FS_MOCK_STORE_PATH=/tmp/opencode/fs-store NODE_ENV=production npx electron . \
 # 2. Capture
 cd parity/tools
 npm install
+npx playwright install chromium     # once per machine
 node capture_freeshow.mjs /tmp/parity-capture
 ```
 
