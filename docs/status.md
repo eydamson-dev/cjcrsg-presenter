@@ -52,7 +52,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
-| 4 — media engine | **started.** Images, video and audio items render; a video plays and advances. No playback coordinator, seeking, audio routing or multi-output measurement |
+| 4 — media engine | **started.** Items render, video plays; a timeline with position, pause, restore and seek resumes mid-clip. No continuous sync, audio routing or four-output measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
 
@@ -74,7 +74,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
-| Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ | `parity/reports/media-playback-2026-11-09.md` |
+| Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -103,7 +103,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     81
+crates/core     87
 crates/compat   25
 crates/remote    9
 ```

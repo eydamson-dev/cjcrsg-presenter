@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 115 -->
+**As of `main`, 2026-11-09.** <!-- tests: 121 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -119,7 +119,13 @@ Same page, 2 s apart: `currentTime` 0.977 → 3.017 s, `readyState` 4, no error,
 **54,205 of 921,600 pixels** different. The burnt-in timecode (01.000 → 03.033)
 shows the difference is the video advancing.
 
-Raw: `parity/reports/evidence/media/video-report.json`.
+**Recovery mid-clip.** Rendering as if an output reopened 2.5 s into the clip
+produces `src="…clip.webm#t=2.500"`; headless Chromium reports `currentTime`
+**3.468 s** 500 ms later and then advances 2.039 s over 2 s. The clip resumes
+where the show was, not from zero.
+
+Raw: `parity/reports/evidence/media/video-report.json`,
+`evidence/media/resume/video-report.json`.
 Report: `parity/reports/media-playback-2026-11-09.md`.
 
 ---

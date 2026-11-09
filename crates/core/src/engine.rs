@@ -6,7 +6,9 @@
 use tracing::debug;
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
+use crate::clock::{Clock, SystemClock};
 use crate::domain::{MediaRef, Project, Show, Slide, SlideGroup, Transition};
 use crate::input::Command;
 use crate::render::{
@@ -19,6 +21,45 @@ pub struct Position {
     pub show: usize,
     pub group: usize,
     pub slide: usize,
+}
+
+/// Where the live slide's media is in its own timeline.
+///
+/// One timeline is enough: only one slide is live, and its media shares one
+/// clock. Pausing stores the elapsed position so restoring resumes rather than
+/// restarts.
+#[derive(Debug, Clone, Default)]
+struct MediaTimeline {
+    offset_ms: u64,
+    /// Clock reading when playback last started; `None` while paused.
+    started_ms: Option<u64>,
+}
+
+impl MediaTimeline {
+    fn restart(&mut self, now_ms: u64, from_ms: u64) {
+        self.offset_ms = from_ms;
+        self.started_ms = Some(now_ms);
+    }
+
+    fn pause(&mut self, now_ms: u64) {
+        if let Some(started) = self.started_ms.take() {
+            self.offset_ms += now_ms.saturating_sub(started);
+        }
+    }
+
+    fn resume(&mut self, now_ms: u64) {
+        if self.started_ms.is_none() {
+            self.started_ms = Some(now_ms);
+        }
+    }
+
+    fn position(&self, now_ms: u64) -> u64 {
+        self.offset_ms
+            + self
+                .started_ms
+                .map(|started| now_ms.saturating_sub(started))
+                .unwrap_or(0)
+    }
 }
 
 /// The authoritative owner of "which slide is live".
@@ -42,6 +83,10 @@ pub struct ShowEngine {
     /// Project folder for `Bundled` media. Without it, a relative path cannot
     /// become a URL, and the renderer would resolve it against the page.
     media_root: Option<PathBuf>,
+    /// Where the live slide's media is. Advanced by reading the clock, never by
+    /// a timer thread: the state is computed when someone asks for it.
+    timeline: MediaTimeline,
+    clock: Arc<dyn Clock>,
 }
 
 impl ShowEngine {
@@ -56,7 +101,35 @@ impl ShowEngine {
             transition: None,
             cleared: false,
             media_root: None,
+            // The first slide is live from construction; its media starts now.
+            timeline: MediaTimeline {
+                offset_ms: 0,
+                started_ms: Some(0),
+            },
+            clock: Arc::new(SystemClock::new()),
         }
+    }
+
+    /// Replace the clock. Tests use a manual one; production uses the system
+    /// monotonic clock. Restarts the timeline at the new clock's origin so the
+    /// first slide's media begins at zero.
+    pub fn with_clock(mut self, clock: Arc<dyn Clock>) -> Self {
+        self.timeline.restart(clock.now_ms(), 0);
+        self.clock = clock;
+        self
+    }
+
+    /// Jump the live slide's media to `position_ms`, as a coordinator or an
+    /// operator scrubbing would. Not a slide change: no transition is emitted.
+    pub fn seek_media(&mut self, position_ms: u64) -> bool {
+        let now = self.clock.now_ms();
+        self.timeline.restart(now, position_ms);
+        self.revision += 1;
+        true
+    }
+
+    pub fn media_position_ms(&self) -> u64 {
+        self.timeline.position(self.clock.now_ms())
     }
 
     /// Where this project's bundled media lives.
@@ -105,6 +178,8 @@ impl ShowEngine {
         if media_root.is_some() {
             self.media_root = media_root;
         }
+        let now = self.clock.now_ms();
+        self.timeline.restart(now, 0);
         self.order = Self::build_order(&project);
         self.project = project;
         self.index = 0;
@@ -240,20 +315,29 @@ impl ShowEngine {
     /// Blank or restore the output. Returns whether anything changed.
     ///
     /// Clearing is not a slide change, so it uses the project default rather
-    /// than the transition the incoming slide declares.
-    pub fn toggle_clear(&mut self) -> bool {
-        self.cleared = !self.cleared;
+    /// than the transition the incoming slide declares. It also pauses media:
+    /// the congregation sees black, so the clip must not run on unseen.
+    pub fn set_cleared(&mut self, cleared: bool) -> bool {
+        if self.cleared == cleared {
+            return false;
+        }
+        self.cleared = cleared;
         self.revision += 1;
+
+        let now = self.clock.now_ms();
+        if cleared {
+            self.timeline.pause(now);
+        } else {
+            self.timeline.resume(now);
+        }
+
         let policy = self.policy.clone();
         self.transition = Some(self.describe(&policy));
         true
     }
 
-    pub fn set_cleared(&mut self, cleared: bool) -> bool {
-        if self.cleared == cleared {
-            return false;
-        }
-        self.toggle_clear()
+    pub fn toggle_clear(&mut self) -> bool {
+        self.set_cleared(!self.cleared)
     }
 
     #[cfg(test)]
@@ -292,6 +376,9 @@ impl ShowEngine {
         // restores it; leaving it blank would make Escape a trap.
         self.cleared = false;
         self.revision += 1;
+        // The incoming slide's media starts at zero.
+        let now = self.clock.now_ms();
+        self.timeline.restart(now, 0);
         // FreeShow resolves the *incoming* slide's transition (slide → style →
         // global). We model the two ends: the slide's own, else the default.
         let transition = self
@@ -319,11 +406,12 @@ impl ShowEngine {
 
         let root = self.media_root.as_deref();
         let playing = !self.cleared;
+        let position_ms = self.timeline.position(self.clock.now_ms());
         let next = self
             .order
             .get(self.index + 1)
             .and_then(|position| self.slide_at(*position))
-            .map(|slide| project_slide(slide, root, playing));
+            .map(|slide| project_slide(slide, root, playing, 0));
 
         if self.cleared {
             // A cleared output still reports which slide is live, so a remote
@@ -343,7 +431,7 @@ impl ShowEngine {
             revision: self.revision,
             show_id: show.id.clone(),
             slide_id: slide.id.clone(),
-            slide: project_slide(slide, root, playing),
+            slide: project_slide(slide, root, playing, position_ms),
             notes: slide.notes.clone(),
             next,
             transition: self.transition.clone(),
@@ -352,7 +440,12 @@ impl ShowEngine {
 }
 
 /// Projection from domain to render model — the one place rendering rules live.
-fn project_slide(slide: &Slide, root: Option<&Path>, playing: bool) -> RenderSlide {
+fn project_slide(
+    slide: &Slide,
+    root: Option<&Path>,
+    playing: bool,
+    position_ms: u64,
+) -> RenderSlide {
     RenderSlide {
         background: None,
         elements: slide
@@ -366,13 +459,18 @@ fn project_slide(slide: &Slide, root: Option<&Path>, playing: bool) -> RenderSli
                 media: element
                     .media
                     .as_ref()
-                    .map(|media| project_media(media, root, playing)),
+                    .map(|media| project_media(media, root, playing, position_ms)),
             })
             .collect(),
     }
 }
 
-fn project_media(media: &MediaRef, root: Option<&Path>, playing: bool) -> RenderMedia {
+fn project_media(
+    media: &MediaRef,
+    root: Option<&Path>,
+    playing: bool,
+    position_ms: u64,
+) -> RenderMedia {
     let path = Path::new(&media.path);
     let resolved = if path.is_absolute() {
         path.to_path_buf()
@@ -391,6 +489,7 @@ fn project_media(media: &MediaRef, root: Option<&Path>, playing: bool) -> Render
         looped: media.looped,
         muted: media.muted,
         playing,
+        position_ms,
     }
 }
 
@@ -745,6 +844,103 @@ mod tests {
         assert_eq!(engine.state().slide_id, "a1");
     }
 
+    fn media_project() -> Project {
+        use crate::domain::MediaRef;
+        use crate::media::{MediaKind, MediaOrigin};
+
+        let mut project = fixture();
+        for slide in project.shows[0].groups[0].slides.iter_mut() {
+            slide.elements.push(SlideElement {
+                id: format!("{}-clip", slide.id),
+                class_name: "media".into(),
+                media: Some(MediaRef {
+                    path: "/srv/media/clip.webm".into(),
+                    kind: MediaKind::Video,
+                    origin: MediaOrigin::External,
+                    looped: true,
+                    muted: true,
+                }),
+                ..Default::default()
+            });
+        }
+        project
+    }
+
+    #[test]
+    fn media_position_advances_with_the_clock_and_freezes_when_cleared() {
+        let clock = crate::clock::ManualClock::new();
+        let mut engine = ShowEngine::new(media_project()).with_clock(Arc::new(clock.clone()));
+
+        assert_eq!(
+            engine.state().slide.elements[1]
+                .media
+                .as_ref()
+                .unwrap()
+                .position_ms,
+            0
+        );
+
+        clock.advance(1500);
+        assert_eq!(engine.media_position_ms(), 1500);
+        assert_eq!(
+            engine.state().slide.elements[1]
+                .media
+                .as_ref()
+                .unwrap()
+                .position_ms,
+            1500
+        );
+
+        engine.set_cleared(true);
+        clock.advance(1000);
+        assert_eq!(engine.media_position_ms(), 1500, "a blanked output pauses");
+        assert!(
+            !engine.state().next.as_ref().unwrap().elements[1]
+                .media
+                .as_ref()
+                .unwrap()
+                .playing,
+            "next is reported but not started"
+        );
+
+        engine.set_cleared(false);
+        clock.advance(500);
+        assert_eq!(
+            engine.media_position_ms(),
+            2000,
+            "restore resumes, not restarts"
+        );
+    }
+
+    #[test]
+    fn a_slide_change_restarts_media_at_zero() {
+        let clock = crate::clock::ManualClock::new();
+        let mut engine = ShowEngine::new(media_project()).with_clock(Arc::new(clock.clone()));
+
+        clock.advance(4000);
+        assert_eq!(engine.media_position_ms(), 4000);
+        engine.next_slide();
+        assert_eq!(engine.media_position_ms(), 0);
+    }
+
+    #[test]
+    fn seeking_moves_the_position_without_a_transition() {
+        let clock = crate::clock::ManualClock::new();
+        let mut engine = ShowEngine::new(media_project()).with_clock(Arc::new(clock.clone()));
+
+        let before = engine.revision();
+        assert!(engine.seek_media(4200));
+        assert_eq!(engine.media_position_ms(), 4200);
+        assert_eq!(engine.revision(), before + 1);
+        assert!(
+            engine.state().transition.is_none(),
+            "a seek is not a slide change"
+        );
+
+        clock.advance(300);
+        assert_eq!(engine.media_position_ms(), 4500);
+    }
+
     #[test]
     fn media_is_resolved_against_the_project_root() {
         use crate::domain::MediaRef;
@@ -767,12 +963,21 @@ mod tests {
                 ..Default::default()
             });
 
-        let engine = ShowEngine::new(project).with_media_root("/srv/sunday");
+        // Absolute on the host running the test: a POSIX literal is not
+        // absolute on Windows, which the Windows job rightly rejects.
+        let root = std::env::temp_dir().join("cjcp-media-root");
+        let engine = ShowEngine::new(project).with_media_root(&root);
         let slide = engine.state().slide;
         let media = slide.elements[1].media.as_ref().expect("a media element");
-        assert_eq!(
-            media.src, "file:///srv/sunday/media/clip%20one.mp4",
-            "relative paths resolve against the project, spaces are encoded"
+        assert!(
+            media.src.starts_with(&crate::media::file_url(&root)),
+            "relative paths resolve against the project: {}",
+            media.src
+        );
+        assert!(
+            media.src.ends_with("/media/clip%20one.mp4"),
+            "the space is encoded: {}",
+            media.src
         );
         assert_eq!(media.kind, MediaKind::Video);
         assert!(media.playing);

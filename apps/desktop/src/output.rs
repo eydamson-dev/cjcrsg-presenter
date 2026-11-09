@@ -22,7 +22,9 @@ pub fn OutputRoot(props: OutputProps) -> Element {
     // the congregation already saw.
     let first_revision: Revision = use_hook(|| shared.engine.revision());
 
-    let initial = shared.engine.state();
+    // Snapshot, not the cached state: a window opening mid-clip must start at
+    // the current position, not at the moment the slide was published.
+    let initial = shared.engine.snapshot();
     let current = use_signal(|| initial);
 
     let hub = shared.engine.clone();

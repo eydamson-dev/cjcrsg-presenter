@@ -56,8 +56,9 @@ struct StateBody {
 }
 
 async fn state(State(engine): State<Arc<SharedEngine>>) -> Json<StateBody> {
-    let snapshot = engine.state();
-    let (slide_id, position, total) = engine.cursor();
+    // One lock for state and cursor, and a fresh snapshot so a remote asks
+    // where the clip is now rather than where it was at the last publication.
+    let (snapshot, (slide_id, position, total)) = engine.snapshot_with_cursor();
     Json(StateBody {
         revision: snapshot.revision,
         slide_id,

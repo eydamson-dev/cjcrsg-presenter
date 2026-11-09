@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 pub mod bundle;
+pub mod clock;
 pub mod domain;
 pub mod engine;
 pub mod hub;
@@ -16,6 +17,7 @@ pub mod session;
 pub mod shared;
 
 pub use bundle::{bundle_media, BundleReport, BUNDLE_DIR};
+pub use clock::{Clock, ManualClock, SystemClock};
 pub use domain::{
     easing_css, MediaRef, Project, Show, Slide, SlideElement, SlideGroup, Transition,
     TransitionKind, EASINGS,

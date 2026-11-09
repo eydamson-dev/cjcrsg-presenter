@@ -66,6 +66,9 @@ pub struct RenderMedia {
     /// False when the output is blanked. The element is not rendered then, but
     /// the state says why, so a future pause/resume does not guess.
     pub playing: bool,
+    /// Milliseconds into the clip. A reopened output seeks here instead of
+    /// restarting the video the congregation is already watching.
+    pub position_ms: u64,
 }
 
 /// How the state that produced `revision` should animate.

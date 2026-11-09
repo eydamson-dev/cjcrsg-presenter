@@ -93,8 +93,28 @@ impl SharedEngine {
         self.apply_engine(|engine| engine.go_to_index(index))
     }
 
+    /// The last published state. Cheap, and enough for hot readers.
     pub fn state(&self) -> Arc<RenderState> {
         self.hub.borrow().clone()
+    }
+
+    /// The state *now*, including the live slide's current media position.
+    ///
+    /// The hub caches what was published; a navigation publishes position zero,
+    /// which is right at that moment and wrong a minute later. A window that
+    /// opens mid-clip must ask for this one.
+    pub fn snapshot(&self) -> Arc<RenderState> {
+        let engine = self.lock();
+        Arc::new(engine.state())
+    }
+
+    /// Snapshot and cursor read under one lock, so a navigation between the two
+    /// cannot make the remote disagree with itself.
+    pub fn snapshot_with_cursor(&self) -> (Arc<RenderState>, (String, usize, usize)) {
+        let engine = self.lock();
+        let state = engine.state();
+        let cursor = (state.slide_id.clone(), engine.index() + 1, engine.len());
+        (Arc::new(state), cursor)
     }
 
     pub fn revision(&self) -> Revision {
@@ -214,6 +234,59 @@ mod tests {
         let receiver = shared.subscribe();
         shared.next_slide();
         assert_eq!(receiver.borrow().revision, 1);
+    }
+
+    #[test]
+    fn a_snapshot_reports_the_current_media_position_while_the_cache_does_not() {
+        use crate::clock::ManualClock;
+        use crate::domain::{MediaRef, SlideElement};
+        use crate::media::{MediaKind, MediaOrigin};
+        use std::sync::Arc;
+
+        let clock = ManualClock::new();
+        let mut engine = engine();
+        {
+            let mut project = engine.project().clone();
+            project.shows[0].groups[0].slides[0]
+                .elements
+                .push(SlideElement {
+                    id: "clip".into(),
+                    class_name: "media".into(),
+                    media: Some(MediaRef {
+                        path: "/srv/clip.webm".into(),
+                        kind: MediaKind::Video,
+                        origin: MediaOrigin::External,
+                        looped: false,
+                        muted: true,
+                    }),
+                    ..Default::default()
+                });
+            engine.replace_project(project);
+        }
+        let shared = SharedEngine::new(engine.with_clock(Arc::new(clock.clone())));
+
+        clock.advance(1200);
+        let position = |state: &crate::render::RenderState| {
+            state
+                .slide
+                .elements
+                .last()
+                .unwrap()
+                .media
+                .as_ref()
+                .unwrap()
+                .position_ms
+        };
+        assert_eq!(
+            position(&shared.snapshot()),
+            1200,
+            "fresh, for a window opening now"
+        );
+        assert_eq!(
+            position(&shared.state()),
+            0,
+            "the cached state keeps the position from when it was published"
+        );
     }
 
     #[test]

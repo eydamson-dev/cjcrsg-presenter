@@ -41,8 +41,9 @@ fn main() {
             slide,
             transition,
             pause,
+            resume_at,
         }) => {
-            render_to_file(&project, &out, layout, slide, transition, pause);
+            render_to_file(&project, &out, layout, slide, transition, pause, resume_at);
             return;
         }
         Err(message) => {
@@ -83,6 +84,7 @@ fn render_to_file(
     slide: Option<usize>,
     requested: Option<presenter_core::Transition>,
     pause: Option<u32>,
+    resume_at: Option<u64>,
 ) {
     if layout == render::Layout::Recent {
         let session = runtime::session_store().load();
@@ -109,6 +111,11 @@ fn render_to_file(
     }
     if let Some(index) = slide {
         engine.go_to_index(index);
+    }
+    // Evidence for recovery: render exactly what a window that reopened this
+    // far into the clip would show.
+    if let Some(position_ms) = resume_at {
+        engine.seek_media(position_ms);
     }
 
     // A slide's own timing is what an imported project carries, so it is the

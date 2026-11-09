@@ -20,6 +20,8 @@ pub enum Action {
         /// `None` means "use the transition the engine published".
         transition: Option<presenter_core::Transition>,
         pause: Option<u32>,
+        /// Render as if the output reopened mid-clip.
+        resume_at: Option<u64>,
     },
 }
 
@@ -242,7 +244,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             if rest.len() < 2 {
                 return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
                      [--layout stage|audience] [--slide N] [--transition NAME] \
-                     [--duration MS] [--easing NAME]"
+                     [--duration MS] [--easing NAME] [--resume-at MS]"
                     .into());
             }
             let project = PathBuf::from(&rest[0]);
@@ -251,6 +253,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             let mut slide = None;
             let mut transition: Option<presenter_core::Transition> = None;
             let mut pause = None;
+            let mut resume_at = None;
 
             let mut args = rest[2..].iter();
             while let Some(arg) = args.next() {
@@ -302,6 +305,14 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                                 .map_err(|_| format!("not a number: {value:?}"))?,
                         );
                     }
+                    "--resume-at" => {
+                        let value = args.next().ok_or("--resume-at needs milliseconds")?;
+                        resume_at = Some(
+                            value
+                                .parse()
+                                .map_err(|_| format!("not a number: {value:?}"))?,
+                        );
+                    }
                     "--slide" => {
                         let value = args.next().ok_or("--slide needs a number")?;
                         slide = Some(
@@ -321,6 +332,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 slide,
                 transition,
                 pause,
+                resume_at,
             })
         }
 

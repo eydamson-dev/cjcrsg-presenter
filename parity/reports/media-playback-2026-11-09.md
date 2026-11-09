@@ -63,6 +63,28 @@ Left: 500 ms. Centre: 2500 ms. Right: the still-image slide with a text overlay.
 Raw: `evidence/media/video-report.json`, `frame-500ms.png`,
 `frame-2500ms.png`, `image/remote-1280x720.png`.
 
+## Recovery mid-clip
+
+The engine owns a media timeline: position advances with an injected clock,
+pauses when the output is blanked, resumes on restore, and resets when the slide
+changes. A window that opens mid-clip asks for a fresh snapshot
+(`SharedEngine::snapshot`) instead of the cached publication, which carries the
+position from the moment the slide changed.
+
+The renderer expresses the position as a media fragment (`#t=2.500`), so the
+WebView seeks without a script and without per-frame traffic. Rendering as if an
+output reopened 2.5 s into the clip:
+
+```text
+<video class="media" src="file:///tmp/opencode/media/media/clip.webm#t=2.500" …>
+```
+
+Headless Chromium, 500 ms after load: `currentTime` **3.468 s** (2.5 + 0.968),
+`paused: false`, then advancing 2.039 s over the next 2 s. The clip resumes where
+the show was, not from zero.
+
+Raw: `evidence/media/resume/video-report.json`.
+
 ## Tests
 
 - a media item keeps its path, video kind, external origin and authored
@@ -72,13 +94,20 @@ Raw: `evidence/media/video-report.json`, `frame-500ms.png`,
 - an absolute media path ignores the root;
 - `playing` is false for a blanked output;
 - bundling rewrites an element's media path and origin, not just the project list;
-- `file://` URLs keep a Windows drive letter and encode `#` and spaces.
+- `file://` URLs keep a Windows drive letter and encode `#` and spaces;
+- position advances with the clock, freezes while blanked, resumes on restore,
+  and resets on a slide change;
+- seeking moves the position, bumps the revision and emits no transition;
+- a fresh snapshot reports the live position while the cached state keeps the
+  one from publication.
 
 ## Not done
 
-- **No playback coordinator.** The renderer autoplays because the slide is live;
-  the engine does not pause, resume or seek. A video that leaves the screen is
-  simply unmounted, which restarts it from zero when the slide returns.
+- **No continuous sync.** The position is applied when an output mounts; a
+  running output lets its own WebView clock carry the clip. Drift between two
+  outputs over a long service is unmeasured.
+- **No pause/play control.** Clear/restore pause and resume; there is no
+  operator command to pause a clip without blanking the screen.
 - **No audio routing.** Audio elements exist but mix into the default device;
   FreeShow's channel mapping is Phase 5.
 - **No `filter`, `fit`, `cropping`, `fromTime`/`toTime`.** The item is drawn

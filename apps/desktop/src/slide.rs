@@ -138,14 +138,22 @@ pub fn StageView(
 #[component]
 fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) -> Element {
     let autoplay = play && media.playing;
+    // Media fragments start the clip at a position. That is how a reopened
+    // output resumes mid-video without a script or per-frame traffic.
+    let src = if media.position_ms > 0 && matches!(media.kind, MediaKind::Video | MediaKind::Audio)
+    {
+        format!("{}#t={:.3}", media.src, media.position_ms as f64 / 1000.0)
+    } else {
+        media.src.clone()
+    };
     match media.kind {
         MediaKind::Image => rsx! {
-            img { class: "{class_name}", src: "{media.src}", style: "{style}" }
+            img { class: "{class_name}", src: "{src}", style: "{style}" }
         },
         MediaKind::Video => rsx! {
             video {
                 class: "{class_name}",
-                src: "{media.src}",
+                src: "{src}",
                 style: "{style}",
                 autoplay,
                 muted: media.muted,
@@ -155,7 +163,7 @@ fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) 
         },
         MediaKind::Audio => rsx! {
             audio {
-                src: "{media.src}",
+                src: "{src}",
                 autoplay,
                 muted: media.muted,
                 loop: media.looped,

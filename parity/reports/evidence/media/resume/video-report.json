@@ -1,0 +1,25 @@
+{
+  "html": "/tmp/opencode/media/resume.html",
+  "viewport": [
+    1280,
+    720
+  ],
+  "first": {
+    "currentTime": 3.468,
+    "paused": false,
+    "readyState": 4,
+    "videoWidth": 1280,
+    "videoHeight": 720,
+    "error": null
+  },
+  "second": {
+    "currentTime": 5.507,
+    "paused": false,
+    "readyState": 4,
+    "videoWidth": 1280,
+    "videoHeight": 720,
+    "error": null
+  },
+  "advancedSeconds": 2.039,
+  "errors": []
+}
