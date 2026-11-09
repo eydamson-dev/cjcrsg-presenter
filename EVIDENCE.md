@@ -1,86 +1,129 @@
 # Test evidence
 
-Visual proof for each milestone. Every claim here has a picture or a
-machine-readable artefact beside it; the prose reports in
-[`parity/reports/`](parity/reports/) carry the detail.
+Visual proof and raw artefacts for each milestone. The prose reports in
+[`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-Last updated: 2026-11-09.
+**As of `main`, 2026-11-09.** <!-- tests: 67 -->
 
----
-
-## 1. Rendering — the same components the app runs
-
-`cargo run -p cjcrsg-presenter -- render <file.cjcp> <out.html>` renders the real
-`SlideView` / `StageView` components to HTML; Playwright then screenshots them
-headlessly. No window, no display server, no desktop involvement.
-
-**Audience, 1920×1080** — `render/audience-1920x1080.png`
-
-![Audience 1920x1080](parity/reports/evidence/render/audience-1920x1080.png)
-
-**Audience, 1366×768** — `render/audience-1366x768.png`
-
-![Audience 1366x768](parity/reports/evidence/render/audience-1366x768.png)
-
-**Audience, portrait 1080×1920** — `render/audience-1080x1920.png`
-
-![Audience portrait](parity/reports/evidence/render/audience-1080x1920.png)
-
-**Stage, live + next, 1920×1080** — `render/stage-1920x1080.png`
-
-![Stage](parity/reports/evidence/render/stage-1920x1080.png)
-
-Two defects were found and fixed while capturing these: text sat against the top
-because FreeShow's inline `top/left/width/height` arrives without `position`,
-and the stage badge overlapped the pane label.
+Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
+changed, and `scripts/check.sh` fails if the declared test count and the
+workspace disagree.
 
 ---
 
-## 1b. Experiment 2 — renderer parity, measured
+## Experiments — the three that gate development
 
-Our render and FreeShow's, cropped to the same 16:9 area. Every text box agrees
-within **0.15 px**; glyph advance and horizontal placement are identical. The
-pixel difference is glyph rasterisation at 14 px text, not layout.
+### Experiment 1 — four outputs, one engine
+
+Seven checks, all passing. Recovery **184 ms** against a 1,000 ms budget; the
+first run, before the shared-engine refactor, measured 205 ms.
+
+| | |
+| --- | --- |
+| Raw result | `parity/reports/evidence/experiment-1-smoke.json` |
+| Report | `parity/reports/experiment-1-2026-11-09.md` |
+
+No photograph: it drives four native windows, and this Wayland session refuses
+to let a program focus its own window, so an automated capture lands on whatever
+is already focused. Reproduce with `CJCRSG_SMOKE=1`.
+
+### Experiment 2 — renderer parity
+
+Every text box agrees within **0.15 px**; glyph advance and horizontal placement
+are identical. **0.35 %** differing pixels at 1920×1080.
 
 | FreeShow | Ours | Difference |
 | --- | --- | --- |
-| ![FreeShow](parity/reports/evidence/experiment-2/freeshow-cropped.png) | ![Ours](parity/reports/evidence/experiment-2/ours-final.png) | ![Diff](parity/reports/evidence/experiment-2/diff-cropped.png) |
+| ![FreeShow](parity/reports/evidence/experiment-2/freeshow-1920x1080.png) | ![Ours](parity/reports/evidence/experiment-2/ours-1920x1080.png) | ![Diff](parity/reports/evidence/experiment-2/diff-1920x1080.png) |
 
-Numbers and caveats: `parity/reports/experiment-2-2026-11-09.md`.
+Report: `parity/reports/experiment-2-2026-11-09.md`.
 
----
-
-## 1c. Experiment 3 — four surfaces playing 1080p
+### Experiment 3 — four surfaces playing 1080p
 
 Zero dropped frames at 1, 2 and 4 surfaces; frames decoded scale 1:2:4, so each
-surface decodes independently.
+surface decodes independently. CPU attribution failed and is recorded as failed.
 
 ![A surface playing the test clip](parity/reports/evidence/experiment-3/playing.png)
 
-Raw run: `parity/reports/evidence/experiment-3/video.json`. CPU attribution
-failed and is documented as failed in
-`parity/reports/experiment-3-2026-11-09.md`.
+Report and raw JSON: `parity/reports/experiment-3-2026-11-09.md`,
+`parity/reports/evidence/experiment-3/video.json`.
 
 ---
 
-## 1d. All eight transitions
+## Rendering
 
-FreeShow's full set, frozen 200 ms into each effect.
+`cjcrsg-presenter render <file.cjcp> out.html` renders the real `SlideView` /
+`StageView` components to HTML; Playwright screenshots them headlessly. No
+window, no display server, no desktop involvement.
 
-![Transitions](parity/reports/evidence/transitions/montage.png)
+**Audience, 1920×1080**
 
-Order: none, blur, fade, crossfade / fly, scale, slide, spin.
-Detail: `parity/reports/transitions-2026-11-09.md`.
+![Audience 1920x1080](parity/reports/evidence/render/audience-1920x1080.png)
 
----
+**Audience, 1366×768**
 
-## 1e. Stage with operator notes
+![Audience 1366x768](parity/reports/evidence/render/audience-1366x768.png)
+
+**Audience, portrait 1080×1920**
+
+![Audience portrait](parity/reports/evidence/render/audience-1080x1920.png)
+
+**Stage — live + next**
+
+![Stage](parity/reports/evidence/render/stage-1920x1080.png)
+
+**Stage with operator notes and a clock slot**
 
 ![Stage with notes](parity/reports/evidence/render/stage-notes-1920x1080.png)
 
+**All eight transitions**, frozen 200 ms in: none, blur, fade, crossfade / fly,
+scale, slide, spin.
+
+![Transitions](parity/reports/evidence/transitions/montage.png)
+
+Reports: `parity/reports/stage-2026-11-09.md`,
+`parity/reports/transitions-2026-11-09.md`.
+
 ---
 
-## 2. Remote control — driven and photographed headlessly
+## FreeShow reference
+
+Captured from FreeShow `ff784eb` running with a scratch profile.
+
+**The fixture show, as FreeShow renders it**
+
+![FreeShow slides](parity/reports/evidence/remote-show-slides.png)
+
+**FreeShow's project list**
+
+![FreeShow project](parity/reports/evidence/remote-project.png)
+
+**FreeShow's controller client — the navigation surface**
+
+![FreeShow controller](parity/reports/evidence/controller-page.png)
+
+Report: `parity/reports/preflight-2026-11-09.md`.
+
+---
+
+## Calibration — the same slide, twice
+
+Two captures of one FreeShow slide, 700 ms apart. **0 differing channels, max
+delta 0** across 53,196 pixels, so static Chromium content is deterministic.
+
+| First | Second |
+| --- | --- |
+| ![Slide A](parity/reports/evidence/calibration/slide-a.png) | ![Slide B](parity/reports/evidence/calibration/slide-b.png) |
+
+Report: `parity/reports/calibration-2026-11-09.md`.
+
+---
+
+## Remote control
+
+`GET /api/state`, `POST /api/{next,previous,first,last,next-group,previous-group,goto,clear}`.
+A command that changes nothing returns **409**, so a client can tell "done" from
+"already at the end".
 
 ![Remote phone](parity/reports/evidence/remote/remote-390x844.png)
 
@@ -89,86 +132,58 @@ Detail: `parity/reports/transitions-2026-11-09.md`.
 | Artefact | Shows |
 | --- | --- |
 | `remote/state.json` | `/api/state` before and after a `next` |
-| `remote/smoke.txt` | Full curl transcript: `next` → 200, `clear` → 200, `previous` at the first slide → 409 |
+| `remote/smoke.txt` | curl transcript: `next` → 200, `clear` → 200, `previous` at the first slide → 409 |
+
+Report: `parity/reports/remote-2026-11-09.md`.
 
 ---
 
-## 3. FreeShow reference — what the original looks like
+## Data layer
 
-Captured from FreeShow `ff784eb` running with a scratch profile.
-
-**The fixture show, as FreeShow renders it** —
-
-![FreeShow slide list](parity/reports/evidence/remote-show-slides.png)
-
-**FreeShow's project list** —
-
-![FreeShow project](parity/reports/evidence/remote-project.png)
-
-**FreeShow's controller client (the navigation surface)** —
-
-![FreeShow controller](parity/reports/evidence/controller-page.png)
-
----
-
-## 4. Calibration — the same slide, twice
-
-Two captures of one FreeShow slide, 700 ms apart. **0 differing channels, max
-delta 0** across 53,196 pixels, so static Chromium content is deterministic and
-a zero-tolerance visual gate is viable.
-
-| First | Second |
-| --- | --- |
-| ![Slide A](parity/reports/evidence/calibration/slide-a.png) | ![Slide B](parity/reports/evidence/calibration/slide-b.png) |
-
----
-
-## 5. Data layer — an imported project in the app
-
-FreeShow `.show` → domain → `.cjcp` → the app.
+**A FreeShow `.show` imported into the app.** Readout shows `Slide fx-1`,
+`Position 1 / 3` — the imported ids, not the demo project.
 
 ![Controller with imported project](parity/reports/evidence/controller-imported-project.png)
 
-Readout: `Slide fx-1`, `Position 1 / 3` — the imported slide ids and count, not
-the demo project.
+Artefacts: `import-cli.txt`, `inspect-cli.txt`.
 
-| Artefact | Shows |
-| --- | --- |
-| `import-cli.txt` | `import` output |
-| `inspect-cli.txt` | `inspect` output, slide by slide |
-
----
-
-## 5b. A whole FreeShow project, imported and rendered
-
-`projects.json` + `shows/` joined into one `.cjcp`, then rendered:
+**A whole FreeShow project** — `projects.json` joined with `shows/`, then
+rendered:
 
 ![Imported project](parity/reports/evidence/project/imported-project-1920x1080.png)
 
-Transcript: `parity/reports/evidence/project/import.txt`.
+**Media references** import as `external` (FreeShow keeps media outside the
+project), with a kind derived from the extension:
+
+```
+$ cjcrsg-presenter inspect media.cjcp
+project   Parity With Media
+shows     1
+slides    3
+media     2
+```
+
+Artefacts: `evidence/project/import.txt`, `import-media.txt`,
+`inspect-media.txt`.
+
+Report: `parity/reports/data-layer-2026-11-09.md`.
 
 ---
 
-## 6. Experiment 1 — four outputs, one engine
+## Why these are the choices they are
 
-Re-run on `a6fdece` (current `main`): seven checks, all passing, recovery
-**184 ms** against a 1,000 ms budget. The first run, before the shared-engine
-refactor, measured 205 ms.
-
-`parity/reports/evidence/experiment-1-smoke.json` — the raw result.
-
-This milestone has **no photograph**: it drives four native windows and the
-Wayland session refuses to let a program focus its own window, so an automated
-capture lands on whatever is already focused. The numbers are machine-readable
-and reproducible with `CJCRSG_SMOKE=1`.
+`docs/decisions.md` records the nine expensive-to-reverse decisions and their
+consequences — including why visual evidence comes from headless renders rather
+than photographs of windows.
 
 ---
 
 ## Reproducing any of these
 
 ```bash
-scripts/check.sh                      # fmt + clippy + 45 tests
-cargo run -p cjcrsg-presenter -- serve --port 5521   # remote, headless
-cargo run -p cjcrsg-presenter -- render <file.cjcp> out.html --layout stage
+scripts/check.sh                                     # fmt + clippy + tests
+cjcrsg-presenter serve --port 5521                   # remote, headless
+cjcrsg-presenter render <file.cjcp> out.html --layout stage --slide 0
 cd parity/tools && node capture_page.mjs file:///…/out.html <dir> 1920x1080
+CJCRSG_SMOKE=1 cjcrsg-presenter                      # Experiment 1
 ```
