@@ -50,7 +50,11 @@ Out, with reasons:
 
 - Collapsed height is **40 px** (the strip).
 - Default open height is **300 px**.
-- Maximum is `innerHeight − 40`.
+- Maximum is the space left below the top bar: `innerHeight − top-bar height`.
+  FreeShow's figure is `innerHeight − 40` because its top bar is 40 px; ours is
+  56 px (44 px bar plus 6 px padding), so the same rule gives 744 px at an
+  800 px window. Using FreeShow's literal 40 here would clip the bottom of a
+  maximum-height drawer behind the controller's own chrome.
 - The content area is `height − 40`; it scrolls and never overflows the drawer.
 - The whole 40 px strip is the drag surface except its buttons; a 4 px
   accent-tinted bar at the top edge shows where to grab.
@@ -81,7 +85,7 @@ Out, with reasons:
 ### B4 — drag to resize
 
 - Dragging the strip up grows the drawer, down shrinks it, clamped to
-  `[40, innerHeight − 40]`.
+  `[40, B1's maximum]`.
 - Releasing below **80 px** collapses to 40.
 - Releasing at or above 80 px keeps the height and records it as the remembered
   open height.
@@ -96,7 +100,7 @@ Out, with reasons:
   this (`Drawer.svelte:95`); it means a drawer dragged small does not reopen
   cramped on the next click.
 - A hand-edited session value is clamped before use: `40..=1200`, then again to
-  `innerHeight − 40` when rendered.
+  B1's maximum when rendered.
 
 ### B6 — keyboard
 
