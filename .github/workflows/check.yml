@@ -90,9 +90,46 @@ jobs:
       - name: Build
         run: cargo build --release --target x86_64-pc-windows-msvc -p cjcrsg-presenter
 
+      - name: Manifest is embedded
+        shell: pwsh
+        run: |
+          # DPI awareness must be in the executable, not a runtime setting. The
+          # manifest ships as plain text inside the resource section, so its
+          # presence is checkable without a Windows SDK tool.
+          $text = [Text.Encoding]::UTF8.GetString(
+            [IO.File]::ReadAllBytes("target/x86_64-pc-windows-msvc/release/cjcrsg-presenter.exe"))
+          foreach ($needle in @("PerMonitorV2", "longPathAware")) {
+            if ($text -notmatch $needle) { throw "manifest is missing $needle" }
+          }
+
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: cjcrsg-presenter-windows-x64
           path: target/x86_64-pc-windows-msvc/release/cjcrsg-presenter.exe
+          if-no-files-found: error
+
+      # The installer is built but not run here: NSIS can be executed on a
+      # runner, a GUI install cannot. The manual checklist is in docs/windows.md.
+      - name: WebView2 Evergreen bootstrapper
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" `
+            -OutFile "installer/MicrosoftEdgeWebview2Setup.exe"
+
+      - name: NSIS
+        shell: pwsh
+        run: choco install nsis --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          & "C:\Program Files (x86)\NSIS\makensis.exe" "/DAPP_VERSION=$version" "installer\windows.nsi"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjcrsg-presenter-windows-x64-installer
+          path: dist/*.exe
           if-no-files-found: error

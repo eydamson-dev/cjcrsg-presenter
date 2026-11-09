@@ -10,6 +10,9 @@ rust-version.workspace = true
 name = "cjcrsg-presenter"
 path = "src/main.rs"
 
+[build-dependencies]
+embed-resource = "3"
+
 [dependencies]
 presenter-core.workspace = true
 presenter-compat.workspace = true
