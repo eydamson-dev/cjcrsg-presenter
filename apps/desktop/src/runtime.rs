@@ -72,8 +72,6 @@ pub struct AppState {
     outline: Mutex<Vec<crate::outline::OutlineEntry>>,
     /// The project's media, resolved once per open.
     media: Mutex<Vec<crate::media_panel::MediaItem>>,
-    /// The project's shows in project order, for the drawer's Shows tab.
-    shows: Mutex<Vec<crate::drawer::ShowRow>>,
     /// The file this project came from, if any. Needed to write it back.
     project_path: Mutex<Option<std::path::PathBuf>>,
 }
@@ -86,7 +84,6 @@ impl AppState {
         let project = engine.project();
         let outline = crate::outline::build(&project);
         let media = crate::media_panel::build(&project, media_root_hint());
-        let shows = crate::drawer::build_shows(&project);
         Self {
             engine,
             windows: Mutex::new(HashMap::new()),
@@ -95,7 +92,6 @@ impl AppState {
             session: Mutex::new(session),
             outline: Mutex::new(outline),
             media: Mutex::new(media),
-            shows: Mutex::new(shows),
             project_path: Mutex::new(startup_project_path()),
         }
     }
@@ -167,13 +163,6 @@ impl AppState {
         self.media.lock().expect("media lock").clone()
     }
 
-    pub fn shows(&self) -> Vec<crate::drawer::ShowRow> {
-        match self.shows.lock() {
-            Ok(shows) => shows.clone(),
-            Err(_) => Vec::new(),
-        }
-    }
-
     pub fn project_name(&self) -> String {
         self.engine.project_name()
     }
@@ -200,6 +189,30 @@ impl AppState {
         self.session.lock().expect("session lock").recent.clone()
     }
 
+    /// Forget one recent project. Never the open project, never the file.
+    ///
+    /// The in-memory list changes even if the session file cannot be written:
+    /// the panel has already been asked to drop the row, and losing a
+    /// convenience list is not worth failing the interaction. The save error is
+    /// logged rather than panicking (P4).
+    pub fn forget_recent(&self, path: &str) -> bool {
+        let open = self.project_path();
+        let mut session = match self.session.lock() {
+            Ok(session) => session,
+            Err(_) => {
+                tracing::warn!("could not forget a recent project; session lock poisoned");
+                return false;
+            }
+        };
+        if !crate::projects::forget_recent(&mut session, open.as_deref(), path) {
+            return false;
+        }
+        if let Err(error) = self.store.save(&session) {
+            tracing::warn!(%error, "could not save the recent-projects list");
+        }
+        true
+    }
+
     /// Open a `.cjcp`, making it live for every output and remembering it.
     ///
     /// Synchronous on purpose: reading a project is a few milliseconds, and the
@@ -224,11 +237,6 @@ impl AppState {
         *self.outline.lock().expect("outline lock") = crate::outline::build(&document.project);
         *self.media.lock().expect("media lock") =
             crate::media_panel::build(&document.project, root.as_deref());
-        if let Ok(mut shows) = self.shows.lock() {
-            *shows = crate::drawer::build_shows(&document.project);
-        } else {
-            tracing::warn!("could not update the drawer shows; lock poisoned");
-        }
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)

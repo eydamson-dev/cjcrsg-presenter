@@ -1,8 +1,8 @@
 //! The project outline: sections and shows, in project order.
 //!
-//! This is the navigation half of FreeShow's focus mode. It is a panel rather
-//! than a full-screen view: the service can be started item by item, but the
-//! controller keeps its other tools visible.
+//! This is the navigation model behind the drawer's **Shows** tab (P6) and the
+//! focus view. The controller no longer renders it as a left column: the left
+//! column is the project browser.
 
 use dioxus::prelude::*;
 use presenter_core::{Project, ProjectEntry};
@@ -53,15 +53,15 @@ pub fn build(project: &Project) -> Vec<OutlineEntry> {
 }
 
 #[component]
+/// A standalone outline panel for `render --layout outline` evidence.
+///
+/// The controller renders the same [`OutlineEntry`] list in the drawer's Shows
+/// tab (P6); this panel is not mounted by the controller any more.
 pub fn OutlinePanel(
     items: Vec<OutlineEntry>,
     current: Option<usize>,
     /// Optional so the panel can be rendered headlessly for evidence.
     on_play: Option<EventHandler<usize>>,
-    /// The file the project lives in, if it has one.
-    project_path: Option<String>,
-    on_bundle: Option<EventHandler<()>>,
-    bundle_status: String,
 ) -> Element {
     rsx! {
         section { class: "panel",
@@ -100,26 +100,6 @@ pub fn OutlinePanel(
                             },
                         }
                     }
-                }
-            }
-
-            div { class: "outline-foot",
-                if let Some(path) = project_path {
-                    span { class: "outline-path", "{path}" }
-                    button {
-                        class: "btn small",
-                        onclick: move |_| {
-                            if let Some(on_bundle) = on_bundle {
-                                on_bundle.call(());
-                            }
-                        },
-                        "Make portable"
-                    }
-                } else {
-                    span { class: "outline-path", "Not saved to a file yet." }
-                }
-                if !bundle_status.is_empty() {
-                    span { class: "outline-status", "{bundle_status}" }
                 }
             }
         }
@@ -191,5 +171,67 @@ pub fn FocusView(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use presenter_core::Show;
+
+    fn show(id: &str, name: &str) -> Show {
+        Show {
+            id: id.into(),
+            name: name.into(),
+            ..Default::default()
+        }
+    }
+
+    /// P6: the Shows tab uses this model, so sections are headings and shows
+    /// keep the project's entry order — not the order of `project.shows`.
+    #[test]
+    fn sections_and_shows_keep_the_project_entry_order() {
+        let project = Project {
+            // Deliberately the reverse of the entry order.
+            shows: vec![show("communion", "Communion"), show("worship", "Worship")],
+            entries: vec![
+                ProjectEntry::Section {
+                    id: "opening".into(),
+                    name: "Opening".into(),
+                },
+                ProjectEntry::Show {
+                    id: "worship".into(),
+                },
+                ProjectEntry::Section {
+                    id: "sermon".into(),
+                    name: "Sermon".into(),
+                },
+                ProjectEntry::Show {
+                    id: "communion".into(),
+                },
+            ],
+            ..Default::default()
+        };
+
+        let outline = build(&project);
+        assert_eq!(
+            outline,
+            vec![
+                OutlineEntry::Section {
+                    name: "Opening".into()
+                },
+                OutlineEntry::Show {
+                    name: "Worship".into(),
+                    index: 1,
+                },
+                OutlineEntry::Section {
+                    name: "Sermon".into()
+                },
+                OutlineEntry::Show {
+                    name: "Communion".into(),
+                    index: 0,
+                },
+            ]
+        );
     }
 }

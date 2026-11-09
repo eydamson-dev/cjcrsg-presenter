@@ -1,0 +1,19 @@
+{
+  "recent": [
+    {
+      "name": "Browser Main",
+      "path": "/tmp/opencode/project-browser-evidence/projects/browser-main.cjcp",
+      "opened_at": 1762700000000
+    },
+    {
+      "name": "Browser Third",
+      "path": "/tmp/opencode/project-browser-evidence/projects/browser-third.cjcp",
+      "opened_at": 1762680000000
+    }
+  ],
+  "layout": {
+    "left_width": 280,
+    "right_width": 360,
+    "drawer_height": 300
+  }
+}
