@@ -8,7 +8,6 @@ deviation is closed, delete the entry rather than marking it done.
 
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
-| DEV-003 | The remote speaks JSON over HTTP, not Socket.IO | Existing FreeShow remote/stage clients cannot connect | Implement the Socket.IO surface, or ship our own clients |
 | DEV-005 | FreeShow's categories, tags and media metadata are not imported | A migrated library loses its organisation and media details | Read FreeShow's store and map those fields |
 | DEV-009 | The engine is linear inside a show; groups are navigation only | FreeShow's layout/section model is richer | Model layout sections when a feature needs them |
 

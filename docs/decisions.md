@@ -147,3 +147,30 @@ querying, that is the moment to reconsider — not before.
 **Consequences.** No migrations, no locks, trivially inspectable. FreeShow's own
 database import is separate work (DEV-005): we would read *its* store, not write
 our own with SQLite.
+
+## D12 — Ship our own remote and stage clients; do not speak FreeShow's Socket.IO protocol
+
+**Context.** DEV-003: FreeShow's shipped remote and stage web clients speak
+Socket.IO to the app. Ours speaks JSON/HTTP on 5520 and ships its own page.
+Making the FreeShow clients work looked like a transport problem.
+
+**Decision.** Do not implement the Socket.IO surface. Ship our own clients: the
+HTTP remote page, and native output windows for stage/confidence.
+
+**Why.** It is not a transport problem. Read the stage client in the reference
+(`src/server/stage/util/receiver.ts`): every channel carries FreeShow's own data
+model. `LAYOUT` expects a `StageLayout` — templates, items, resolution, style
+overrides — and `SHOW_DATA` expects a FreeShow `Show` with layouts, slides and
+items. Our engine deliberately does not model styles or templates
+(`docs/architecture.md`); our renderer is a consumer of `RenderState`, not of
+FreeShow's layout tree.
+
+A Socket.IO server that accepts the connection and cannot fill those payloads
+would look compatible and show an empty stage — worse than a documented
+limitation. Real compatibility means a FreeShow projection layer over our
+domain, which starts by modelling styles and templates, not by adding a crate.
+
+**Consequences.** FreeShow's remote and stage pages cannot connect to us; that is
+recorded as a decision rather than left as an open deviation. Our own clients are
+the supported surface. If a church specifically needs the FreeShow client, the
+work is a projection layer, and it should be planned as one.

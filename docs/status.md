@@ -53,7 +53,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, remote, groups. Missing style-level transitions |
+| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, own remote clients, groups. Missing style-level transitions |
 | 3 — data | import (single show, project, whole store) + native format + media copy-in + document import + recent/restore. Missing FreeShow metadata (categories, tags) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
@@ -98,7 +98,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — three entries, each with an impact and a way to close it.
+`docs/deviations.md` — two entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -123,25 +123,25 @@ apps/desktop     3
 
 ## Next, in order
 
-1. **FreeShow remote parity (Socket.IO)** — DEV-003. Their shipped remote and
-   stage clients cannot connect to our JSON/HTTP remote. The largest known
-   compatibility gap; it needs the Socket.IO surface, not a shim.
-2. **Sections and focus mode** — DEV-009. The engine is linear within a show;
+1. **Sections and focus mode** — DEV-009. The engine is linear within a show;
    FreeShow's layout/section model is richer and is what its project items are.
-3. **FreeShow metadata** — DEV-005. Categories, tags and media metadata are not
+2. **FreeShow metadata** — DEV-005. Categories, tags and media metadata are not
    mapped; `import-store` migrates the content but not the organisation.
-4. **Windows runtime verification.** The installer builds but has never run.
+3. **Windows runtime verification.** The installer builds but has never run.
    QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
    playback on WebView2 is also unmeasured.
-5. **Second physical display.** Experiment 1's placement and focus criteria are
+4. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-6. **Audio routing and A/V sync.** Audio elements exist; routing, channels and a
+5. **Audio routing and A/V sync.** Audio elements exist; routing, channels and a
    drift measurement do not (Phase 4/5).
 
 ## Known gaps and hazards
 
 - **No authentication on the remote**, and it binds `0.0.0.0`. Bind it to
   localhost or add auth before it runs on a shared network.
+- **FreeShow's own remote/stage clients cannot connect.** Deliberate (D12): the
+  protocol carries their layout/template model. Our clients are the supported
+  surface.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model (DEV-009).
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
