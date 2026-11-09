@@ -63,6 +63,12 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
+## Not using Craft Anything
+
+`docs/decisions.md` D10. FreeShow is readable, and every question so far was
+answered faster by reading it. The parity work is behavioural, which Craft
+Anything does not produce.
+
 ## Known deviations
 
 `docs/deviations.md` — ten entries, each with an impact and a way to close it.

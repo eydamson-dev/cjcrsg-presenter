@@ -92,3 +92,36 @@ them in headless Chromium. Native-window behaviour is covered by measurements
 
 **Consequences.** Visual regression testing works on a machine in use, with no
 risk of touching the desktop. Native window chrome is not in the pictures.
+
+## D10 — Craft Anything is not part of this workflow
+
+**Context.** The first architecture review suggested using `storytold/craft-anything`
+(Deep mode) to map FreeShow's modules, IPC and behaviour before porting. It is
+installed (`craft-anything-cli 0.5.0`) and was considered again here.
+
+**Decision.** Do not use it. It is not referenced by this repository and is not a
+dependency of any step.
+
+**Why.** Its value is inspecting software you cannot read: binaries, obfuscated
+JavaScript, Electron bundles without source. FreeShow is GPL and fully readable,
+and every question so far was answered faster by reading it directly:
+
+| Question | How it was actually answered |
+| --- | --- |
+| Which client drives navigation? | `src/server/controller/App.svelte` |
+| How is a show stored and ordered? | `types/Show.ts`, `layouts[activeLayout].slides` |
+| Why did the renderer not match? | `Zoomed.svelte` lays out at 1920×1080 and scales |
+| What transitions exist? | `TransitionType` union in `types/Show.ts` |
+| How do groups work? | `group: "."` starts, `null` continues |
+
+The parity work that remains is behavioural — screenshots, text metrics, protocol
+captures — and Craft Anything does not produce those. Playwright, `sharp` and a
+pinned reference checkout do, reproducibly, in CI.
+
+Its "rebuild" mode would also be counterproductive: an agent regenerating an app
+is the opposite of porting behaviour deliberately.
+
+**Consequences.** One less toolchain, one less alpha dependency, and evidence
+that any CI run can reproduce. Keep it installed for genuinely closed targets if
+they ever appear (a vendor SDK binary, an undocumented format); that is a
+different problem from this one.
