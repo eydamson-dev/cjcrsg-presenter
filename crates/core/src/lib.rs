@@ -19,7 +19,7 @@ pub mod shared;
 pub use bundle::{bundle_media, BundleReport, BUNDLE_DIR};
 pub use clock::{Clock, ManualClock, SystemClock};
 pub use domain::{
-    easing_css, MediaRef, Project, Show, Slide, SlideElement, SlideGroup, Transition,
+    easing_css, MediaFit, MediaRef, Project, Show, Slide, SlideElement, SlideGroup, Transition,
     TransitionKind, EASINGS,
 };
 pub use engine::{Position, ShowEngine};

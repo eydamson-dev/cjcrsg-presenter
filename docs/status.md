@@ -52,7 +52,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing, remote, groups. Missing style-level transitions and `custom.direction` |
-| 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
+| 3 — data | import + native format + media copy-in + document import (PDF, DOCX via LibreOffice) + recent/restore. Missing FreeShow DB import |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing, CPU figures or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
@@ -74,6 +74,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Transition timing: 1200 ms imported timing honoured; sine/linear ratio 0.571 vs 0.586 | `parity/reports/transition-timing-2026-11-09.md` |
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
+| Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
@@ -90,7 +91,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — eight entries, each with an impact and a way to close it.
+`docs/deviations.md` — seven entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -108,7 +109,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ```
 crates/core     91
-crates/compat   25
+crates/compat   29
 crates/remote   12
 apps/desktop     3
 ```
@@ -132,6 +133,8 @@ apps/desktop     3
   localhost or add auth before it runs on a shared network.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model.
+- **Document import needs external tools.** `pdftoppm` and `soffice` must be on
+  the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not
   implemented and would need an explicit operator choice.
 - **Media has a partial coordinator.** Position, pause, restore and seek exist;

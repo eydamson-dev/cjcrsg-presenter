@@ -58,7 +58,7 @@ single show, JSON first, versioned envelope, unknown fields preserved).
 - [x] Media: copy External -> Bundled (`cjcrsg-presenter bundle`)
 - [ ] FreeShow database import (DEV-005); our own session state is JSON (D11)
 - Media library, templates, groups
-- [ ] Importers: PDF, PPTX, DOCX, ODP/ODT
+- [x] Importers: PDF, DOCX/office via LibreOffice (PPTX/ODP path untested)
 - Round-trip tests against files from multiple FreeShow releases
 
 **Exit criteria:** an existing CJCRSG project opens, edits, and saves back

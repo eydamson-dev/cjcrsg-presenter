@@ -8,7 +8,8 @@
 use std::collections::BTreeMap;
 
 use presenter_core::{
-    MediaAsset, MediaKind, MediaOrigin, MediaRef, Show, Slide, SlideElement, SlideGroup, Transition,
+    MediaAsset, MediaFit, MediaKind, MediaOrigin, MediaRef, Show, Slide, SlideElement, SlideGroup,
+    Transition,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -150,6 +151,10 @@ fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
                         origin: MediaOrigin::External,
                         looped: item.looped.unwrap_or(false),
                         muted: item.muted.unwrap_or(true),
+                        fit: match item.fit.as_deref() {
+                            Some("contain") => MediaFit::Contain,
+                            _ => MediaFit::Cover,
+                        },
                     }),
                     ..Default::default()
                 });
@@ -265,6 +270,9 @@ struct RawItem {
     muted: Option<bool>,
     #[serde(rename = "loop", default)]
     looped: Option<bool>,
+    /// FreeShow's `fit`: "contain" letterboxes, anything else fills.
+    #[serde(default)]
+    fit: Option<String>,
     #[serde(default)]
     lines: Vec<RawLine>,
 }

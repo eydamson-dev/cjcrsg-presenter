@@ -653,6 +653,7 @@ fn project_media(
 
     RenderMedia {
         kind: media.kind,
+        fit: media.fit,
         src,
         looped: media.looped,
         muted: media.muted,
@@ -1027,6 +1028,7 @@ mod tests {
                     origin: MediaOrigin::External,
                     looped: true,
                     muted: true,
+                    fit: crate::domain::MediaFit::Cover,
                 }),
                 ..Default::default()
             });
@@ -1200,6 +1202,7 @@ mod tests {
                     origin: MediaOrigin::Bundled,
                     looped: false,
                     muted: true,
+                    fit: crate::domain::MediaFit::Cover,
                 }),
                 ..Default::default()
             });
@@ -1243,6 +1246,7 @@ mod tests {
                     origin: MediaOrigin::External,
                     looped: false,
                     muted: true,
+                    fit: crate::domain::MediaFit::Cover,
                 }),
                 ..Default::default()
             });

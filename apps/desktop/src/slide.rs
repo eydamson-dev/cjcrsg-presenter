@@ -5,7 +5,7 @@
 
 use dioxus::prelude::*;
 use presenter_core::{
-    easing_css, MediaKind, RenderMedia, RenderSlide, StageLayout, StageTimer, Transition,
+    easing_css, MediaFit, MediaKind, RenderMedia, RenderSlide, StageLayout, StageTimer, Transition,
 };
 
 #[component]
@@ -184,15 +184,19 @@ fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) 
     } else {
         media.src.clone()
     };
+    let fit = match media.fit {
+        MediaFit::Cover => "cover",
+        MediaFit::Contain => "contain",
+    };
     match media.kind {
         MediaKind::Image => rsx! {
-            img { class: "{class_name}", src: "{src}", style: "{style}" }
+            img { class: "{class_name}", src: "{src}", style: "{style} object-fit: {fit};" }
         },
         MediaKind::Video => rsx! {
             video {
                 class: "{class_name}",
                 src: "{src}",
-                style: "{style}",
+                style: "{style} object-fit: {fit};",
                 autoplay,
                 muted: media.muted || !play,
                 loop: media.looped,

@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 131 -->
+**As of `main`, 2026-11-09.** <!-- tests: 135 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -295,6 +295,14 @@ Copied bytes are identical to the source (`sha256` matches for both files).
 
 Report: `parity/reports/media-copy-in-2026-11-09.md`, and
 `parity/reports/data-layer-2026-11-09.md` for the import itself.
+
+**Documents import as image slides.** A three-page PDF becomes three slides
+(`Contain`, so a page is letterboxed rather than cropped); DOCX goes through
+LibreOffice into the same path.
+
+![A PDF page on an output](parity/reports/evidence/documents/remote-1920x1080.png)
+
+Report: `parity/reports/documents-2026-11-09.md`.
 
 **Recent projects are remembered.** Two launches recorded two projects, newest
 first; launching with no arguments restored the newest. The panel, rendered by

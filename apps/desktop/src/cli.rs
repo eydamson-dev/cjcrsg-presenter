@@ -113,6 +113,61 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Handled)
         }
 
+        [command, rest @ ..] if command == "import-pdf" || command == "import-deck" => {
+            let deck = command == "import-deck";
+            if rest.len() < 2 {
+                return Err(format!(
+                    "usage: cjcrsg-presenter {command} <in.{}> <out.cjcp> [--dpi N]",
+                    if deck { "pptx|odp|docx" } else { "pdf" }
+                ));
+            }
+            let source = Path::new(&rest[0]);
+            let destination = Path::new(&rest[1]);
+            let mut options = presenter_compat::ImportOptions::default();
+
+            let mut args = rest[2..].iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--dpi" => {
+                        let value = args.next().ok_or("--dpi needs a number")?;
+                        options.dpi = value
+                            .parse()
+                            .map_err(|_| format!("not a number: {value:?}"))?;
+                    }
+                    other => return Err(format!("unknown option {other:?}")),
+                }
+            }
+
+            // Rasterised pages live beside the project.
+            let root = destination
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new("."));
+            std::fs::create_dir_all(root)
+                .map_err(|error| format!("cannot create {}: {error}", root.display()))?;
+
+            let project = if deck {
+                presenter_compat::import_deck(source, root, options)
+            } else {
+                presenter_compat::import_pdf(source, root, options)
+            }
+            .map_err(|error| format!("cannot import {}: {error}", source.display()))?;
+
+            let document = cjcp::Document::new(project);
+            cjcp::write(destination, &document)
+                .map_err(|error| format!("cannot write {}: {error}", destination.display()))?;
+
+            out(format!(
+                "imported {} -> {} ({} slides, {} pages at {} dpi)",
+                source.display(),
+                destination.display(),
+                document.project.slide_count(),
+                document.project.slide_count(),
+                options.dpi
+            ));
+            Ok(Action::Handled)
+        }
+
         [command, rest @ ..] if command == "bundle" => {
             if rest.is_empty() {
                 return Err("usage: cjcrsg-presenter bundle <file.cjcp>".into());
@@ -193,8 +248,22 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                         let first = slide
                             .elements
                             .first()
-                            .map(|element| element.text.split('\n').next().unwrap_or(""))
-                            .unwrap_or("");
+                            .map(|element| {
+                                if !element.text.trim().is_empty() {
+                                    element.text.split('\n').next().unwrap_or("").to_string()
+                                } else {
+                                    element
+                                        .media
+                                        .as_ref()
+                                        .and_then(|media| {
+                                            std::path::Path::new(&media.path)
+                                                .file_name()
+                                                .map(|name| name.to_string_lossy().to_string())
+                                        })
+                                        .unwrap_or_default()
+                                }
+                            })
+                            .unwrap_or_default();
                         let timing = slide
                             .transition
                             .as_ref()
@@ -381,6 +450,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter import <in.show> <out.cjcp>\n  \
              cjcrsg-presenter inspect <file.cjcp>\n  \
              cjcrsg-presenter import-project <projects.json> <shows-dir> <out.cjcp> [--id ID]\n  \
+             cjcrsg-presenter import-pdf <in.pdf> <out.cjcp> [--dpi N]\n  \
+             cjcrsg-presenter import-deck <in.pptx|odp|docx> <out.cjcp> [--dpi N]\n  \
              cjcrsg-presenter bundle <file.cjcp>  copy external media into <dir>/media\n  \
              cjcrsg-presenter recent             list recently opened projects\n  \
              cjcrsg-presenter serve [--port N]   headless remote server\n  \

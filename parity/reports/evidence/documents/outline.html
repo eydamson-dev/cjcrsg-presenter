@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CJCRSG render</title>
+<style>/* Shared by the controller and every output window.
+   Each window is its own document, so this sheet cannot leak between outputs —
+   which is one of the properties Experiment 1 verifies. */
+
+:root {
+    color-scheme: dark;
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --line: #232a32;
+    --text: #e6e8ea;
+    --muted: #8b949e;
+    --accent: #4c8dff;
+    --ok: #3fb950;
+    --warn: #d29922;
+}
+
+html,
+body,
+#main {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+}
+
+/* ---------- controller ---------- */
+
+.controller {
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 32px 24px 48px;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 6px 0 24px;
+    color: var(--muted);
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+}
+
+.panel h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+}
+
+.readout {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+}
+
+.readout:last-of-type {
+    border-bottom: 0;
+}
+
+.readout .label {
+    color: var(--muted);
+}
+
+.readout .value {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.btn {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: #1b222a;
+    color: var(--text);
+    border-radius: 7px;
+    padding: 9px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #232c36;
+}
+
+.btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn.primary:hover {
+    filter: brightness(1.08);
+}
+
+.btn.small {
+    padding: 5px 12px;
+    font-size: 13px;
+}
+
+.hint {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.text {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: #0e1216;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.text.number {
+    flex: 0 0 5rem;
+    min-width: 5rem;
+}
+
+.control-label {
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.stage-top {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a1f26;
+}
+
+.stage-timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    padding: 2px 12px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.08);
+    color: #cfd6dd;
+}
+
+.stage-timer.running {
+    color: #fff;
+    background: rgb(210 60 60 / 0.35);
+}
+
+.stage-message {
+    flex: 0 0 auto;
+    padding: 14px 24px;
+    background: rgb(0 0 0 / 0.72);
+    border-top: 2px solid var(--accent);
+    color: #fff;
+    font-size: 30px;
+    text-align: center;
+    white-space: pre-wrap;
+}
+
+.confidence {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+}
+
+.confidence-clock {
+    position: absolute;
+    right: 3%;
+    top: 3%;
+    z-index: 4;
+    font-variant-numeric: tabular-nums;
+    font-size: 120px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow: 0 2px 18px rgb(0 0 0 / 0.65);
+}
+
+.keys {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+}
+
+.hint.error {
+    color: #ff8a80;
+    white-space: pre-wrap;
+}
+
+.recent-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+}
+
+.recent-row:last-child {
+    border-bottom: none;
+}
+
+.recent-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.recent-name .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-name .path {
+    color: var(--muted);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.output-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+}
+
+.output-row .name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.output-row .status,
+.output-row .btn {
+    flex: 0 0 auto;
+}
+
+.output-row:last-child {
+    border-bottom: 0;
+}
+
+.output-row .name {
+    font-weight: 600;
+}
+
+.status {
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+}
+
+.status.open {
+    color: var(--ok);
+    border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.status.closed {
+    color: var(--muted);
+}
+
+.applied {
+    flex: 0 0 auto;
+    min-width: 7.5rem;
+    text-align: right;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+footer p {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* ---------- output ---------- */
+
+.slide {
+    /* Slides are laid out at a fixed 1920x1080 and scaled to the viewport, so
+       every size on stage is proportional. Reflowing instead would make text
+       relatively larger on small outputs — a real difference from FreeShow. */
+    width: 1920px;
+    height: 1080px;
+    /* The scale is set by `--slide-scale`, computed from the viewport when the
+       document loads. `calc()` cannot divide a length by a number inside
+       `scale()`, so this cannot be done in pure CSS. */
+    transform: scale(var(--slide-scale, 1));
+    transform-origin: top left;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    background: #000;
+    color: #fff;
+    position: relative;
+}
+
+/* The animated layer. Transitions animate this element, never `.slide`, because
+   a keyframe that sets `transform` would overwrite the `scale()` that fits the
+   1920x1080 surface to the window — the slide would snap to full size for the
+   duration of every effect. */
+.slide-body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+}
+
+.slide .lyrics {
+    /* FreeShow stores an item's box as inline top/left/width/height without a
+       position, so the box only behaves as a box once we make it absolute. */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    /* Measured from FreeShow's Zoomed preview: 100px glyphs, ~112px line box,
+       on a 1920x1080 surface. */
+    font-size: 100px;
+    line-height: 1.12;
+    text-align: center;
+    /* FreeShow's text sits 1px lower than a plain centre at 1080p; a 2px top
+       pad shifts the flex centre by 1px. Verified by pixel diff. */
+    padding: 2px 6% 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.slide .lyrics .line {
+    white-space: pre;
+}
+
+/* Media items carry FreeShow's box style inline; the class only supplies the
+   fill behaviour when the item has no explicit size. */
+.slide .media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide audio {
+    display: none;
+}
+
+.slide .blank {
+    color: #4a5058;
+    font-size: 1.2rem;
+}
+
+.stage .output-badge {
+    display: none;
+}
+
+.output-badge {
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.3;
+}
+
+/* FreeShow's transition set: none, blur, fade, crossfade, fly, scale, slide, spin.
+   Each effect is defined twice (a/b) so alternating the class restarts the
+   animation on the next slide without remounting the subtree.
+
+   The shorthand below is FreeShow's default text transition (500 ms, sine) and
+   is only a fallback: SlideView sets animation-duration and
+   animation-timing-function inline from the project's own timing. */
+
+.tx-fade-a {
+    animation: tx-fade-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-fade-b {
+    animation: tx-fade-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-crossfade-a {
+    animation: tx-crossfade-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-crossfade-b {
+    animation: tx-crossfade-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-blur-a {
+    animation: tx-blur-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-blur-b {
+    animation: tx-blur-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-fly-a {
+    animation: tx-fly-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-fly-b {
+    animation: tx-fly-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-scale-a {
+    animation: tx-scale-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-scale-b {
+    animation: tx-scale-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-slide-a {
+    animation: tx-slide-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-slide-b {
+    animation: tx-slide-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-spin-a {
+    animation: tx-spin-a 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+.tx-spin-b {
+    animation: tx-spin-b 500ms cubic-bezier(0.37, 0, 0.63, 1) both;
+}
+
+@keyframes tx-fade-a {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-fade-b {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-crossfade-a {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-crossfade-b {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+
+@keyframes tx-blur-a {
+    from { filter: blur(24px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes tx-blur-b {
+    from { filter: blur(24px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes tx-fly-a {
+    from { transform: translateY(6%) scale(0.98); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-fly-b {
+    from { transform: translateY(6%) scale(0.98); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-scale-a {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-scale-b {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-slide-a {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+}
+
+@keyframes tx-slide-b {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+}
+
+@keyframes tx-spin-a {
+    from { transform: rotate(-8deg) scale(0.92); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes tx-spin-b {
+    from { transform: rotate(-8deg) scale(0.92); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+/* ---------- stage ---------- */
+
+.stage {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    color: #fff;
+}
+
+.stage-panes {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.stage .pane {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid #1a1f26;
+}
+
+.stage .pane:last-child {
+    border-right: 0;
+}
+
+.stage .pane-label {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8b949e;
+    border-bottom: 1px solid #1a1f26;
+}
+
+.stage .clock {
+    font-variant-numeric: tabular-nums;
+    color: #e6e8ea;
+}
+
+.stage .pane-notes {
+    flex: 0 0 auto;
+    max-height: 22%;
+    overflow: hidden;
+    padding: 10px 16px;
+    border-top: 1px solid #1a1f26;
+    color: #b8c0c8;
+    font-size: 16px;
+    line-height: 1.35;
+    white-space: pre-line;
+}
+
+.stage .pane-body {
+    flex: 1 1 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.stage .pane-body .slide {
+    width: 100%;
+    height: 100%;
+}
+</style>
+
+<style>html,body,#main{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000}</style>
+</head><body><div id="main"><div class="slide"><div class="slide-body " style=""><div class="output-badge">Audience</div><img class="media" src="file:///tmp/opencode/documents/media/outline/page-1.png" style=" object-fit: contain;"/></div></div></div>
+<script>
+  // Lay out at 1920x1080 and scale to the window, the way an output does.
+  const fit = () => document.documentElement.style.setProperty(
+    "--slide-scale", String(window.innerWidth / 1920));
+  fit();
+  addEventListener("resize", fit);
+  // A confidence clock, if this page has one.
+  const clock = document.getElementById("confidence-clock");
+  if (clock) {
+    const paint = () => {
+      clock.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    };
+    paint();
+    setInterval(paint, 1000);
+  }
+</script>
+</body></html>

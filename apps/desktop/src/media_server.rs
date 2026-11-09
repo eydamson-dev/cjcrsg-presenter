@@ -284,6 +284,7 @@ mod tests {
                                 origin: MediaOrigin::External,
                                 looped: false,
                                 muted: true,
+                                fit: presenter_core::MediaFit::Cover,
                             }),
                             ..Default::default()
                         }],

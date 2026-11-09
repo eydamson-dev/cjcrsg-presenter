@@ -91,6 +91,7 @@ pub struct RenderElement {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RenderMedia {
     pub kind: crate::media::MediaKind,
+    pub fit: crate::domain::MediaFit,
     /// An absolute `file://` URL the WebView can load.
     pub src: String,
     pub looped: bool,

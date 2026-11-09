@@ -192,6 +192,17 @@ pub struct Slide {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// How a media item fills its box.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum MediaFit {
+    /// Fill the box, cropping the overflow. Right for backgrounds and video.
+    #[default]
+    Cover,
+    /// Fit inside the box, letterboxing. Right for documents and logos.
+    Contain,
+}
+
 /// A file a slide element shows or plays.
 ///
 /// Imported FreeShow items carry the path directly (`item.src`), so an element
@@ -208,6 +219,8 @@ pub struct MediaRef {
     /// browsers only autoplay muted media. A project that says otherwise wins.
     #[serde(default = "default_muted")]
     pub muted: bool,
+    #[serde(default)]
+    pub fit: MediaFit,
 }
 
 fn default_muted() -> bool {

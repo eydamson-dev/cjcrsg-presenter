@@ -338,6 +338,7 @@ mod tests {
                     origin: MediaOrigin::External,
                     looped: false,
                     muted: true,
+                    fit: crate::domain::MediaFit::Cover,
                 }),
                 ..Default::default()
             });
