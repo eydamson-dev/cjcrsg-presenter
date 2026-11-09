@@ -1,0 +1,23 @@
+{
+  "pid": 735502,
+  "seconds": 60.0,
+  "cpu_percent": 112.6,
+  "rss_mb": 2204.6,
+  "processes": [
+    "WebKitNetworkPr",
+    "WebKitNetworkPr",
+    "WebKitNetworkPr",
+    "WebKitNetworkPr",
+    "WebKitNetworkPr",
+    "WebKitWebProces",
+    "WebKitWebProces",
+    "WebKitWebProces",
+    "WebKitWebProces",
+    "WebKitWebProces",
+    "bwrap",
+    "bwrap",
+    "cjcrsg-presente",
+    "glycin-svg"
+  ],
+  "process_count": 14
+}

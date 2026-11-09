@@ -10,9 +10,7 @@ deviation is closed, delete the entry rather than marking it done.
 | --- | --- | --- | --- |
 | DEV-003 | The remote speaks JSON over HTTP, not Socket.IO | Existing FreeShow remote/stage clients cannot connect | Implement the Socket.IO surface, or ship our own clients |
 | DEV-005 | FreeShow's own database is not imported | Migrating a library loses its categories, tags and media metadata | Read FreeShow's store and map it to a project |
-| DEV-008 | `next` on the last slide is a no-op; FreeShow's behaviour is unverified | Could differ at the end of a service | Observe the reference, then match it |
 | DEV-009 | The engine is linear inside a show; groups are navigation only | FreeShow's layout/section model is richer | Model layout sections when a feature needs them |
-| DEV-010 | Experiment 3 measured dropped frames, not CPU cost | Media budget is unknown | Measure inside the app in Phase 4 |
 | DEV-011 | `elastic` and `bounce` easings are approximated by one cubic-bézier | Those two curves are not exactly FreeShow's | Keyframes with intermediate stops per curve |
 | DEV-012 | The `slide` transition always enters from the right | FreeShow's default enters from the left and `custom.direction` selects an edge | Apply `custom.direction` in the renderer |
 

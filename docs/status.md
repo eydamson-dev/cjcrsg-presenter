@@ -53,7 +53,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing, remote, groups. Missing style-level transitions and `custom.direction` |
 | 3 — data | import + native format + media copy-in + document import (PDF, DOCX via LibreOffice) + recent/restore. Missing FreeShow DB import |
-| 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing, CPU figures or A/V drift measurement |
+| 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
 
@@ -75,6 +75,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 | Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
+| Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
+| Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
@@ -91,7 +93,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — seven entries, each with an impact and a way to close it.
+`docs/deviations.md` — five entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -132,7 +134,7 @@ apps/desktop     3
 - **No authentication on the remote**, and it binds `0.0.0.0`. Bind it to
   localhost or add auth before it runs on a shared network.
 - **The engine is linear within a show.** Groups are navigation sections, not
-  FreeShow's full layout/section model.
+  FreeShow's full layout/section model (DEV-009).
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not
@@ -147,8 +149,6 @@ apps/desktop     3
 - **Style-level transitions are not modelled.** FreeShow resolves slide → style
   → global; we resolve slide → default. A project that keeps its timing in
   `styles.json` gets the default (DEV-012 covers the related direction gap).
-- **Experiment 3 measured dropped frames only.** CPU cost per surface is
-  unmeasured; the proxy harness could not attribute it. Measure in-app.
 - **Desktop automation is unreliable on this machine.** Prefer headless
   renders; capture windows by hand.
 - **CI is green but the repo history is short.** The original fork's git history
