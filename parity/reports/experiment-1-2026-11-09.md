@@ -1,10 +1,11 @@
 # Experiment 1 — multi-window Dioxus and state recovery
 
-**Status:** **automated run passed.** Seven checks green; recovery 205 ms.
+**Status:** **automated run passed, re-run on `a6fdece`.** Seven checks green;
+recovery **184 ms** (205 ms on the first run, before the shared-engine refactor).
 Second physical display and focus behaviour still unmeasured (see *Not measured*).
 
-**Date:** 2026-11-09
-**Commit:** uncommitted working tree (no git history in this directory yet)
+**Date:** 2026-11-09 (first run), re-run 2026-11-09
+**Commit:** `a6fdece` for the re-run; the first run predates the repository history
 
 ## Machine
 
@@ -71,7 +72,7 @@ Raw output: `evidence/experiment-1-smoke.json`.
 | Four outputs open | 4 | 4 | yes |
 | State propagation after 10 advances | all at engine revision | all four at rev 10 | yes |
 | Closing an output changes engine state | never | engine 10 → 11 after 5 advances with Stage closed | yes |
-| Reopen → correct slide | < 1 s | **205 ms** | yes |
+| Reopen → correct slide | < 1 s | **184 ms** (205 ms first run) | yes |
 | Reopen → applied == engine revision | yes | `Some(11)` vs target 11 | yes |
 | Other outputs undisturbed by a reopen | yes | Audience/Preview/Confidence at 11 | yes |
 | Process exit code | 0 | 0 | yes |
@@ -109,7 +110,7 @@ before the outputs area is implemented.
 
 **Proceed.** The central claim holds: one engine, independent `VirtualDom`s, and
 a closed output that recovers the live slide from a snapshot rather than a
-replay. Recovery at 205 ms is far inside the one-second budget.
+replay. Recovery at 184 ms is far inside the one-second budget.
 
 The renderer work (Experiment 2) is unblocked. Display placement and focus must
 be closed before the multi-output features in Phase 2.

@@ -151,8 +151,11 @@ Transcript: `parity/reports/evidence/project/import.txt`.
 
 ## 6. Experiment 1 — four outputs, one engine
 
-`parity/reports/evidence/experiment-1-smoke.json` — seven checks, all passing,
-recovery **205 ms** against a 1,000 ms budget.
+Re-run on `a6fdece` (current `main`): seven checks, all passing, recovery
+**184 ms** against a 1,000 ms budget. The first run, before the shared-engine
+refactor, measured 205 ms.
+
+`parity/reports/evidence/experiment-1-smoke.json` — the raw result.
 
 This milestone has **no photograph**: it drives four native windows and the
 Wayland session refuses to let a program focus its own window, so an automated
