@@ -10,6 +10,28 @@ use serde_json::Value;
 
 pub type Id = String;
 
+/// One entry in a FreeShow project's ordered item list.
+///
+/// A project is not just shows: it can contain section markers and direct media
+/// items. We import shows, keep sections as ordered markers, and record other
+/// kinds rather than silently dropping them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum ProjectEntry {
+    Show {
+        id: Id,
+    },
+    Section {
+        id: Id,
+        name: String,
+    },
+    Other {
+        id: Id,
+        #[serde(rename = "type")]
+        item_type: String,
+    },
+}
+
 /// The transitions FreeShow offers, so a project's transition survives import.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -194,6 +216,10 @@ pub struct Project {
     pub id: Id,
     pub name: String,
     pub shows: Vec<Show>,
+    /// The project's item list in order: shows, sections and anything else it
+    /// referenced. Empty for a project built from a single show.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entries: Vec<ProjectEntry>,
     /// Category id to display name, when the source store provided them.
     /// A show's `category` refers to one of these.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]

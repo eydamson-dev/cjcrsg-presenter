@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use presenter_core::Project;
+use presenter_core::{Project, ProjectEntry};
 use serde::Deserialize;
 
 use crate::freeshow::{import_show, ImportError};
@@ -59,6 +59,11 @@ fn unnamed() -> String {
 #[derive(Debug, Deserialize)]
 struct RawRef {
     id: String,
+    /// FreeShow's `ShowType`: "show", "section", "image", …
+    #[serde(rename = "type", default)]
+    kind: Option<String>,
+    #[serde(default)]
+    name: Option<String>,
 }
 
 /// One entry in `projects.json`, as the store importer needs it.
@@ -106,12 +111,36 @@ pub fn import_project(
 
     let shows = load_shows(shows_dir)?;
     let mut imported = Vec::with_capacity(raw.shows.len());
+    let mut entries = Vec::with_capacity(raw.shows.len());
 
     for reference in &raw.shows {
-        let show = shows.get(&reference.id).ok_or_else(|| {
-            ProjectImportError::MissingShow(raw.name.clone(), reference.id.clone())
-        })?;
-        imported.push(show.clone());
+        if let Some(show) = shows.get(&reference.id) {
+            imported.push(show.clone());
+            entries.push(ProjectEntry::Show {
+                id: reference.id.clone(),
+            });
+            continue;
+        }
+
+        // A reference without a show file is only an error when it claims to be
+        // a show. Sections and direct media items are project structure, not
+        // missing files.
+        match reference.kind.as_deref() {
+            Some("section") => entries.push(ProjectEntry::Section {
+                id: reference.id.clone(),
+                name: reference.name.clone().unwrap_or_default(),
+            }),
+            Some("show") | None => {
+                return Err(ProjectImportError::MissingShow(
+                    raw.name.clone(),
+                    reference.id.clone(),
+                ))
+            }
+            Some(other) => entries.push(ProjectEntry::Other {
+                id: reference.id.clone(),
+                item_type: other.to_string(),
+            }),
+        }
     }
 
     // Media belongs to shows, but a project view wants one list. Deduplicate by
@@ -129,6 +158,7 @@ pub fn import_project(
         id,
         name: raw.name.clone(),
         shows: imported,
+        entries,
         media,
         ..Default::default()
     })
@@ -245,6 +275,47 @@ mod tests {
             }
             other => panic!("expected MissingShow, got {other}"),
         }
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn sections_and_other_items_do_not_fail_the_import() {
+        let dir = fixture_dir("sections");
+        let json = r#"{"projects":{"proj1":{"name":"Sunday","shows":[
+            {"id":"sec-1","type":"section","name":"Opening"},
+            {"id":"fx-show"},
+            {"id":"sec-2","type":"section","name":"Sermon"},
+            {"id":"img-1","type":"image"}
+        ]}}}"#;
+
+        let project = import_project(json, &dir, None).unwrap();
+        assert_eq!(project.shows.len(), 1, "only the real show is imported");
+        assert_eq!(project.entries.len(), 4, "order and structure are kept");
+
+        assert!(matches!(
+            &project.entries[0],
+            ProjectEntry::Section { name, .. } if name == "Opening"
+        ));
+        assert!(matches!(&project.entries[1], ProjectEntry::Show { .. }));
+        assert!(matches!(
+            &project.entries[3],
+            ProjectEntry::Other { item_type, .. } if item_type == "image"
+        ));
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_section_only_project_imports_with_no_slides() {
+        let dir = fixture_dir("section-only");
+        let json = r#"{"projects":{"proj1":{"name":"Empty","shows":[
+            {"id":"sec-1","type":"section","name":"Opening"}
+        ]}}}"#;
+
+        let project = import_project(json, &dir, None).unwrap();
+        assert_eq!(project.slides().count(), 0);
+        assert_eq!(project.entries.len(), 1);
 
         fs::remove_dir_all(&dir).ok();
     }

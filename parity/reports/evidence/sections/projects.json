@@ -1,0 +1,6 @@
+{"projects":{"sunday":{"name":"Sunday Service","shows":[
+  {"id":"sec-open","type":"section","name":"Opening"},
+  {"id":"fx-show"},
+  {"id":"sec-sermon","type":"section","name":"Sermon"},
+  {"id":"img-1","type":"image"}
+]}}}

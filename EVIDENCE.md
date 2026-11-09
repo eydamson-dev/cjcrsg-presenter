@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 148 -->
+**As of `main`, 2026-11-09.** <!-- tests: 150 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -336,6 +336,18 @@ Categories and show tags come with it:
 ```text
   show  Parity Fixture (fx-show) category=Songs tags=worship,easter
 ```
+
+**A project with sections imports.** Before this, any section reference aborted
+the whole import; sections are now ordered markers:
+
+```text
+entries   4
+  section Opening (sec-open)
+  section Sermon (sec-sermon)
+  item    image (img-1)
+```
+
+Report: `parity/reports/sections-2026-11-09.md`.
 
 Report: `parity/reports/store-import-2026-11-09.md`.
 

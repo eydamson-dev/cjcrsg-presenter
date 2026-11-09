@@ -232,6 +232,18 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             out(format!("app       {}", document.app_version));
             out(format!("shows     {}", document.project.shows.len()));
             out(format!("slides    {}", document.project.slide_count()));
+            out(format!("entries   {}", document.project.entries.len()));
+            for entry in &document.project.entries {
+                match entry {
+                    presenter_core::ProjectEntry::Show { .. } => {}
+                    presenter_core::ProjectEntry::Section { name, id } => {
+                        out(format!("  section {name} ({id})"));
+                    }
+                    presenter_core::ProjectEntry::Other { id, item_type } => {
+                        out(format!("  item    {item_type} ({id})"));
+                    }
+                }
+            }
             out(format!("media     {}", document.project.media.len()));
             // Report rather than refuse: a project with a missing clip must
             // still open, and the operator needs to know which one is gone.

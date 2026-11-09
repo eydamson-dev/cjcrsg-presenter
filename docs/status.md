@@ -54,7 +54,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, own remote clients, groups. Missing style-level transitions |
-| 3 — data | import (single show, project, whole store with categories and tags) + native format + media copy-in + document import + recent/restore. Missing FreeShow media metadata |
+| 3 — data | import (single show, project with sections, whole store with categories and tags) + native format + media copy-in + document import + recent/restore. Missing FreeShow media metadata |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
@@ -78,6 +78,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 | Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
 | Store import: 3 projects → 2 written, 1 broken project reported, others unaffected; category `Songs` and tags resolve | `parity/reports/store-import-2026-11-09.md` |
+| Sections: a project with 2 sections + 1 show + 1 image imports with ordered entries | `parity/reports/sections-2026-11-09.md` |
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
 | Slide direction: imported bottom_top moves down, top_bottom up, default left | `parity/reports/transition-direction-2026-11-09.md` |
@@ -116,15 +117,15 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ```
 crates/core     96
-crates/compat   37
+crates/compat   39
 crates/remote   12
 apps/desktop     3
 ```
 
 ## Next, in order
 
-1. **Sections and focus mode** — DEV-009. The engine is linear within a show;
-   FreeShow's layout/section model is richer and is what its project items are.
+1. **Sections and focus mode** — DEV-009. Sections now import as ordered
+   markers; focus mode and section actions (skip, loop, notes) do not exist.
 2. **FreeShow metadata** — DEV-005. Categories, tags and media metadata are not
    mapped; `import-store` migrates the content but not the organisation.
 3. **Windows runtime verification.** The installer builds but has never run.

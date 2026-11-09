@@ -1,0 +1,16 @@
+project   Sunday Service
+format    cjcp v1
+app       0.1.0
+shows     1
+slides    3
+entries   4
+  section Opening (sec-open)
+  section Sermon (sec-sermon)
+  item    image (img-1)
+media     0
+preserved 0 unknown key(s)
+  show  Parity Fixture (fx-show) category=none
+    group Group 1 — 3 slide(s)
+      fx-1 — "Verse one, line one"
+      fx-2 — "Verse one, line three"
+      fx-3 — "Verse two, line one"
