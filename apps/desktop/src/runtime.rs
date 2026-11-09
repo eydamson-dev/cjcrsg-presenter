@@ -81,6 +81,9 @@ impl AppState {
         let store = session_store();
         let session = store.load();
         let engine = shared_engine();
+        // Apply the remembered end-of-show setting before the first render, or
+        // the control would show one state and the engine behave as another.
+        engine.set_next_item_on_last_slide(session.next_item_on_last_slide);
         let project = engine.project();
         let outline = crate::outline::build(&project);
         let media = crate::media_panel::build(&project, media_root_hint());
@@ -159,6 +162,35 @@ impl AppState {
         }
     }
 
+    /// The live end-of-show setting. The engine owns it; the session remembers
+    /// it between launches.
+    pub fn next_item_on_last_slide(&self) -> bool {
+        self.engine.next_item_on_last_slide()
+    }
+
+    /// Apply the operator's end-of-show choice and remember it, the same way
+    /// column widths are remembered. The engine changes even if the file cannot
+    /// be written; a failed save is logged, not fatal.
+    pub fn set_next_item_on_last_slide(&self, enabled: bool) {
+        if !self.engine.set_next_item_on_last_slide(enabled) {
+            return;
+        }
+        let mut session = match self.session.lock() {
+            Ok(session) => session,
+            Err(_) => {
+                tracing::warn!("could not save the end-of-show setting; session lock poisoned");
+                return;
+            }
+        };
+        if session.next_item_on_last_slide == enabled {
+            return;
+        }
+        session.next_item_on_last_slide = enabled;
+        if let Err(error) = self.store.save(&session) {
+            tracing::warn!(%error, "could not save the end-of-show setting");
+        }
+    }
+
     pub fn media(&self) -> Vec<crate::media_panel::MediaItem> {
         self.media.lock().expect("media lock").clone()
     }
@@ -178,6 +210,12 @@ impl AppState {
 
     pub fn current_show(&self) -> Option<usize> {
         self.engine.current_show()
+    }
+
+    /// The show the operator has selected, which a next-at-the-end press moves
+    /// before the output follows.
+    pub fn selected_show(&self) -> Option<usize> {
+        self.engine.selected_show()
     }
 
     pub fn go_to_show(&self, show: usize) -> bool {

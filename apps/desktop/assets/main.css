@@ -610,11 +610,23 @@ header h1 {
     background: rgb(64 132 214 / 0.18);
 }
 
+/* The selected show can differ from the live one between the two presses of a
+   next-at-the-end move. It is a different colour on purpose: the operator must
+   be able to tell "where I am" from "what the room sees". */
+.outline-show.selected {
+    background: rgb(144 202 249 / 0.14);
+    box-shadow: inset 2px 0 0 var(--info);
+}
+
 .outline-badge {
     color: var(--accent);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+}
+
+.outline-badge.selected {
+    color: var(--info);
 }
 
 .outline-other {
@@ -700,11 +712,21 @@ header h1 {
     background: rgb(64 132 214 / 0.18);
 }
 
+.focus-show.selected {
+    border-color: var(--info);
+    background: rgb(144 202 249 / 0.12);
+    box-shadow: inset 3px 0 0 var(--info);
+}
+
 .focus-badge {
     color: var(--accent);
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+}
+
+.focus-badge.selected {
+    color: var(--info);
 }
 
 .focus-other {

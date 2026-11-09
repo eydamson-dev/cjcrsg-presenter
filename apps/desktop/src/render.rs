@@ -126,6 +126,7 @@ pub fn render(
                 OutlinePanel {
                     items: crate::outline::build(&engine.project()),
                     current: engine.current_show(),
+                    selected: engine.selected_show(),
                     on_play: None,
                 }
             }
@@ -137,6 +138,7 @@ pub fn render(
                     FocusView {
                         items: crate::outline::build(&engine.project()),
                         current: engine.current_show(),
+                        selected: engine.selected_show(),
                         on_play: None,
                         on_exit: None,
                         slide: slide_id,

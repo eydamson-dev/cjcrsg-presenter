@@ -72,6 +72,23 @@ impl SharedEngine {
         self.lock().current_show()
     }
 
+    /// The project show the operator has selected, which is not necessarily the
+    /// show on the output between the two presses of a next-at-the-end move.
+    pub fn selected_show(&self) -> Option<usize> {
+        self.lock().selected_show()
+    }
+
+    /// FreeShow's end-of-show setting, as the controller shows it.
+    pub fn next_item_on_last_slide(&self) -> bool {
+        self.lock().next_item_on_last_slide()
+    }
+
+    /// Apply the end-of-show setting. A preference, so neither the revision nor
+    /// the published state moves: the controller repaints from its own state.
+    pub fn set_next_item_on_last_slide(&self, enabled: bool) -> bool {
+        self.lock().set_next_item_on_last_slide(enabled)
+    }
+
     pub fn next_section(&self) -> bool {
         self.apply_engine(ShowEngine::next_section)
     }

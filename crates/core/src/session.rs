@@ -27,7 +27,7 @@ fn default_drawer_height() -> u32 {
     DEFAULT_DRAWER_HEIGHT
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Session {
     /// Newest first. `recent[0]` is what "restore on start" opens.
     #[serde(default)]
@@ -35,6 +35,26 @@ pub struct Session {
     /// Controller column widths in pixels.
     #[serde(default)]
     pub layout: LayoutPrefs,
+    /// FreeShow's `special.nextItemOnLastSlide`: off, Next at the end of a show
+    /// does nothing. `serde(default)` (and the manual `Default`) keep an old
+    /// session, which did not have this field, loading with FreeShow's default
+    /// of on rather than failing or silently turning the move off.
+    #[serde(default = "default_next_item_on_last_slide")]
+    pub next_item_on_last_slide: bool,
+}
+
+fn default_next_item_on_last_slide() -> bool {
+    true
+}
+
+impl Default for Session {
+    fn default() -> Self {
+        Self {
+            recent: Vec::new(),
+            layout: LayoutPrefs::default(),
+            next_item_on_last_slide: default_next_item_on_last_slide(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -350,6 +370,33 @@ mod tests {
 
         let reloaded = store.load();
         assert_eq!(reloaded.layout.drawer_height, 520);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn an_old_session_without_the_end_of_show_setting_reads_it_as_on() {
+        let json =
+            r#"{"recent":[],"layout":{"left_width":300,"right_width":400,"drawer_height":300}}"#;
+        let session: Session = serde_json::from_str(json).unwrap();
+        assert!(
+            session.next_item_on_last_slide,
+            "FreeShow's default is on; an upgrade must not turn the move off"
+        );
+        assert!(Session::default().next_item_on_last_slide);
+    }
+
+    #[test]
+    fn the_end_of_show_setting_round_trips_through_a_session_file() {
+        let dir = scratch("next-at-end");
+        let store = SessionStore::at(dir.join("session.json"));
+
+        let session = Session {
+            next_item_on_last_slide: false,
+            ..Default::default()
+        };
+        store.save(&session).unwrap();
+
+        assert!(!store.load().next_item_on_last_slide);
         std::fs::remove_dir_all(&dir).ok();
     }
 

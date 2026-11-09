@@ -1,0 +1,238 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running unittests src/main.rs (target/debug/deps/cjcrsg_presenter-c8c292e73ddcc0d7)
+
+running 25 tests
+test app::tests::the_end_of_show_control_is_a_state_not_a_question ... ok
+test drawer::tests::a_remembered_height_above_the_default_is_kept_and_window_clamped ... ok
+test drawer::tests::drag_height_keeps_the_pointer_at_its_grab_offset ... ok
+test drawer::tests::a_remembered_height_below_the_default_reopens_at_300 ... ok
+test drawer::tests::ctrl_digits_select_the_tab_at_that_position ... ok
+test drawer::tests::drag_heights_are_clamped_to_the_drawer_range ... ok
+test drawer::tests::only_ctrl_digits_one_to_eight_are_drawer_shortcuts ... ok
+test drawer::tests::tabs_are_in_freeshow_order_with_their_labels ... ok
+test drawer::tests::the_five_library_tabs_each_state_why_they_are_empty ... ok
+test media_panel::tests::external_media_uses_its_absolute_path_and_keeps_tags ... ok
+test media_panel::tests::media_splits_into_the_media_and_audio_tabs_in_project_order ... ok
+test media_panel::tests::sizes_are_human_readable ... ok
+test media_server::tests::content_types_cover_the_formats_freeshow_imports ... ok
+test media_panel::tests::bundled_media_resolves_against_the_project_and_reports_missing_files ... ok
+test media_server::tests::ranges_are_parsed_and_clamped ... ok
+test outline::tests::sections_and_shows_keep_the_project_entry_order ... ok
+test media_server::tests::only_files_the_project_references_are_allowed ... ok
+test projects::tests::a_missing_file_is_flagged_until_it_can_be_read_again ... ok
+test projects::tests::the_empty_state_is_the_contract_sentence ... ok
+test projects::tests::forgetting_removes_exactly_one_entry_and_never_the_open_project ... ok
+test projects::tests::recent_rows_keep_the_session_order_newest_first ... ok
+test projects::tests::the_open_project_alone_is_the_only_row ... ok
+test projects::tests::the_open_project_is_first_and_appears_exactly_once ... ok
+test projects::tests::repeated_recent_paths_are_deduplicated ... ok
+test runtime::tests::bundling_a_project_file_copies_and_rewrites_in_place ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/presenter_compat-db7aa89bcc2ac052)
+
+running 41 tests
+test cjcp::tests::json_is_readable_and_diffable ... ok
+test cjcp::tests::a_project_file_is_not_a_show_file ... ok
+test cjcp::tests::preserves_unknown_fields_inside_the_project ... ok
+test cjcp::tests::refuses_a_foreign_document ... ok
+test cjcp::tests::refuses_a_newer_format_version ... ok
+test cjcp::tests::preserves_unknown_top_level_keys ... ok
+test documents::tests::file_names_are_sanitised ... ok
+test documents::tests::page_numbers_sort_numerically_not_lexically ... ok
+test cjcp::tests::round_trips_a_project ... ok
+test documents::tests::a_document_with_no_pages_is_an_error ... ok
+test cjcp::tests::transition_fields_we_do_not_model_round_trip ... ok
+test cjcp::tests::single_show_round_trips ... ok
+test freeshow::tests::a_media_item_without_a_path_is_dropped ... ok
+test freeshow::tests::a_media_item_keeps_its_path_kind_and_playback_flags ... ok
+test freeshow::tests::a_show_keeps_its_category_and_tags ... ok
+test freeshow::tests::a_show_without_a_layout_is_rejected ... ok
+test documents::tests::pages_become_slides_with_relative_contain_images ... ok
+test freeshow::tests::a_show_without_metadata_has_no_category_or_tags ... ok
+test freeshow::tests::broken_json_is_reported_not_panicked ... ok
+test freeshow::tests::an_audio_item_is_audible_by_default_and_a_video_is_not ... ok
+test freeshow::tests::a_transition_without_a_type_is_ignored_like_freeshow_does ... ok
+test freeshow::tests::dot_starts_a_group_and_null_continues_it ... ok
+test freeshow::tests::imports_the_fixture ... ok
+test freeshow::tests::imports_a_slides_transition ... ok
+test freeshow::tests::media_arrives_as_an_external_reference_with_a_kind ... ok
+test freeshow::tests::keeps_multiline_text ... ok
+test freeshow::tests::follows_layout_order_not_the_slide_map_order ... ok
+test project::tests::an_empty_projects_file_is_reported ... ok
+test project::tests::a_referenced_show_that_is_not_on_disk_fails_loudly ... ok
+test project::tests::an_unknown_project_id_is_reported ... ok
+test project::tests::a_section_only_project_imports_with_no_slides ... ok
+test project::tests::imports_a_named_project ... ok
+test store::tests::a_folder_without_projects_json_says_so ... ok
+test project::tests::imports_the_first_project_by_default ... ok
+test store::tests::duplicate_project_names_get_distinct_files ... ok
+test project::tests::sections_and_other_items_do_not_fail_the_import ... ok
+test store::tests::category_names_come_from_the_synced_settings ... ok
+test store::tests::a_project_with_a_missing_show_is_reported_and_the_rest_still_import ... ok
+test store::tests::a_malformed_synced_settings_file_does_not_fail_the_migration ... ok
+test store::tests::media_tags_attach_to_the_matching_path ... ok
+test store::tests::every_project_becomes_its_own_cjcp ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/presenter_core-03a93e201695d145)
+
+running 115 tests
+test bundle::tests::file_names_are_sanitised_but_keep_their_extension ... ok
+test bundle::tests::a_missing_source_is_reported_and_left_external ... ok
+test clock::tests::the_manual_clock_moves_only_when_told ... ok
+test bundle::tests::a_source_already_inside_the_bundle_folder_is_not_copied_onto_itself ... ok
+test bundle::tests::an_element_media_path_is_rewritten_too ... ok
+test bundle::tests::a_relative_external_path_is_resolved_against_the_project_root ... ok
+test bundle::tests::an_external_file_is_copied_and_becomes_a_relative_bundled_asset ... ok
+test domain::tests::a_transition_written_by_us_can_be_read_back ... ok
+test domain::tests::a_transition_reads_freeshows_shape ... ok
+test domain::tests::a_slide_direction_is_read_from_custom_and_defaults_left_to_right ... ok
+test bundle::tests::one_file_referenced_by_the_project_and_a_show_is_copied_once ... ok
+test bundle::tests::running_twice_copies_nothing_the_second_time ... ok
+test domain::tests::an_unknown_direction_round_trips_untouched ... ok
+test domain::tests::an_unknown_easing_still_loads_and_round_trips ... ok
+test domain::tests::collecting_media_merges_shows_without_dropping_project_entries ... ok
+test domain::tests::easing_names_resolve_to_css_curves ... ok
+test domain::tests::the_default_is_freeshows_default_text_transition ... ok
+test domain::tests::the_sampled_curves_are_css_linear_lists ... ok
+test bundle::tests::two_assets_with_the_same_file_name_do_not_overwrite_each_other ... ok
+test engine::tests::a_countdown_starts_pauses_resets_and_expires ... ok
+test engine::tests::a_project_without_sections_has_one_group ... ok
+test engine::tests::a_show_can_be_started_by_index ... ok
+test engine::tests::a_slide_change_restarts_media_at_zero ... ok
+test engine::tests::a_slide_without_a_transition_uses_the_project_default ... ok
+test engine::tests::a_slides_own_transition_wins_over_the_default ... ok
+test engine::tests::an_absolute_media_path_ignores_the_root_and_clearing_stops_playback ... ok
+test engine::tests::an_operator_message_publishes_and_empties_to_nothing ... ok
+test engine::tests::a_slides_transition_direction_reaches_the_state ... ok
+test engine::tests::changing_the_end_of_show_setting_does_not_move_anything ... ok
+test engine::tests::clear_blanks_and_restore_reveals_without_moving ... ok
+test engine::tests::clearing_blanks_the_output_but_keeps_the_position ... ok
+test engine::tests::clearing_uses_the_default_not_the_slides_transition ... ok
+test engine::tests::first_and_last_are_reachable_as_commands ... ok
+test engine::tests::flattens_slides_in_order_across_groups_and_shows ... ok
+test engine::tests::go_to_out_of_range_is_a_no_op ... ok
+test engine::tests::go_to_addresses_a_slide_directly ... ok
+test engine::tests::group_navigation_is_a_no_op_when_there_is_nowhere_to_go ... ok
+test engine::tests::loading_nothing_yields_a_blank_state_not_an_error ... ok
+test engine::tests::media_is_resolved_against_the_project_root ... ok
+test engine::tests::media_position_advances_with_the_clock_and_freezes_when_cleared ... ok
+test engine::tests::navigating_after_clear_restores_the_output ... ok
+test engine::tests::navigation_publishes_a_transition_tagged_with_its_revision ... ok
+test engine::tests::next_advances_and_increments_revision ... ok
+test engine::tests::next_and_previous_section_jump_between_show_groups ... ok
+test engine::tests::next_at_project_end_is_no_op ... ok
+test engine::tests::next_at_show_end_selects_then_plays ... ok
+test engine::tests::next_at_show_end_setting_off_is_no_op ... ok
+test engine::tests::next_at_the_end_is_a_no_op ... ok
+test engine::tests::next_group_lands_on_the_next_sections_first_slide ... ok
+test engine::tests::next_within_show_is_unchanged ... ok
+test engine::tests::previous_at_the_start_is_a_no_op ... ok
+test engine::tests::previous_group_lands_on_the_previous_sections_first_slide ... ok
+test engine::tests::previous_walks_back_across_boundaries ... ok
+test engine::tests::replace_project_resets_selection ... ok
+test engine::tests::replacing_with_an_empty_project_blanks_the_output ... ok
+test engine::tests::replacing_the_project_resets_position_without_animating ... ok
+test engine::tests::seeking_moves_the_position_without_a_transition ... ok
+test engine::tests::selection_follows_go_to_and_first_last ... ok
+test engine::tests::selection_starts_on_the_first_show_with_a_slide ... ok
+test engine::tests::setting_cleared_to_its_current_value_is_a_no_op ... ok
+test engine::tests::state_carries_the_next_slide ... ok
+test engine::tests::state_carries_the_slide_notes ... ok
+test engine::tests::state_is_self_sufficient_for_a_fresh_renderer ... ok
+test engine::tests::the_stage_layout_publishes_and_ignores_a_repeat ... ok
+test hub::tests::a_new_subscriber_sees_the_current_value ... ok
+test hub::tests::clone_shares_one_publisher ... ok
+test hub::tests::publishing_with_no_receivers_is_not_an_error ... ok
+test hub::tests::a_late_subscriber_needs_only_the_latest_value ... ok
+test input::tests::a_bound_key_is_captured_and_an_unbound_one_is_not ... ok
+test input::tests::the_bindings_are_freeshows_controller_bindings ... ok
+test hub::tests::publishing_reaches_every_subscriber ... ok
+test input::tests::unbound_keys_do_nothing ... ok
+test media::tests::a_bundled_absolute_path_is_rejected ... ok
+test media::tests::a_bundled_path_is_relative_and_resolves_inside_the_project ... ok
+test media::tests::a_bundled_path_may_not_escape_the_project_root ... ok
+test media::tests::a_drive_relative_path_is_rejected_as_ambiguous ... ok
+test media::tests::a_file_url_is_absolute_and_percent_encoded ... ok
+test media::tests::a_file_url_keeps_the_drive_letter ... ok
+test media::tests::a_linux_absolute_path_is_rejected_on_every_platform ... ok
+test media::tests::a_unc_path_is_rejected ... ok
+test media::tests::a_windows_absolute_path_is_rejected ... ok
+test media::tests::an_external_absolute_path_is_allowed_and_marked_not_portable ... ok
+test media::tests::an_internal_parent_dir_is_allowed ... ok
+test media::tests::a_url_path_component_strips_the_leading_slash_and_encodes ... ok
+test media::tests::backslashes_are_rejected_everywhere ... ok
+test media::tests::round_trips_through_json_without_optional_noise ... ok
+test render::tests::a_state_spec_carries_the_slide_direction ... ok
+test render::tests::every_transition_round_trips_by_name ... ok
+test render::tests::names_match_freeshow_spelling ... ok
+test render::tests::none_has_no_animation ... ok
+test clock::tests::the_system_clock_moves_forward ... ok
+test session::tests::a_remembered_drawer_height_is_clamped_on_read ... ok
+test session::tests::a_missing_file_reads_as_an_empty_session ... ok
+test session::tests::a_corrupt_file_reads_as_an_empty_session_rather_than_failing_to_start ... ok
+test session::tests::a_session_without_layout_reads_default_widths ... ok
+test session::tests::an_old_layout_without_a_drawer_height_reads_the_default ... ok
+test session::tests::an_old_session_without_the_end_of_show_setting_reads_it_as_on ... ok
+test session::tests::a_remembered_drawer_height_round_trips_through_disk ... ok
+test session::tests::changing_column_widths_keeps_the_remembered_drawer_height ... ok
+test session::tests::a_session_round_trips_through_disk ... ok
+test session::tests::column_widths_have_defaults_and_are_clamped ... ok
+test session::tests::forgetting_a_project_removes_it ... ok
+test session::tests::recording_puts_the_newest_first_and_drops_the_old_entry ... ok
+test session::tests::the_list_is_capped ... ok
+test shared::tests::a_snapshot_reports_the_current_media_position_while_the_cache_does_not ... ok
+test session::tests::the_end_of_show_setting_round_trips_through_a_session_file ... ok
+test shared::tests::first_slide_jumps_to_the_start ... ok
+test shared::tests::is_send_and_sync ... ok
+test session::tests::saving_twice_replaces_the_file_without_leaving_a_temporary ... ok
+test shared::tests::last_slide_jumps_to_the_end ... ok
+test shared::tests::no_op_commands_do_not_publish ... ok
+test shared::tests::publishes_on_every_change ... ok
+test shared::tests::subscribers_see_published_state ... ok
+test shared::tests::replacing_a_project_publishes_even_when_the_new_one_is_empty ... ok
+test shared::tests::concurrent_advances_serialise ... ok
+
+test result: ok. 115 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/presenter_remote-e4251986add0c526)
+
+running 14 tests
+test tests::a_no_op_command_reports_conflict ... ok
+test tests::a_show_can_be_started_by_index_over_http ... ok
+test tests::goto_jumps_to_an_index ... ok
+test tests::a_stage_message_round_trips_and_clears ... ok
+test tests::a_timer_can_be_set_started_and_cleared ... ok
+test tests::first_and_last_jump ... ok
+test tests::next_advances_the_engine ... ok
+test tests::group_commands_move_by_section ... ok
+test tests::clear_blanks_and_restore_reveals_without_moving ... ok
+test tests::next_after_clear_restores_the_output ... ok
+test tests::the_page_renders_position ... ok
+test tests::the_stage_layout_can_be_changed ... ok
+test tests::section_jumps_are_reachable_over_http ... ok
+test tests::state_reports_position_and_slide ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests presenter_compat
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests presenter_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests presenter_remote
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

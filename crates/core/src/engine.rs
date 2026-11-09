@@ -109,7 +109,15 @@ pub struct ShowEngine {
     /// Which section each show belongs to, parallel to `project.shows`.
     /// Sections are project markers that group shows; they have no slides.
     sections: Vec<usize>,
+    /// The slide the audience sees.
     index: usize,
+    /// The project show the operator has moved to. It differs from the live
+    /// show only while a press at the end of a show has selected the next item
+    /// without playing it yet.
+    selected_show: usize,
+    /// FreeShow's `special.nextItemOnLastSlide`. On, a press at the last slide
+    /// of a show selects the next presentable show; off, it does nothing.
+    next_item_on_last_slide: bool,
     revision: Revision,
     /// Applies when a slide does not declare its own transition. FreeShow's
     /// default text transition: fade, 500 ms, sine.
@@ -140,11 +148,14 @@ impl ShowEngine {
     pub fn new(project: Project) -> Self {
         let order = Self::build_order(&project);
         let sections = Self::build_sections(&project);
+        let selected_show = order.first().map(|position| position.show).unwrap_or(0);
         Self {
             project,
             order,
             sections,
             index: 0,
+            selected_show,
+            next_item_on_last_slide: true,
             revision: 0,
             policy: Transition::default(),
             transition: None,
@@ -355,6 +366,11 @@ impl ShowEngine {
         self.sections = Self::build_sections(&project);
         self.project = project;
         self.index = 0;
+        self.selected_show = self
+            .order
+            .first()
+            .map(|position| position.show)
+            .unwrap_or(0);
         self.cleared = false;
         self.transition = None;
         self.revision += 1;
@@ -393,14 +409,80 @@ impl ShowEngine {
         Some((show, group, slide))
     }
 
-    /// Advance one slide. Returns whether anything changed.
-    pub fn next_slide(&mut self) -> bool {
-        if self.index + 1 >= self.order.len() {
-            debug!("next at final slide; ignoring");
+    /// The project index of the selected show, or `None` when there is no show
+    /// with a slide to select.
+    pub fn selected_show(&self) -> Option<usize> {
+        if self.order.is_empty() {
+            return None;
+        }
+        Some(self.selected_show)
+    }
+
+    /// FreeShow's `special.nextItemOnLastSlide`, on by default.
+    pub fn next_item_on_last_slide(&self) -> bool {
+        self.next_item_on_last_slide
+    }
+
+    /// Change the end-of-show setting. Returns whether the value changed.
+    ///
+    /// This is a preference, not navigation: the live slide, the selection and
+    /// the revision are untouched. The controller is what repaints.
+    pub fn set_next_item_on_last_slide(&mut self, enabled: bool) -> bool {
+        if self.next_item_on_last_slide == enabled {
             return false;
         }
-        self.index += 1;
-        self.bump();
+        self.next_item_on_last_slide = enabled;
+        true
+    }
+
+    /// Advance one slide. Returns whether anything changed.
+    ///
+    /// Inside a show this moves the output one slide. At a show's last slide,
+    /// FreeShow moves in two steps: the first press selects the next show that
+    /// has a slide, leaving the output where it is; the following press outputs
+    /// that show's first slide. The setting can stop the move, and at the end
+    /// of the project there is nowhere to go.
+    pub fn next_slide(&mut self) -> bool {
+        let Some(current) = self.position() else {
+            debug!("next on a project with no slides; ignoring");
+            return false;
+        };
+        let Some(next) = self.order.get(self.index + 1).copied() else {
+            debug!("next at final slide; ignoring");
+            return false;
+        };
+
+        if next.show == current.show {
+            self.index += 1;
+            self.bump();
+            return true;
+        }
+
+        if !self.next_item_on_last_slide {
+            debug!("next past a show's last slide, setting off; ignoring");
+            return false;
+        }
+
+        if self.selected_show == next.show {
+            // The selection already landed on the next show: play it.
+            return self.go_to_index(self.index + 1);
+        }
+
+        // First press: select the next show and leave the output alone.
+        self.select_show(next.show)
+    }
+
+    /// Move the selection without touching the output.
+    ///
+    /// The revision moves so the controller repaints, but no transition
+    /// accompanies it: the audience sees the same slide as before.
+    fn select_show(&mut self, show: usize) -> bool {
+        if self.selected_show == show {
+            return false;
+        }
+        self.selected_show = show;
+        self.transition = None;
+        self.revision += 1;
         true
     }
 
@@ -410,9 +492,7 @@ impl ShowEngine {
             debug!("previous at first slide; ignoring");
             return false;
         }
-        self.index -= 1;
-        self.bump();
-        true
+        self.go_to_index(self.index - 1)
     }
 
     /// Jump to the first slide of the next section.
@@ -528,8 +608,15 @@ impl ShowEngine {
     }
 
     pub fn go_to_index(&mut self, index: usize) -> bool {
-        if index >= self.order.len() || index == self.index {
+        if index >= self.order.len() {
             return false;
+        }
+        let show = self.order[index].show;
+        if index == self.index {
+            // Landing on the slide already live still re-targets the selection:
+            // an operator who clicks the live show after a next-at-the-end press
+            // must see it selected again. The output is unchanged.
+            return self.select_show(show);
         }
         self.index = index;
         self.bump();
@@ -601,6 +688,11 @@ impl ShowEngine {
     }
 
     fn bump(&mut self) {
+        // A landed slide is also the selected show. The two positions differ
+        // only between the two presses of a next-at-the-end move.
+        if let Some(position) = self.position() {
+            self.selected_show = position.show;
+        }
         // Navigating reveals the output again. In FreeShow the cleared state is
         // derived from whether an output has content, so any slide change
         // restores it; leaving it blank would make Escape a trap.
@@ -833,19 +925,189 @@ mod tests {
         assert!(engine.next_slide());
         assert_eq!(engine.state().slide_id, "b1");
 
-        // Crosses into the next show.
+        // The last slide of the show: the next press only selects the next
+        // show, because FreeShow moves to the next item in two presses.
+        assert!(engine.next_slide());
+        assert_eq!(engine.state().slide_id, "b1");
+        assert_eq!(engine.selected_show(), Some(1));
+        assert_eq!(engine.revision(), 3);
+
+        // The following press crosses into the next show.
         assert!(engine.next_slide());
         assert_eq!(engine.state().slide_id, "c1");
+        assert_eq!(engine.revision(), 4);
     }
 
     #[test]
     fn next_at_the_end_is_a_no_op() {
         let mut engine = ShowEngine::new(fixture());
+        // Walk to the end, including the selection-only press at the first
+        // show's last slide. The loop stops because nothing follows the last
+        // show.
         while engine.next_slide() {}
         let revision = engine.revision();
         assert_eq!(engine.state().slide_id, "c2");
         assert!(!engine.next_slide());
         assert_eq!(engine.revision(), revision);
+        assert_eq!(
+            engine.selected_show(),
+            Some(1),
+            "the live show stays selected at the end of the project"
+        );
+    }
+
+    #[test]
+    fn next_at_show_end_selects_then_plays() {
+        let mut engine = ShowEngine::new(fixture());
+        // b1, the last slide of the first show.
+        assert!(engine.go_to_index(2));
+        let before = engine.revision();
+
+        assert!(
+            engine.next_slide(),
+            "the first press is a state change: the selection moved"
+        );
+        assert_eq!(engine.state().slide_id, "b1", "the output has not moved");
+        assert_eq!(engine.selected_show(), Some(1));
+        assert_eq!(engine.revision(), before + 1);
+        assert!(
+            engine.state().transition.is_none(),
+            "a selection change is not a slide change and starts no transition"
+        );
+
+        assert!(engine.next_slide(), "the second press plays the selection");
+        assert_eq!(engine.state().slide_id, "c1");
+        assert_eq!(
+            engine.selected_show(),
+            Some(1),
+            "selected and live agree again once the slide lands"
+        );
+        assert_eq!(engine.revision(), before + 2);
+        assert!(
+            engine.state().transition.is_some(),
+            "playing is an ordinary advance and publishes a transition"
+        );
+    }
+
+    #[test]
+    fn next_at_show_end_setting_off_is_no_op() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.set_next_item_on_last_slide(false));
+        assert!(engine.go_to_index(2));
+        let before = engine.revision();
+
+        assert!(!engine.next_slide(), "the setting stops the move");
+        assert_eq!(engine.state().slide_id, "b1");
+        assert_eq!(
+            engine.selected_show(),
+            Some(0),
+            "no selection change either"
+        );
+        assert_eq!(engine.revision(), before);
+    }
+
+    #[test]
+    fn next_at_project_end_is_no_op() {
+        let mut engine = ShowEngine::new(fixture());
+        // c2, the project's last slide.
+        assert!(engine.go_to_index(4));
+        let before = engine.revision();
+
+        assert!(!engine.next_slide(), "there is no next show to select");
+        assert_eq!(engine.state().slide_id, "c2");
+        assert_eq!(engine.selected_show(), Some(1));
+        assert_eq!(engine.revision(), before, "it does not wrap");
+    }
+
+    #[test]
+    fn next_within_show_is_unchanged() {
+        let mut engine = ShowEngine::new(fixture());
+        let before = engine.revision();
+
+        assert!(engine.next_slide(), "inside a show, one press advances");
+        assert_eq!(engine.state().slide_id, "a2");
+        assert_eq!(engine.revision(), before + 1);
+
+        assert!(engine.next_slide(), "the empty group does not stall it");
+        assert_eq!(engine.state().slide_id, "b1");
+        assert_eq!(
+            engine.selected_show(),
+            Some(0),
+            "the selection follows the live slide"
+        );
+    }
+
+    #[test]
+    fn selection_follows_go_to_and_first_last() {
+        use crate::shared::SharedEngine;
+
+        let shared = SharedEngine::new(ShowEngine::new(fixture()));
+        assert!(shared.go_to_show(1));
+        assert_eq!(
+            shared.selected_show(),
+            Some(1),
+            "go_to_show selects its show"
+        );
+
+        assert!(shared.first_slide());
+        assert_eq!(
+            shared.selected_show(),
+            Some(0),
+            "First selects the first show"
+        );
+
+        assert!(shared.last_slide());
+        assert_eq!(
+            shared.selected_show(),
+            Some(1),
+            "Last selects the last show"
+        );
+
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.go_to(Position {
+            show: 1,
+            group: 0,
+            slide: 1
+        }));
+        assert_eq!(engine.selected_show(), Some(1), "go_to selects its show");
+    }
+
+    #[test]
+    fn replace_project_resets_selection() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.go_to_index(2));
+        assert!(engine.next_slide());
+        assert_eq!(engine.selected_show(), Some(1));
+
+        let mut other = fixture();
+        other.shows.truncate(1);
+        assert!(engine.replace_project(other));
+
+        assert_eq!(engine.state().slide_id, "a1");
+        assert_eq!(engine.current_show(), Some(0));
+        assert_eq!(
+            engine.selected_show(),
+            Some(0),
+            "a new project starts with both positions on its first show"
+        );
+    }
+
+    #[test]
+    fn changing_the_end_of_show_setting_does_not_move_anything() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.go_to_index(2));
+        assert!(engine.next_slide());
+        let revision = engine.revision();
+
+        assert!(engine.set_next_item_on_last_slide(false));
+        assert!(!engine.set_next_item_on_last_slide(false), "unchanged");
+        assert_eq!(
+            engine.revision(),
+            revision,
+            "a preference is not navigation"
+        );
+        assert_eq!(engine.state().slide_id, "b1");
+        assert_eq!(engine.selected_show(), Some(1), "the selection is kept");
     }
 
     #[test]
@@ -1075,6 +1337,20 @@ mod tests {
         assert!(state.slide.is_blank());
         assert_eq!(state.revision, 0);
         assert!(!engine.is_loaded());
+        assert_eq!(engine.selected_show(), None, "nothing to select");
+    }
+
+    #[test]
+    fn selection_starts_on_the_first_show_with_a_slide() {
+        let mut project = fixture();
+        project.shows[0].groups.clear();
+        let engine = ShowEngine::new(project);
+        assert_eq!(engine.current_show(), Some(1), "the empty show is skipped");
+        assert_eq!(
+            engine.selected_show(),
+            Some(1),
+            "selected starts where the output does, on the first presentable show"
+        );
     }
 
     #[test]
