@@ -1,10 +1,10 @@
 # Controller UI parity
 
-Status: **shell done.** Frame, live preview, FreeShow palette, resizable
-columns, focus-in-centre and a side-by-side comparison against FreeShow are in.
-What remains is information architecture, not the shell: a project browser, the
-bottom tab strip (Media/Audio/Overlays/Templates…), a clock and the slide
-editor. Recorded as DEV-013.
+Status: **shell and drawer done.** Frame, live preview, FreeShow palette,
+resizable columns, focus-in-centre, the eight-tab bottom drawer with its clock,
+and side-by-side comparisons against FreeShow are in. What remains is the left
+project browser and the slide editor, recorded as DEV-013; the text-only tabs
+are DEV-014.
 
 ## The difference, plainly
 
@@ -12,15 +12,15 @@ FreeShow's controller is a **top bar with three resizable columns**:
 
 | Region | FreeShow (`src/frontend/MainLayout.svelte`) | Ours today |
 | --- | --- | --- |
-| Top | `Top` — project, profiles, add, settings | title + a Focus button |
-| Left | Projects, navigation, stage layouts, draw tabs or settings — switches with the page | Project outline |
-| Centre | the show: slide grid, editor, or focus mode | nothing — panels stacked below |
-| Right | **Preview** plus page-specific tools | Stage, Media, Outputs panels |
-| Bottom | drawer / timeline when enabled | — |
+| Top | `Top` — project, profiles, add, settings | title, transport, sections, Focus |
+| Left | Projects, navigation, stage layouts, draw tabs or settings — switches with the page | Project outline and recent projects |
+| Centre | the show: slide grid, editor, or focus mode | live preview of the live slide, or focus mode |
+| Right | **Preview** plus page-specific tools | Stage controls and the output registry |
+| Bottom | drawer / timeline when enabled | eight-tab drawer, no timeline |
 
-Ours is one scrolling column: readout, project, media, stage, recent projects,
-outputs, footer. Every function is reachable, none of FreeShow's layout is
-reproduced, and muscle memory from FreeShow does not transfer.
+The three columns and the drawer now match. What differs is which surfaces
+exist: FreeShow's left column browses projects and its centre edits a slide
+grid; ours lists the open project's shows and previews the live slide.
 
 The window also said "Experiment 1 · multi-window state recovery" until
 2026-11-09; it now says "Controller".
@@ -36,15 +36,17 @@ media layers depends on this layout; moving it is a UI change only.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│ CJCRSG Presenter · project name   [Prev][Next][First][Clear]  │
-│                                    [sections][groups][Focus]  │
+│ CJCRSG Presenter · project   [◀][▶][First][Clear]  [Section]  │
+│                                                   [Focus]     │
 ├───────────────┬───────────────────────────────┬───────────────┤
 │ Project       │ Live preview                  │ Stage         │
 │  Section      │  (SlideView, scaled)          │  message      │
 │  ▸ Show       │                               │  countdown    │
-│  ▸ Show       │ Media                         │  layout       │
+│  ▸ Show       │                               │  layout       │
 │ Recent        │                               │ Outputs       │
-└───────────────┴───────────────────────────────┴───────────────┘
+├───────────────┴───────────────────────────────┴───────────────┤
+│ [Shows][Media][Audio][Overlays][Templates][Scripture]…  clock │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 - **Top bar** carries the commands currently in the readout panel.
@@ -74,6 +76,13 @@ Columns should be resizable, with widths remembered in the session store
 5. ~~**Comparison evidence.**~~ Done: FreeShow 1.6.8 captured on X11 with
    `--ozone-platform=x11`, ours with `scripts/capture_window.sh`, both in
    `evidence/ui-shell/comparison.png`.
+6. ~~**Bottom drawer.**~~ Done: eight tabs in FreeShow's order, 40/300/maximum
+   geometry with the maximum measured from our top bar, drag and double-click
+   collapse, remembered height, Ctrl+1..8, media split into Media and Audio,
+   the five library-less tabs naming their gap, and the clock with a long-form
+   date. Contract `docs/contracts/ui-drawer.md`, scenarios
+   `parity/scenarios/controller-drawer.yaml`, evidence
+   `parity/reports/ui-drawer-2026-11-09.md`, verifier pass on `b969f82`.
 
 ## Evidence method
 
@@ -86,7 +95,8 @@ not the controller.
 
 - **No slide editor.** FreeShow's centre shows an editable slide grid; ours
   previews the live slide. Editing is a different phase.
-- **No drawer or timeline** until a feature needs them.
+- **No timeline** until a feature needs one. The drawer exists because the
+  media, audio and show lists needed a home.
 - **No output-window changes.** The audience/stage/preview/confidence surfaces
   and their parity evidence are untouched.
 - **No engine changes.** The controller keeps reading `RenderState` through
@@ -98,4 +108,5 @@ not the controller.
   **selected** slide (a future editor)? Today: live.
 - Does focus mode keep the top bar? FreeShow hides it; ours likely keeps a single
   Exit control.
-- Do we port FreeShow's icon set, or keep text labels until an icon pass?
+- Icons: answered for now — text labels only, recorded as DEV-014. Port
+  FreeShow's icon set when a controller icon pass happens.

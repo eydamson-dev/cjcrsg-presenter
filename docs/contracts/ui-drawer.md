@@ -181,3 +181,20 @@ silently blank and not a disabled control:
 - **Click on the active tab does not collapse** — the reference is ambiguous.
 - **No drawer search, sub-columns, info panels, profiles or Ctrl+D/Ctrl+T** —
   listed in Scope.
+
+## Acceptance
+
+Accepted by the orchestrator on 2026-11-09.
+
+- Candidate: `b969f826a72f4d55c043398192598a60b7ad2c4a` (`dev-013-drawer`,
+  fast-forwarded to `main`), `scripts/check.sh` exit 0, 177 tests.
+- Verifier: pass, no contract defects. First pass failed on the grab-bar hit
+  target, evidence crops and three small defects; the second pass re-tested each
+  fix and the whole contract.
+  Reports: `parity/reports/verifier/ui-drawer-2026-11-09.md` and
+  `parity/reports/verifier/ui-drawer-2026-11-09-2.md`.
+- Evidence index: `EVIDENCE.md` § Controller drawer.
+- Recorded gaps at acceptance: no controller adapter, so the 20 scenarios are
+  manual; the scenario fixtures do not exist yet; the 1400 px clamp capture is
+  blocked by this display's window-manager cap (1302 px WebView) and is
+  reported as unconfirmed rather than passed.

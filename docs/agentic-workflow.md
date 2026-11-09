@@ -54,6 +54,8 @@ does the work is never the one that grades it.
 
 ## Status
 
-The agent files exist under `.opencode/agents/`. Whether OpenCode lists them for
-this project has not been confirmed in a session yet. Update this section when it
-has been.
+The agent files exist under `.opencode/agents/`, and OpenCode lists all five.
+The first full run (controller drawer, 2026-11-09) used reader →
+scenario-author → implementer (worktree `dev-013-drawer`) → verifier (separate
+worktree at the candidate SHA), with one failed verdict sent back and a second
+pass that passed. The orchestrator accepted on `b969f82`.

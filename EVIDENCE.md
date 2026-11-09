@@ -512,9 +512,10 @@ of icons, and a simple show list instead of the reference's grid.
 
 Measured from the pixels: the grab bar is 4 px, the active underline 2 px, the
 info column exactly 290 px, and the clock advances 16:29:18 → 16:29:19 between
-captures 1.4 s apart. Every image is a WebView content crop; the native menu bar
-is not in any of them. A real-mouse Chromium probe drags from the bar centre
-over a tab at 1280/1024/400 and checks that the grab offset is preserved
+captures 1.4 s apart. Every **controller** image is a WebView content crop; the
+native menu bar is not in any of them. The FreeShow reference and the composite
+are not ours and are not crops. A real-mouse Chromium probe drags from the bar
+centre over a tab at 1280/1024/400 and checks that the grab offset is preserved
 (`drag-hit-test-report.json`). The 79/80 release, remembered-80 relaunch,
 remembered-520 restart, 744 maximum and the 1201/39 session clamps all have
 their `session-*.json` files beside the images.

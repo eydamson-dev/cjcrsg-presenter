@@ -49,6 +49,9 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 - An HTTP remote that drives all of the above, returning 409 for a no-op.
 - Close any output, keep presenting, reopen it and it returns to the live slide
   in ~180 ms.
+- Use FreeShow's bottom drawer: eight tabs in its order, drag to resize or
+  collapse to the 40 px strip, Ctrl+1..8, a remembered height, the project's
+  media split into Media and Audio, and a clock with the long-form date.
 
 ## Phases
 
@@ -61,7 +64,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. Linux: per-user tarball with desktop entry, icon and install script, built in CI. DPI/monitors/audio, Windows uninstall and AppImage/Flatpak unverified |
-| 7 — controller UI parity | **shell done.** Top bar, three columns, live preview, FreeShow palette, resizable persisted columns, focus-in-centre, and a side-by-side comparison against FreeShow 1.6.8. Remaining is information architecture: project browser, tab strip, clock, editor (DEV-013) |
+| 7 — controller UI parity | **shell and drawer done.** Top bar, three columns, live preview, FreeShow palette, resizable persisted columns, focus-in-centre, the eight-tab bottom drawer with clock, and side-by-side comparisons against FreeShow 1.6.8. Remaining: the left project browser and the slide editor (DEV-013) |
 
 ## Measured, with evidence
 
@@ -101,6 +104,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Output drift over 10 min: Stage 5.8 ms, Confidence 1.6 ms against Audience (offset is start time, not drift) | `parity/reports/media-drift-2026-11-09.md` |
 | Stage message + countdown: 120 s set, pause holds 90 s, remote reports 299 994 ms running; split and live-only layouts | `parity/reports/stage-message-timer-2026-11-09.md` |
 | Output kinds: preview renders the next slide, confidence the live slide + clock | `parity/reports/output-kinds-2026-11-09.md` |
+| Controller drawer: 8 tabs, 40/300/744 px geometry, 79/80 px drag threshold, remembered height across restart, 17 images and 9 session files | `parity/reports/ui-drawer-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -129,17 +133,17 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core    101
+crates/core    105
 crates/compat   41
 crates/remote   14
-apps/desktop     7
+apps/desktop    17
 ```
 
 ## Next, in order
 
-1. **Controller information architecture** — DEV-013's remainder. The shell
-   matches FreeShow; the project browser, bottom tab strip (Media, Audio,
-   Overlays, Templates…), clock and slide editor do not exist.
+1. **Controller information architecture, remainder** — DEV-013. The drawer,
+   tab strip and clock are done. The left project browser and the slide editor
+   are not; the editor stays out until a later phase (`docs/ui-parity.md`).
 2. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
    per-section actions (skip, loop, notes) are still not executed, and the view
    has no drag, auto-scroll or keyboard traversal.
@@ -153,14 +157,15 @@ apps/desktop     7
 ## Controller UI
 
 The **outputs** target FreeShow's look (renderer parity 0.35 % differing
-pixels). The **controller** now has FreeShow's shell: top bar, three columns,
-live preview, palette, resizable columns and focus-in-centre, compared
-side-by-side with FreeShow 1.6.8 in `parity/reports/ui-shell-2026-11-09.md`.
+pixels). The **controller** now has FreeShow's shell and its bottom drawer: top
+bar, three columns, live preview, palette, resizable columns, focus-in-centre,
+eight drawer tabs and the clock, compared side-by-side with FreeShow 1.6.8 in
+`parity/reports/ui-shell-2026-11-09.md` and `parity/reports/ui-drawer-2026-11-09.md`.
 
-What still differs is information architecture, not layout: FreeShow has a
-project browser, a bottom tab strip (Media, Audio, Overlays, Templates…) and a
-slide editor; we have the open project's shows and a live preview. DEV-013 and
-`docs/ui-parity.md` record the boundary.
+What still differs is information architecture, not layout: FreeShow has a left
+project browser and an editable slide grid; we have the open project's shows and
+a live preview. The five drawer tabs with no library behind them say so
+explicitly (DEV-014). DEV-013 and `docs/ui-parity.md` record the boundary.
 
 ## Known gaps and hazards
 
@@ -175,6 +180,9 @@ slide editor; we have the open project's shows and a live preview. DEV-013 and
 - **The media panel is read-only.** It lists assets, sizes, tags and missing
   files, but cannot add, relink or remove; thumbnails and durations are not
   stored.
+- **Five drawer tabs are empty by design.** Overlays, Templates, Scripture,
+  Calendar and Functions each say there is no library behind them; only Shows,
+  Media and Audio have content (DEV-014).
 - **Document import needs external tools.** `pdftoppm` and `soffice` must be on
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not
