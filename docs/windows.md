@@ -201,6 +201,28 @@ Do not let CI pretend a virtual display is a presentation environment.
 **QEMU/KVM Windows 11 on the Fedora desktop.** 4–6 vCPU, 8 GB RAM, 80–100 GB
 disk, virtio storage and network, SPICE or RDP for interaction.
 
+The most automated route found so far is `dockurr/windows`, which installs
+Windows unattended and exposes a web console:
+
+```bash
+docker run -d --name cjcrsg-win \
+  --device /dev/kvm --cap-add NET_ADMIN \
+  -p 8006:8006 -p 3389:3389 \
+  -v /path/to/oem:/oem -v /path/to/storage:/storage \
+  -e VERSION=11 -e RAM_SIZE=6G -e CPU_CORES=4 -e DISK_SIZE=64G \
+  dockurr/windows
+```
+
+Files in `/oem` are copied into the guest and `install.bat` runs at first start.
+That is how the NSIS installer can be exercised without a human clicking: the
+batch runs `CJCRSG-Presenter-Setup.exe /S`, checks the executable and the HKCU
+uninstall key, launches the app, and writes `C:\oem-result.txt` for the console
+screenshot. The web console at `:8006` is readable from Playwright
+(`parity/tools/watch_vm.mjs`), which is how the result is captured.
+
+Status of that run: **in progress** — this section will say what it proved, or
+that it did not, before any release claim is made.
+
 Good enough for: MSVC builds, WebView2 install and launch, native menus, tray,
 basic fullscreen, filesystem behaviour, installer testing, font rendering
 against Windows fonts, CDP automation.
