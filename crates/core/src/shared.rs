@@ -77,6 +77,32 @@ impl SharedEngine {
         self.apply_engine(|engine| engine.apply(command))
     }
 
+    /// Set or clear the stage-only operator message.
+    pub fn set_message(&self, message: Option<&str>) -> bool {
+        let message = message.map(str::to_string);
+        self.apply_engine(|engine| engine.set_message(message.as_deref()))
+    }
+
+    pub fn set_timer(&self, seconds: u64) -> bool {
+        self.apply_engine(|engine| engine.set_timer(seconds))
+    }
+
+    pub fn start_timer(&self) -> bool {
+        self.apply_engine(ShowEngine::start_timer)
+    }
+
+    pub fn pause_timer(&self) -> bool {
+        self.apply_engine(ShowEngine::pause_timer)
+    }
+
+    pub fn reset_timer(&self) -> bool {
+        self.apply_engine(ShowEngine::reset_timer)
+    }
+
+    pub fn clear_timer(&self) -> bool {
+        self.apply_engine(ShowEngine::clear_timer)
+    }
+
     pub fn set_cleared(&self, cleared: bool) -> bool {
         self.apply_engine(|engine| engine.set_cleared(cleared))
     }

@@ -50,7 +50,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
+| 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage with message and countdown, transitions with project timing, remote, groups. Missing stage layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, four outputs decode 1080p with 0 dropped frames over 30 s. No continuous sync, audio routing, CPU figures or 10-minute run |
 | 5 — professional AV | not started (needs hardware) |
@@ -76,6 +76,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s | `parity/reports/media-four-outputs-2026-11-09.md` |
+| Stage message + countdown: 120 s set, pause holds 90 s, remote reports 299 994 ms running | `parity/reports/stage-message-timer-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -104,9 +105,9 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     88
+crates/core     90
 crates/compat   25
-crates/remote    9
+crates/remote   11
 apps/desktop     3
 ```
 
@@ -129,6 +130,8 @@ apps/desktop     3
   localhost or add auth before it runs on a shared network.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model.
+- **The stage message is stage-only.** Routing it to an audience output is not
+  implemented and would need an explicit operator choice.
 - **Media has a partial coordinator.** Position, pause, restore and seek exist;
   continuous sync between outputs and audio routing do not.
 - **Media URLs are loopback HTTP.** The app serves only the project's own files;

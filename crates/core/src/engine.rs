@@ -12,7 +12,7 @@ use crate::clock::{Clock, SystemClock};
 use crate::domain::{MediaRef, Project, Show, Slide, SlideGroup, Transition};
 use crate::input::Command;
 use crate::render::{
-    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, TransitionState,
+    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageTimer, TransitionState,
 };
 
 /// A slide's address inside the project.
@@ -62,6 +62,40 @@ impl MediaTimeline {
     }
 }
 
+/// A stage countdown. Time comes from the same injected clock as media, so tests
+/// can advance it without sleeping.
+#[derive(Debug, Clone)]
+struct Countdown {
+    total_ms: u64,
+    remaining_at_start_ms: u64,
+    started_ms: Option<u64>,
+}
+
+impl Countdown {
+    fn remaining(&self, now_ms: u64) -> u64 {
+        match self.started_ms {
+            Some(started) => self
+                .remaining_at_start_ms
+                .saturating_sub(now_ms.saturating_sub(started)),
+            None => self.remaining_at_start_ms,
+        }
+    }
+
+    fn start(&mut self, now_ms: u64) {
+        if self.started_ms.is_none() && self.remaining_at_start_ms > 0 {
+            self.started_ms = Some(now_ms);
+        }
+    }
+
+    fn pause(&mut self, now_ms: u64) {
+        if let Some(started) = self.started_ms.take() {
+            self.remaining_at_start_ms = self
+                .remaining_at_start_ms
+                .saturating_sub(now_ms.saturating_sub(started));
+        }
+    }
+}
+
 /// The authoritative owner of "which slide is live".
 ///
 /// Windows may come and go; this must not care.
@@ -90,6 +124,10 @@ pub struct ShowEngine {
     /// Where the live slide's media is. Advanced by reading the clock, never by
     /// a timer thread: the state is computed when someone asks for it.
     timeline: MediaTimeline,
+    /// An operator message for the stage. Not persisted: it is for the people
+    /// in the room now.
+    message: Option<String>,
+    timer: Option<Countdown>,
     clock: Arc<dyn Clock>,
 }
 
@@ -111,6 +149,8 @@ impl ShowEngine {
                 offset_ms: 0,
                 started_ms: Some(0),
             },
+            message: None,
+            timer: None,
             clock: Arc::new(SystemClock::new()),
         }
     }
@@ -135,6 +175,91 @@ impl ShowEngine {
 
     pub fn media_position_ms(&self) -> u64 {
         self.timeline.position(self.clock.now_ms())
+    }
+
+    /// Set or clear the operator message shown on the stage.
+    pub fn set_message(&mut self, message: Option<&str>) -> bool {
+        let message = message
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+            .map(str::to_string);
+        if self.message == message {
+            return false;
+        }
+        self.message = message;
+        self.revision += 1;
+        true
+    }
+
+    pub fn message(&self) -> Option<&str> {
+        self.message.as_deref()
+    }
+
+    /// Set the countdown to `seconds`, paused at the start.
+    pub fn set_timer(&mut self, seconds: u64) -> bool {
+        let total_ms = seconds.saturating_mul(1000);
+        if total_ms == 0 {
+            return self.clear_timer();
+        }
+        self.timer = Some(Countdown {
+            total_ms,
+            remaining_at_start_ms: total_ms,
+            started_ms: None,
+        });
+        self.revision += 1;
+        true
+    }
+
+    pub fn start_timer(&mut self) -> bool {
+        let now = self.clock.now_ms();
+        let Some(timer) = self.timer.as_mut() else {
+            return false;
+        };
+        if timer.started_ms.is_some() || timer.remaining_at_start_ms == 0 {
+            return false;
+        }
+        timer.start(now);
+        self.revision += 1;
+        true
+    }
+
+    pub fn pause_timer(&mut self) -> bool {
+        let now = self.clock.now_ms();
+        let Some(timer) = self.timer.as_mut() else {
+            return false;
+        };
+        if timer.started_ms.is_none() {
+            return false;
+        }
+        timer.pause(now);
+        self.revision += 1;
+        true
+    }
+
+    /// Put the countdown back to its full duration, paused.
+    pub fn reset_timer(&mut self) -> bool {
+        let Some(timer) = self.timer.as_mut() else {
+            return false;
+        };
+        timer.remaining_at_start_ms = timer.total_ms;
+        timer.started_ms = None;
+        self.revision += 1;
+        true
+    }
+
+    pub fn clear_timer(&mut self) -> bool {
+        if self.timer.take().is_none() {
+            return false;
+        }
+        self.revision += 1;
+        true
+    }
+
+    fn stage_timer(&self, now_ms: u64) -> Option<StageTimer> {
+        self.timer.as_ref().map(|timer| StageTimer {
+            remaining_ms: timer.remaining(now_ms),
+            running: timer.started_ms.is_some() && timer.remaining(now_ms) > 0,
+        })
     }
 
     /// Where this project's bundled media lives.
@@ -418,7 +543,9 @@ impl ShowEngine {
         let root = self.media_root.as_deref();
         let base = self.media_base.as_deref();
         let playing = !self.cleared;
-        let position_ms = self.timeline.position(self.clock.now_ms());
+        let now_ms = self.clock.now_ms();
+        let position_ms = self.timeline.position(now_ms);
+        let timer = self.stage_timer(now_ms);
         let next = self
             .order
             .get(self.index + 1)
@@ -434,6 +561,8 @@ impl ShowEngine {
                 slide_id: slide.id.clone(),
                 notes: slide.notes.clone(),
                 slide: RenderSlide::default(),
+                message: self.message.clone(),
+                timer,
                 next,
                 transition: self.transition.clone(),
             };
@@ -445,6 +574,8 @@ impl ShowEngine {
             slide_id: slide.id.clone(),
             slide: project_slide(slide, root, base, playing, position_ms),
             notes: slide.notes.clone(),
+            message: self.message.clone(),
+            timer,
             next,
             transition: self.transition.clone(),
         }
@@ -886,6 +1017,65 @@ mod tests {
             });
         }
         project
+    }
+
+    #[test]
+    fn an_operator_message_publishes_and_empties_to_nothing() {
+        let mut engine = ShowEngine::new(fixture());
+        let before = engine.revision();
+
+        assert!(engine.set_message(Some("  Two minutes  ")));
+        assert_eq!(engine.message(), Some("Two minutes"));
+        assert_eq!(engine.state().message.as_deref(), Some("Two minutes"));
+        assert_eq!(engine.revision(), before + 1);
+
+        assert!(!engine.set_message(Some("Two minutes")), "unchanged");
+        assert!(engine.set_message(Some("   ")), "blank clears");
+        assert_eq!(engine.state().message, None);
+    }
+
+    #[test]
+    fn a_countdown_starts_pauses_resets_and_expires() {
+        let clock = crate::clock::ManualClock::new();
+        let mut engine = ShowEngine::new(fixture()).with_clock(Arc::new(clock.clone()));
+
+        assert!(engine.set_timer(120));
+        let timer = engine.state().timer.expect("a timer");
+        assert_eq!(timer.remaining_ms, 120_000);
+        assert!(!timer.running);
+
+        assert!(engine.start_timer());
+        clock.advance(30_000);
+        let timer = engine.state().timer.expect("a timer");
+        assert_eq!(timer.remaining_ms, 90_000);
+        assert!(timer.running);
+
+        assert!(engine.pause_timer());
+        clock.advance(10_000);
+        let timer = engine.state().timer.expect("a timer");
+        assert_eq!(
+            timer.remaining_ms, 90_000,
+            "a paused countdown does not run"
+        );
+        assert!(!timer.running);
+
+        assert!(engine.reset_timer());
+        assert_eq!(engine.state().timer.unwrap().remaining_ms, 120_000);
+
+        // Run past zero: it stops rather than going negative.
+        engine.start_timer();
+        clock.advance(200_000);
+        let timer = engine.state().timer.expect("a timer");
+        assert_eq!(timer.remaining_ms, 0);
+        assert!(!timer.running);
+        assert!(
+            !engine.start_timer(),
+            "an expired countdown does not restart"
+        );
+
+        assert!(engine.clear_timer());
+        assert!(engine.state().timer.is_none());
+        assert!(!engine.clear_timer());
     }
 
     #[test]

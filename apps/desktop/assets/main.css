@@ -132,6 +132,62 @@ header h1 {
     font-size: 13px;
 }
 
+.text {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: #0e1216;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.text.number {
+    flex: 0 0 5rem;
+    min-width: 5rem;
+}
+
+.control-label {
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.stage-top {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a1f26;
+}
+
+.stage-timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    padding: 2px 12px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.08);
+    color: #cfd6dd;
+}
+
+.stage-timer.running {
+    color: #fff;
+    background: rgb(210 60 60 / 0.35);
+}
+
+.stage-message {
+    flex: 0 0 auto;
+    padding: 14px 24px;
+    background: rgb(0 0 0 / 0.72);
+    border-top: 2px solid var(--accent);
+    color: #fff;
+    font-size: 30px;
+    text-align: center;
+    white-space: pre-wrap;
+}
+
 .keys {
     margin: 0 0 6px;
     color: var(--muted);
@@ -476,10 +532,17 @@ footer p {
 
 .stage {
     display: flex;
+    flex-direction: column;
     width: 100vw;
     height: 100vh;
     background: #000;
     color: #fff;
+}
+
+.stage-panes {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .stage .pane {

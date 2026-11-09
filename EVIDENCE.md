@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 125 -->
+**As of `main`, 2026-11-09.** <!-- tests: 129 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -75,6 +75,13 @@ window, no display server, no desktop involvement.
 **Stage with operator notes and a clock slot**
 
 ![Stage with notes](parity/reports/evidence/render/stage-notes-1920x1080.png)
+
+**Stage with an operator message and a countdown** — both stage-only; the
+countdown ticks in the page and corrects on every publication.
+
+![Stage with message and timer](parity/reports/evidence/stage/remote-1920x1080.png)
+
+Report: `parity/reports/stage-message-timer-2026-11-09.md`.
 
 **All eight transitions**, frozen 200 ms in: none, blur, fade, crossfade / fly,
 scale, slide, spin.

@@ -80,6 +80,8 @@ pub fn App() -> Element {
     let revision = app.revision();
     let recent = app.recent();
     let mut open_error = use_signal(|| Option::<String>::None);
+    let mut message_text = use_signal(String::new);
+    let mut timer_minutes = use_signal(|| 5u64);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
         .iter()
@@ -173,6 +175,85 @@ pub fn App() -> Element {
                             move |_| { app.engine.next_group(); }
                         },
                         "Next group"
+                    }
+                }
+            }
+
+            section { class: "panel",
+                h2 { "Stage" }
+                p { class: "hint", "The message and countdown appear on the stage display, never on an audience output." }
+
+                div { class: "controls",
+                    input {
+                        class: "text",
+                        placeholder: "Message to stage",
+                        value: "{message_text}",
+                        oninput: move |event| message_text.set(event.value()),
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.set_message(Some(&message_text())); }
+                        },
+                        "Send"
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.set_message(None); }
+                        },
+                        "Clear"
+                    }
+                }
+
+                div { class: "controls",
+                    label { class: "control-label", "Countdown" }
+                    input {
+                        class: "text number",
+                        r#type: "number",
+                        min: "1",
+                        max: "180",
+                        value: "{timer_minutes}",
+                        oninput: move |event| {
+                            if let Ok(value) = event.value().parse::<u64>() {
+                                timer_minutes.set(value.clamp(1, 180));
+                            }
+                        },
+                    }
+                    span { class: "control-label", "min" }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.set_timer(timer_minutes() * 60); }
+                        },
+                        "Set"
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.start_timer(); }
+                        },
+                        "Start"
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.pause_timer(); }
+                        },
+                        "Pause"
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.clear_timer(); }
+                        },
+                        "Clear"
                     }
                 }
             }

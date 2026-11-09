@@ -135,6 +135,26 @@ impl AppState {
         self.engine.apply(command)
     }
 
+    pub fn set_message(&self, message: Option<&str>) -> bool {
+        self.engine.set_message(message)
+    }
+
+    pub fn set_timer(&self, seconds: u64) -> bool {
+        self.engine.set_timer(seconds)
+    }
+
+    pub fn start_timer(&self) -> bool {
+        self.engine.start_timer()
+    }
+
+    pub fn pause_timer(&self) -> bool {
+        self.engine.pause_timer()
+    }
+
+    pub fn clear_timer(&self) -> bool {
+        self.engine.clear_timer()
+    }
+
     pub fn next_slide(&self) -> bool {
         self.engine.next_slide()
     }

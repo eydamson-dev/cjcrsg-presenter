@@ -26,6 +26,8 @@ pub use engine::{Position, ShowEngine};
 pub use hub::RenderHub;
 pub use input::Command;
 pub use media::{MediaAsset, MediaError, MediaKind, MediaOrigin};
-pub use render::{RenderElement, RenderMedia, RenderSlide, RenderState, Revision, TransitionState};
+pub use render::{
+    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageTimer, TransitionState,
+};
 pub use session::{RecentProject, Session, SessionStore, MAX_RECENT};
 pub use shared::SharedEngine;

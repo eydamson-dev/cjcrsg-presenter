@@ -104,6 +104,33 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         });
     }
 
+    // The countdown ticks in the page and corrects on every publication, so a
+    // per-second state publish is not needed for a label.
+    if kind == OutputKind::Stage {
+        use_future(|| async move {
+            let script = r#"
+                (() => {
+                    if (window.__stageTimer) return;
+                    window.__stageTimer = setInterval(() => {
+                        const el = document.getElementById('stage-timer');
+                        if (!el) return;
+                        const key = el.dataset.key;
+                        if (window.__stageTimerKey !== key) {
+                            window.__stageTimerKey = key;
+                            window.__stageTimerLeft = Number(el.dataset.remaining);
+                        }
+                        if (el.dataset.running === 'true' && window.__stageTimerLeft > 0) {
+                            window.__stageTimerLeft = Math.max(0, window.__stageTimerLeft - 250);
+                        }
+                        const seconds = Math.ceil(window.__stageTimerLeft / 1000);
+                        el.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+                    }, 250);
+                })();
+            "#;
+            let _ = document::eval(script).await;
+        });
+    }
+
     // A stage clock ticks in the page, not through Rust: a per-second state
     // publish would wake every output for a label.
     if kind == OutputKind::Stage {
@@ -142,6 +169,8 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 next: state.next.clone(),
                 output: kind.label().to_string(),
                 notes: state.notes.clone(),
+                message: state.message.clone(),
+                timer: state.timer,
             }
         } else {
             SlideView {

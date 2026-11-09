@@ -28,12 +28,29 @@ pub struct RenderState {
     /// Part of the state rather than something a stage computes, because the
     /// stage must never disagree with the engine about what comes next.
     pub next: Option<RenderSlide>,
+    /// A message for the stage display only. Never rendered on an audience
+    /// output: an operator note to the team is not a slide.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    /// The stage countdown, if one is set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timer: Option<StageTimer>,
     /// Describes the change that produced `revision`, if any.
     ///
     /// A renderer animates only when it already knows a *previous* revision. On
     /// first mount it renders directly, so reopening a window never replays a
     /// transition the congregation already saw.
     pub transition: Option<TransitionState>,
+}
+
+/// The stage countdown, as of the moment this state was produced.
+///
+/// The stage display ticks locally between publications; this value is the
+/// correction it starts from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StageTimer {
+    pub remaining_ms: u64,
+    pub running: bool,
 }
 
 /// A slide reduced to everything the renderer needs, with no lookups required.

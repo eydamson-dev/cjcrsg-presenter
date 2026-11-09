@@ -43,8 +43,22 @@ fn main() {
             transition,
             pause,
             resume_at,
+            message,
+            timer,
         }) => {
-            render_to_file(&project, &out, layout, slide, transition, pause, resume_at);
+            render_to_file(
+                &project,
+                &out,
+                &RenderRequest {
+                    layout,
+                    slide,
+                    transition,
+                    pause,
+                    resume_at,
+                    message,
+                    timer,
+                },
+            );
             return;
         }
         Err(message) => {
@@ -77,17 +91,31 @@ fn main() {
     }
 }
 
-/// Render a project to HTML. No window, no display server.
-fn render_to_file(
-    project: &std::path::Path,
-    out: &std::path::Path,
+/// Everything an evidence render may vary. A struct because the CLI grew past
+/// what a nine-argument function can say clearly.
+struct RenderRequest {
     layout: render::Layout,
     slide: Option<usize>,
-    requested: Option<presenter_core::Transition>,
+    transition: Option<presenter_core::Transition>,
     pause: Option<u32>,
     resume_at: Option<u64>,
-) {
-    if layout == render::Layout::Recent {
+    message: Option<String>,
+    timer: Option<u64>,
+}
+
+/// Render a project to HTML. No window, no display server.
+fn render_to_file(project: &std::path::Path, out: &std::path::Path, request: &RenderRequest) {
+    let RenderRequest {
+        layout,
+        slide,
+        transition: requested,
+        pause,
+        resume_at,
+        message,
+        timer,
+    } = request;
+
+    if *layout == render::Layout::Recent {
         let session = runtime::session_store().load();
         let html = render::render_recent(&session);
         if let Err(error) = std::fs::write(out, html) {
@@ -110,18 +138,25 @@ fn render_to_file(
     if let Some(root) = project.parent() {
         engine = engine.with_media_root(root);
     }
-    if let Some(index) = slide {
+    if let Some(index) = *slide {
         engine.go_to_index(index);
     }
     // Evidence for recovery: render exactly what a window that reopened this
     // far into the clip would show.
-    if let Some(position_ms) = resume_at {
+    if let Some(position_ms) = *resume_at {
         engine.seek_media(position_ms);
+    }
+    if let Some(message) = message.as_deref() {
+        engine.set_message(Some(message));
+    }
+    if let Some(seconds) = *timer {
+        engine.set_timer(seconds);
+        engine.start_timer();
     }
 
     // A slide's own timing is what an imported project carries, so it is the
     // default for evidence renders; `--transition` overrides it.
-    let transition = requested.unwrap_or_else(|| {
+    let transition = requested.clone().unwrap_or_else(|| {
         engine
             .state()
             .transition
@@ -131,7 +166,7 @@ fn render_to_file(
     });
 
     let shared = presenter_core::SharedEngine::new(engine);
-    let html = render::render(&shared, layout, transition, pause);
+    let html = render::render(&shared, *layout, transition, *pause);
     if let Err(error) = std::fs::write(out, html) {
         eprintln!("cannot write {}: {error}", out.display());
         std::process::exit(1);

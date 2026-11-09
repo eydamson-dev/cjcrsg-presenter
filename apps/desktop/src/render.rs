@@ -58,6 +58,8 @@ pub fn render(
                 next: state.next.clone(),
                 output: "Stage".to_string(),
                 notes: state.notes.clone(),
+                message: state.message.clone(),
+                timer: state.timer,
             }
         },
         // `main` renders this layout from the session store, because it has

@@ -31,6 +31,12 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/last", post(last))
         .route("/api/clear", post(clear))
         .route("/api/restore", post(restore))
+        .route("/api/message", post(message))
+        .route("/api/message/clear", post(message_clear))
+        .route("/api/timer", post(timer))
+        .route("/api/timer/start", post(timer_start))
+        .route("/api/timer/pause", post(timer_pause))
+        .route("/api/timer/clear", post(timer_clear))
         .route("/api/next-group", post(next_group))
         .route("/api/goto", post(goto))
         .route("/api/previous-group", post(previous_group))
@@ -51,6 +57,8 @@ struct StateBody {
     position: usize,
     total: usize,
     cleared: bool,
+    message: Option<String>,
+    timer: Option<presenter_core::StageTimer>,
     slide: presenter_core::RenderSlide,
     next: Option<presenter_core::RenderSlide>,
 }
@@ -65,6 +73,8 @@ async fn state(State(engine): State<Arc<SharedEngine>>) -> Json<StateBody> {
         position,
         total,
         cleared: engine.is_cleared(),
+        message: snapshot.message.clone(),
+        timer: snapshot.timer,
         slide: snapshot.slide.clone(),
         next: snapshot.next.clone(),
     })
@@ -109,6 +119,46 @@ async fn restore(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
     command(engine.set_cleared(false))
 }
 
+#[derive(Debug, Deserialize)]
+struct MessageBody {
+    text: String,
+}
+
+async fn message(
+    State(engine): State<Arc<SharedEngine>>,
+    Json(body): Json<MessageBody>,
+) -> impl IntoResponse {
+    command(engine.set_message(Some(&body.text)))
+}
+
+async fn message_clear(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.set_message(None))
+}
+
+#[derive(Debug, Deserialize)]
+struct TimerBody {
+    seconds: u64,
+}
+
+async fn timer(
+    State(engine): State<Arc<SharedEngine>>,
+    Json(body): Json<TimerBody>,
+) -> impl IntoResponse {
+    command(engine.set_timer(body.seconds))
+}
+
+async fn timer_start(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.start_timer())
+}
+
+async fn timer_pause(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.pause_timer())
+}
+
+async fn timer_clear(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.clear_timer())
+}
+
 async fn first(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
     command(engine.first_slide())
 }
@@ -129,7 +179,17 @@ fn command(changed: bool) -> impl IntoResponse {
 }
 
 async fn page(State(engine): State<Arc<SharedEngine>>) -> Html<String> {
-    let (_, position, total) = engine.cursor();
+    let (snapshot, (_, position, total)) = engine.snapshot_with_cursor();
+    let timer = snapshot
+        .timer
+        .map(|timer| {
+            format!(
+                "{}s{}",
+                timer.remaining_ms.div_ceil(1000),
+                if timer.running { " running" } else { " paused" }
+            )
+        })
+        .unwrap_or_default();
     Html(format!(
         r#"<!doctype html>
 <html><head><meta charset="utf-8">
@@ -148,6 +208,7 @@ button:active{{background:#22303f}}
 </style></head>
 <body>
 <div class="pos">{position} / {total}</div>
+<div class="pos" id="timer">{timer}</div>
 <div class="row">
   <button onclick="fetch('/api/previous',{{method:'POST'}}).then(refresh)">◀</button>
   <button onclick="fetch('/api/next',{{method:'POST'}}).then(refresh)">▶</button>
@@ -162,9 +223,23 @@ button:active{{background:#22303f}}
   <button onclick="fetch('/api/clear',{{method:'POST'}}).then(refresh)">Clear</button>
   <button onclick="fetch('/api/restore',{{method:'POST'}}).then(refresh)">Restore</button>
 </div>
+<div class="row tools">
+  <input id="msg" placeholder="Message to stage" />
+  <button onclick="const t=document.getElementById('msg');fetch('/api/message',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{text:t.value}})}}).then(()=>{{t.value='';refresh()}})">Send</button>
+  <button onclick="fetch('/api/message/clear',{{method:'POST'}}).then(refresh)">Clear</button>
+</div>
+<div class="row tools">
+  <input id="mins" type="number" min="1" max="180" value="5" style="width:5rem" /> min
+  <button onclick="const m=Number(document.getElementById('mins').value);fetch('/api/timer',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{seconds:m*60}})}}).then(refresh)">Set</button>
+  <button onclick="fetch('/api/timer/start',{{method:'POST'}}).then(refresh)">Start</button>
+  <button onclick="fetch('/api/timer/pause',{{method:'POST'}}).then(refresh)">Pause</button>
+  <button onclick="fetch('/api/timer/clear',{{method:'POST'}}).then(refresh)">Clear</button>
+</div>
 <script>
 async function refresh(){{const r=await fetch('/api/state');const s=await r.json();
-document.querySelector('.pos').textContent=s.position+' / '+s.total;}}
+document.querySelector('.pos').textContent=s.position+' / '+s.total;
+const timer=document.getElementById('timer');
+timer.textContent=s.timer?Math.ceil(s.timer.remaining_ms/1000)+'s'+(s.timer.running?' running':' paused'):'';}}
 setInterval(refresh, 1000);
 </script>
 </body></html>"#
@@ -417,6 +492,83 @@ mod tests {
             .unwrap();
         assert!(!shared.is_cleared(), "navigation reveals the slide");
         assert_eq!(shared.state().slide_id, "b");
+    }
+
+    #[tokio::test]
+    async fn a_stage_message_round_trips_and_clears() {
+        let shared = engine();
+        let app = router(shared.clone());
+
+        let sent = app
+            .clone()
+            .oneshot(
+                Request::post("/api/message")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"text":"Two minutes"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(sent.status(), StatusCode::OK);
+
+        let body = body_text(
+            app.clone()
+                .oneshot(Request::get("/api/state").body(Body::empty()).unwrap())
+                .await
+                .unwrap(),
+        )
+        .await;
+        assert!(body.contains("Two minutes"), "{body}");
+
+        let cleared = app
+            .oneshot(
+                Request::post("/api/message/clear")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(cleared.status(), StatusCode::OK);
+        assert_eq!(shared.snapshot().message, None);
+    }
+
+    #[tokio::test]
+    async fn a_timer_can_be_set_started_and_cleared() {
+        let shared = engine();
+        let app = router(shared.clone());
+
+        for (path, body) in [
+            ("/api/timer", r#"{"seconds":120}"#),
+            ("/api/timer/start", ""),
+        ] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::post(path)
+                        .header("content-type", "application/json")
+                        .body(Body::from(body))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{path}");
+        }
+
+        let state = shared.snapshot();
+        let timer = state.timer.expect("a timer");
+        assert!(timer.running);
+        assert!(timer.remaining_ms > 115_000, "{}", timer.remaining_ms);
+
+        let cleared = app
+            .oneshot(
+                Request::post("/api/timer/clear")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(cleared.status(), StatusCode::OK);
+        assert!(shared.snapshot().timer.is_none());
     }
 
     #[tokio::test]

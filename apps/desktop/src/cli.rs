@@ -22,6 +22,10 @@ pub enum Action {
         pause: Option<u32>,
         /// Render as if the output reopened mid-clip.
         resume_at: Option<u64>,
+        /// Stage message, for evidence renders.
+        message: Option<String>,
+        /// Stage countdown in seconds, started.
+        timer: Option<u64>,
     },
 }
 
@@ -244,7 +248,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             if rest.len() < 2 {
                 return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
                      [--layout stage|audience] [--slide N] [--transition NAME] \
-                     [--duration MS] [--easing NAME] [--resume-at MS]"
+                     [--duration MS] [--easing NAME] [--resume-at MS] \
+                     [--message TEXT] [--timer SECONDS]"
                     .into());
             }
             let project = PathBuf::from(&rest[0]);
@@ -254,6 +259,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             let mut transition: Option<presenter_core::Transition> = None;
             let mut pause = None;
             let mut resume_at = None;
+            let mut message = None;
+            let mut timer = None;
 
             let mut args = rest[2..].iter();
             while let Some(arg) = args.next() {
@@ -305,6 +312,17 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                                 .map_err(|_| format!("not a number: {value:?}"))?,
                         );
                     }
+                    "--message" => {
+                        message = Some(args.next().ok_or("--message needs text")?.to_string());
+                    }
+                    "--timer" => {
+                        let value = args.next().ok_or("--timer needs seconds")?;
+                        timer = Some(
+                            value
+                                .parse()
+                                .map_err(|_| format!("not a number: {value:?}"))?,
+                        );
+                    }
                     "--resume-at" => {
                         let value = args.next().ok_or("--resume-at needs milliseconds")?;
                         resume_at = Some(
@@ -333,6 +351,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 transition,
                 pause,
                 resume_at,
+                message,
+                timer,
             })
         }
 

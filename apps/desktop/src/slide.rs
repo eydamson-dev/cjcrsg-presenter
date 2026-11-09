@@ -4,7 +4,7 @@
 //! Real renderer parity is Experiment 2.
 
 use dioxus::prelude::*;
-use presenter_core::{easing_css, MediaKind, RenderMedia, RenderSlide, Transition};
+use presenter_core::{easing_css, MediaKind, RenderMedia, RenderSlide, StageTimer, Transition};
 
 #[component]
 pub fn SlideView(
@@ -88,44 +88,75 @@ pub fn StageView(
     next: Option<RenderSlide>,
     output: String,
     notes: String,
+    message: Option<String>,
+    timer: Option<StageTimer>,
 ) -> Element {
+    let timer_text = timer.map(|timer| {
+        let seconds = timer.remaining_ms.div_ceil(1000);
+        (
+            format!("{:02}:{:02}", seconds / 60, seconds % 60),
+            timer.remaining_ms,
+            timer.running,
+        )
+    });
+
     rsx! {
         div { class: "stage",
-            div { class: "pane",
-                div { class: "pane-label",
-                    span { "Live" }
-                    span { class: "clock", id: "stage-clock", "--:--" }
-                }
-                div { class: "pane-body",
-                    SlideView {
-                        slide: current,
-                        output: output,
-                        animate: false,
-                        revision: 0,
-                        transition: Transition::none(),
-                        play_media: false,
+            if let Some((text, remaining, running)) = timer_text {
+                div { class: "stage-top",
+                    span {
+                        class: if running { "stage-timer running" } else { "stage-timer" },
+                        id: "stage-timer",
+                        "data-remaining": "{remaining}",
+                        "data-running": "{running}",
+                        "data-key": "{remaining}-{running}",
+                        "{text}"
                     }
                 }
-                if !notes.is_empty() {
-                    div { class: "pane-notes", "{notes}" }
-                }
             }
-            div { class: "pane",
-                div { class: "pane-label", "Next" }
-                div { class: "pane-body",
-                    if let Some(upcoming) = next {
+
+            div { class: "stage-panes",
+                div { class: "pane",
+                    div { class: "pane-label",
+                        span { "Live" }
+                        span { class: "clock", id: "stage-clock", "--:--" }
+                    }
+                    div { class: "pane-body",
                         SlideView {
-                            slide: upcoming,
-                            output: String::new(),
+                            slide: current,
+                            output: output,
                             animate: false,
                             revision: 0,
                             transition: Transition::none(),
                             play_media: false,
                         }
-                    } else {
-                        p { class: "blank", "End of show" }
+                    }
+                    if !notes.is_empty() {
+                        div { class: "pane-notes", "{notes}" }
                     }
                 }
+
+                div { class: "pane",
+                    div { class: "pane-label", "Next" }
+                    div { class: "pane-body",
+                        if let Some(upcoming) = next {
+                            SlideView {
+                                slide: upcoming,
+                                output: String::new(),
+                                animate: false,
+                                revision: 0,
+                                transition: Transition::none(),
+                                play_media: false,
+                            }
+                        } else {
+                            p { class: "blank", "End of show" }
+                        }
+                    }
+                }
+            }
+
+            if let Some(message) = message {
+                div { class: "stage-message", "{message}" }
             }
         }
     }
