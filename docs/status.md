@@ -76,15 +76,15 @@ Read it before claiming parity on anything.
 
 ## Windows
 
-Never run. See `docs/windows.md`. CI now compiles the desktop crate on
-`windows-latest`, and runs the library tests on Windows too — that is the first
-time this code touches Windows at all. Running it, monitors, DPI and fullscreen
-need a real machine.
+Never *run* on Windows. But it now compiles and its library tests execute there:
+the first Windows run built the desktop binary in 3m51s and caught a real path
+bug (`Path::is_absolute` is false for `/home/...` on Windows). See
+`docs/windows.md`; monitors, DPI, fullscreen and audio still need a real machine.
 
 ## Tests
 
 ```
-crates/core     39
+crates/core     43
 crates/compat   20
 crates/remote    8
 ```

@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 67 -->
+**As of `main`, 2026-11-09.** <!-- tests: 71 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -177,6 +177,33 @@ consequences — including why visual evidence comes from headless renders rathe
 than photographs of windows.
 
 ---
+
+## Windows — first run
+
+CI compiles and tests on `windows-latest`. First run (`42543078950`):
+
+| Job | Result |
+| --- | --- |
+| desktop (windows-latest) | **passed**, 3m51s — first time this app compiled for Windows |
+| desktop (ubuntu-24.04) | passed, 2m46s |
+| library (ubuntu-24.04) | passed, 33s |
+| library (windows-latest) | **failed** — one test, and it was right to |
+
+The failure was a genuine cross-platform bug, not a flaky test:
+
+```
+media::tests::a_bundled_absolute_path_is_rejected
+  left: Ok(())                                    expected Err(AbsoluteBundledPath)
+```
+
+`Path::is_absolute("/home/user/worship.mp4")` is **false on Windows**, because
+the path has no drive prefix. A project authored on Linux could therefore carry
+an absolute media path that validation accepted and resolution then failed on.
+Replaced with a platform-independent check that also rejects `C:\…`, `C:foo`
+and UNC paths, with tests for each.
+
+This is the argument for running the library tests on Windows rather than only
+compiling there.
 
 ## Verification
 

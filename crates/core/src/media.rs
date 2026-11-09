@@ -88,6 +88,13 @@ impl MediaAsset {
     /// Validation is a separate step from parsing: an unreadable path should not
     /// stop a project from opening, but it should be reported.
     pub fn validate(&self) -> Result<(), MediaError> {
+        // Absolute-ness is checked before separators: a Windows path is both
+        // absolute and backslashed, and "this is absolute" is the more useful
+        // complaint.
+        if self.origin == MediaOrigin::Bundled && looks_absolute(&self.path) {
+            return Err(MediaError::AbsoluteBundledPath(self.path.clone()));
+        }
+
         if self.path.contains('\\') {
             return Err(MediaError::Backslashes(self.path.clone()));
         }
@@ -95,10 +102,6 @@ impl MediaAsset {
         let path = Path::new(&self.path);
 
         if self.origin == MediaOrigin::Bundled {
-            if path.is_absolute() {
-                return Err(MediaError::AbsoluteBundledPath(self.path.clone()));
-            }
-
             // A bundled path must stay inside the project. `..` at the start is
             // how a path escapes.
             let mut depth: i32 = 0;
@@ -125,6 +128,23 @@ impl MediaAsset {
     }
 }
 
+/// Absolute on any platform, not just the one we were compiled for.
+///
+/// `Path::is_absolute` is platform-specific: on Windows, `/home/user/x.mp4` is
+/// *not* absolute because it has no drive prefix, so a project authored on Linux
+/// would pass validation and then fail to resolve. The Windows CI job caught
+/// exactly that.
+fn looks_absolute(path: &str) -> bool {
+    if path.starts_with('/') || path.starts_with('\\') {
+        return true;
+    }
+
+    // `C:\...` is absolute; `C:foo` is drive-relative and ambiguous. Both are
+    // wrong for a bundled asset.
+    let bytes = path.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -148,6 +168,43 @@ mod tests {
                 "/home/user/worship.mp4".into()
             ))
         );
+    }
+
+    #[test]
+    fn a_windows_absolute_path_is_rejected() {
+        let asset = MediaAsset::new("m1", MediaKind::Video, r"C:\Users\x\worship.mp4");
+        assert!(matches!(
+            asset.validate(),
+            Err(MediaError::AbsoluteBundledPath(_))
+        ));
+    }
+
+    #[test]
+    fn a_drive_relative_path_is_rejected_as_ambiguous() {
+        let asset = MediaAsset::new("m1", MediaKind::Video, "C:worship.mp4");
+        assert!(matches!(
+            asset.validate(),
+            Err(MediaError::AbsoluteBundledPath(_))
+        ));
+    }
+
+    #[test]
+    fn a_unc_path_is_rejected() {
+        let asset = MediaAsset::new("m1", MediaKind::Video, r"\\server\share\worship.mp4");
+        assert!(matches!(
+            asset.validate(),
+            Err(MediaError::AbsoluteBundledPath(_))
+        ));
+    }
+
+    #[test]
+    fn a_linux_absolute_path_is_rejected_on_every_platform() {
+        // The Windows job failed here: `Path::is_absolute` says false for this.
+        let asset = MediaAsset::new("m1", MediaKind::Video, "/home/user/worship.mp4");
+        assert!(matches!(
+            asset.validate(),
+            Err(MediaError::AbsoluteBundledPath(_))
+        ));
     }
 
     #[test]

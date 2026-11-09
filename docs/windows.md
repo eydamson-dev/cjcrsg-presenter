@@ -1,8 +1,14 @@
 # Testing on Windows
 
-Status: **plan, not yet verified.** Nothing in this repository has run on
-Windows. This document is the route to changing that, and says plainly which
-claims are untested.
+Status: **partly verified.** The desktop crate compiles on `windows-latest`
+(3m51s, run `42543078950`) and the library tests execute there. Nothing has been
+*run* on Windows yet — no window has opened — and the manual checklist at the
+end is untouched.
+
+The first Windows test run immediately found a real bug: `Path::is_absolute`
+returns false for `/home/user/x.mp4` on Windows, so a Linux-authored absolute
+media path passed validation. The validator now rejects rooted, drive and UNC
+paths explicitly.
 
 ## The three testing targets
 
