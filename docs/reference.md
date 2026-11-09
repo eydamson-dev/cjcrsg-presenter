@@ -99,6 +99,9 @@ ffmpeg -f lavfi -i "testsrc2=size=1920x1080:rate=30:duration=15" \
 | `parity/tools/compare.mjs` | pixel diff + ink distribution |
 | `parity/tools/capture_page.mjs` | screenshot any URL or `file://` page |
 | `parity/tools/experiment3_video.mjs` | 1/2/4 surfaces playing the same clip |
+| `parity/tools/capture_video_frames.mjs` | two screenshots of a page with a video, plus its playback state |
+| `parity/tools/check_keys.mjs` | runs the shipped `assets/keys.js` in Chromium and reports what it forwards |
+| `parity/tools/summarize_probe.py` | frame rate and dropped frames from a `CJCRSG_MEDIA_PROBE` log |
 
 They need `npm install` in `parity/tools` (they do not use the reference's
 `node_modules`; ESM ignores `NODE_PATH`).
