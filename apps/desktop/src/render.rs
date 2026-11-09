@@ -49,6 +49,7 @@ pub fn render(
                 animate,
                 revision: 0,
                 transition,
+                play_media: true,
             }
         },
         Layout::Stage => rsx! {

@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 108 -->
+**As of `main`, 2026-11-09.** <!-- tests: 115 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -104,6 +104,23 @@ also uncovered that a transition keyframe replaced the slide's `scale()`: at
 Reports: `parity/reports/stage-2026-11-09.md`,
 `parity/reports/transitions-2026-11-09.md`,
 `parity/reports/transition-timing-2026-11-09.md`.
+
+---
+
+## Media
+
+A FreeShow media item becomes a real element in the output. The clip is a VP9
+file bundled into the project, so this also exercises the project-relative media
+root.
+
+![Video frames and an image slide](parity/reports/evidence/media/montage.png)
+
+Same page, 2 s apart: `currentTime` 0.977 → 3.017 s, `readyState` 4, no error,
+**54,205 of 921,600 pixels** different. The burnt-in timecode (01.000 → 03.033)
+shows the difference is the video advancing.
+
+Raw: `parity/reports/evidence/media/video-report.json`.
+Report: `parity/reports/media-playback-2026-11-09.md`.
 
 ---
 

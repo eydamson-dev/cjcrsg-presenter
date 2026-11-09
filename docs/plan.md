@@ -54,7 +54,9 @@ single show, JSON first, versioned envelope, unknown fields preserved).
 
 - [x] FreeShow `.show` import (read-only) — `crates/compat/src/freeshow.rs`
 - [x] Native `.cjcp` read/write with unknown-field preservation — `crates/compat/src/cjcp.rs`
-- [x] Media references: bundled/external origin, validation, import\n- [ ] Media: copy External -> Bundled in the app\n- [ ] SQLite compatibility and versioned migrations
+- [x] Media references: bundled/external origin, validation, import
+- [x] Media: copy External -> Bundled (`cjcrsg-presenter bundle`)
+- [ ] FreeShow database import (DEV-005); our own session state is JSON (D11)
 - Media library, templates, groups
 - [ ] Importers: PDF, PPTX, DOCX, ODP/ODT
 - Round-trip tests against files from multiple FreeShow releases
@@ -64,10 +66,13 @@ without loss; importers match the converters on a golden corpus.
 
 ## Phase 4 — Media engine
 
+- [x] Media items render: image, video, audio; a live slide's video plays
+- [ ] Playback coordinator behind a trait: pause/resume per slide, position
+- [ ] Media position in `RenderState` for correct recovery mid-playback
+- [ ] Four outputs playing video at once, measured
 - GStreamer pipeline for synchronised audio/video
 - Audio routing, multi-channel, low-latency output
 - Capture, LTC
-- Media position in `RenderState` for correct recovery mid-playback
 
 **Exit criteria:** a service with live video and audio plays with no drift and
 survives an output restart mid-playback.

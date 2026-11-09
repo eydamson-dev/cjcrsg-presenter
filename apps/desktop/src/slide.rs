@@ -4,7 +4,7 @@
 //! Real renderer parity is Experiment 2.
 
 use dioxus::prelude::*;
-use presenter_core::{easing_css, RenderSlide, Transition};
+use presenter_core::{easing_css, MediaKind, RenderMedia, RenderSlide, Transition};
 
 #[component]
 pub fn SlideView(
@@ -13,6 +13,8 @@ pub fn SlideView(
     animate: bool,
     revision: u64,
     transition: Transition,
+    /// False on a stage: a second copy of the slide must not play its audio.
+    play_media: bool,
 ) -> Element {
     // Alternating two identical animations retriggers the effect when the
     // revision changes, without remounting the subtree: changing
@@ -45,17 +47,27 @@ pub fn SlideView(
                     p { class: "blank", "No project loaded" }
                 } else {
                     for element in slide.elements.iter() {
-                        div {
-                            key: "{element.id}",
-                            class: "{element.class_name}",
-                            style: "{element.style}",
-                            // FreeShow stores each line as its own element; matching
-                            // that keeps line boxes measurable and comparable.
-                            for (index, line) in element.text.split('\n').enumerate() {
-                                div {
-                                    key: "{element.id}-line-{index}",
-                                    class: "line",
-                                    "{line}"
+                        if let Some(media) = element.media.as_ref() {
+                            MediaView {
+                                key: "{element.id}",
+                                class_name: element.class_name.clone(),
+                                style: element.style.clone(),
+                                media: media.clone(),
+                                play: play_media,
+                            }
+                        } else {
+                            div {
+                                key: "{element.id}",
+                                class: "{element.class_name}",
+                                style: "{element.style}",
+                                // FreeShow stores each line as its own element; matching
+                                // that keeps line boxes measurable and comparable.
+                                for (index, line) in element.text.split('\n').enumerate() {
+                                    div {
+                                        key: "{element.id}-line-{index}",
+                                        class: "line",
+                                        "{line}"
+                                    }
                                 }
                             }
                         }
@@ -91,6 +103,7 @@ pub fn StageView(
                         animate: false,
                         revision: 0,
                         transition: Transition::none(),
+                        play_media: false,
                     }
                 }
                 if !notes.is_empty() {
@@ -107,6 +120,7 @@ pub fn StageView(
                             animate: false,
                             revision: 0,
                             transition: Transition::none(),
+                            play_media: false,
                         }
                     } else {
                         p { class: "blank", "End of show" }
@@ -114,5 +128,39 @@ pub fn StageView(
                 }
             }
         }
+    }
+}
+
+/// An image, video or audio item.
+///
+/// `play` is false on the stage so a second copy of the slide does not play the
+/// same audio; the engine still owns whether the output is live.
+#[component]
+fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) -> Element {
+    let autoplay = play && media.playing;
+    match media.kind {
+        MediaKind::Image => rsx! {
+            img { class: "{class_name}", src: "{media.src}", style: "{style}" }
+        },
+        MediaKind::Video => rsx! {
+            video {
+                class: "{class_name}",
+                src: "{media.src}",
+                style: "{style}",
+                autoplay,
+                muted: media.muted,
+                loop: media.looped,
+                playsinline: true,
+            }
+        },
+        MediaKind::Audio => rsx! {
+            audio {
+                src: "{media.src}",
+                autoplay,
+                muted: media.muted,
+                loop: media.looped,
+            }
+        },
+        MediaKind::Other => rsx! {},
     }
 }

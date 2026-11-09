@@ -50,6 +50,22 @@ pub struct RenderElement {
     pub class_name: String,
     pub text: String,
     pub style: String,
+    /// An image, video or audio item. `None` means the element renders text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<RenderMedia>,
+}
+
+/// Media ready for a renderer: no project lookups, no path rules.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RenderMedia {
+    pub kind: crate::media::MediaKind,
+    /// An absolute `file://` URL the WebView can load.
+    pub src: String,
+    pub looped: bool,
+    pub muted: bool,
+    /// False when the output is blanked. The element is not rendered then, but
+    /// the state says why, so a future pause/resume does not guess.
+    pub playing: bool,
 }
 
 /// How the state that produced `revision` should animate.

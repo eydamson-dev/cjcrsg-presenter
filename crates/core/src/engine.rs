@@ -5,9 +5,13 @@
 
 use tracing::debug;
 
-use crate::domain::{Project, Show, Slide, SlideGroup, Transition};
+use std::path::{Path, PathBuf};
+
+use crate::domain::{MediaRef, Project, Show, Slide, SlideGroup, Transition};
 use crate::input::Command;
-use crate::render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
+use crate::render::{
+    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, TransitionState,
+};
 
 /// A slide's address inside the project.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,6 +39,9 @@ pub struct ShowEngine {
     /// Blanked output. The show position is untouched: clearing is a display
     /// state, not a navigation event.
     cleared: bool,
+    /// Project folder for `Bundled` media. Without it, a relative path cannot
+    /// become a URL, and the renderer would resolve it against the page.
+    media_root: Option<PathBuf>,
 }
 
 impl ShowEngine {
@@ -48,7 +55,18 @@ impl ShowEngine {
             policy: Transition::default(),
             transition: None,
             cleared: false,
+            media_root: None,
         }
+    }
+
+    /// Where this project's bundled media lives.
+    pub fn with_media_root(mut self, root: impl Into<PathBuf>) -> Self {
+        self.media_root = Some(root.into());
+        self
+    }
+
+    pub fn media_root(&self) -> Option<&Path> {
+        self.media_root.as_deref()
     }
 
     fn build_order(project: &Project) -> Vec<Position> {
@@ -78,6 +96,15 @@ impl ShowEngine {
     /// transition: opening a project is not a slide change, so it must not
     /// animate. Returns whether the new project has anything to present.
     pub fn replace_project(&mut self, project: Project) -> bool {
+        self.replace_project_at(project, None)
+    }
+
+    /// Replace the project and, when given, the folder its media resolves
+    /// against. One revision, so an output never renders with the old root.
+    pub fn replace_project_at(&mut self, project: Project, media_root: Option<PathBuf>) -> bool {
+        if media_root.is_some() {
+            self.media_root = media_root;
+        }
         self.order = Self::build_order(&project);
         self.project = project;
         self.index = 0;
@@ -290,11 +317,13 @@ impl ShowEngine {
             return RenderState::blank(self.revision);
         };
 
+        let root = self.media_root.as_deref();
+        let playing = !self.cleared;
         let next = self
             .order
             .get(self.index + 1)
             .and_then(|position| self.slide_at(*position))
-            .map(project_slide);
+            .map(|slide| project_slide(slide, root, playing));
 
         if self.cleared {
             // A cleared output still reports which slide is live, so a remote
@@ -314,7 +343,7 @@ impl ShowEngine {
             revision: self.revision,
             show_id: show.id.clone(),
             slide_id: slide.id.clone(),
-            slide: project_slide(slide),
+            slide: project_slide(slide, root, playing),
             notes: slide.notes.clone(),
             next,
             transition: self.transition.clone(),
@@ -323,7 +352,7 @@ impl ShowEngine {
 }
 
 /// Projection from domain to render model — the one place rendering rules live.
-fn project_slide(slide: &Slide) -> RenderSlide {
+fn project_slide(slide: &Slide, root: Option<&Path>, playing: bool) -> RenderSlide {
     RenderSlide {
         background: None,
         elements: slide
@@ -334,8 +363,34 @@ fn project_slide(slide: &Slide) -> RenderSlide {
                 class_name: element.class_name.clone(),
                 text: element.text.clone(),
                 style: element.style.clone(),
+                media: element
+                    .media
+                    .as_ref()
+                    .map(|media| project_media(media, root, playing)),
             })
             .collect(),
+    }
+}
+
+fn project_media(media: &MediaRef, root: Option<&Path>, playing: bool) -> RenderMedia {
+    let path = Path::new(&media.path);
+    let resolved = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        match root {
+            Some(root) => root.join(path),
+            // No root yet: keep the path, the renderer will fail visibly rather
+            // than silently playing whatever a relative lookup finds.
+            None => path.to_path_buf(),
+        }
+    };
+
+    RenderMedia {
+        kind: media.kind,
+        src: crate::media::file_url(&resolved),
+        looped: media.looped,
+        muted: media.muted,
+        playing,
     }
 }
 
@@ -688,6 +743,76 @@ mod tests {
         assert_eq!(engine.state().slide_id, "c2");
         assert!(engine.apply(Command::First));
         assert_eq!(engine.state().slide_id, "a1");
+    }
+
+    #[test]
+    fn media_is_resolved_against_the_project_root() {
+        use crate::domain::MediaRef;
+        use crate::media::{MediaKind, MediaOrigin};
+
+        let mut project = fixture();
+        project.shows[0].groups[0].slides[0]
+            .elements
+            .push(SlideElement {
+                id: "bg".into(),
+                class_name: "media".into(),
+                style: "top:0;left:0;width:100%;height:100%;".into(),
+                media: Some(MediaRef {
+                    path: "media/clip one.mp4".into(),
+                    kind: MediaKind::Video,
+                    origin: MediaOrigin::Bundled,
+                    looped: false,
+                    muted: true,
+                }),
+                ..Default::default()
+            });
+
+        let engine = ShowEngine::new(project).with_media_root("/srv/sunday");
+        let slide = engine.state().slide;
+        let media = slide.elements[1].media.as_ref().expect("a media element");
+        assert_eq!(
+            media.src, "file:///srv/sunday/media/clip%20one.mp4",
+            "relative paths resolve against the project, spaces are encoded"
+        );
+        assert_eq!(media.kind, MediaKind::Video);
+        assert!(media.playing);
+    }
+
+    #[test]
+    fn an_absolute_media_path_ignores_the_root_and_clearing_stops_playback() {
+        use crate::domain::MediaRef;
+        use crate::media::{MediaKind, MediaOrigin};
+
+        let mut project = fixture();
+        for slide in project.shows[0].groups[0].slides.iter_mut() {
+            slide.elements.push(SlideElement {
+                id: format!("{}-bg", slide.id),
+                class_name: "media".into(),
+                style: String::new(),
+                media: Some(MediaRef {
+                    path: "/srv/media/logo.png".into(),
+                    kind: MediaKind::Image,
+                    origin: MediaOrigin::External,
+                    looped: false,
+                    muted: true,
+                }),
+                ..Default::default()
+            });
+        }
+
+        let mut engine = ShowEngine::new(project).with_media_root("/ignored");
+        let media = engine.state().slide.elements[1]
+            .media
+            .clone()
+            .expect("a media element");
+        assert_eq!(media.src, "file:///srv/media/logo.png");
+
+        engine.toggle_clear();
+        let next = engine.state().next.expect("a next slide");
+        assert!(
+            !next.elements[1].media.as_ref().unwrap().playing,
+            "a blanked output does not start media"
+        );
     }
 
     #[test]

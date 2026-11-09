@@ -127,9 +127,19 @@ impl SharedEngine {
     /// Replace the loaded project and publish, even when the new one is empty:
     /// outputs showing the old project must be blanked, not left stale.
     pub fn replace_project(&self, project: crate::domain::Project) -> bool {
+        self.replace_project_at(project, None)
+    }
+
+    /// Replace the project and its media folder in one published revision, so
+    /// an output never renders the new slides against the old root.
+    pub fn replace_project_at(
+        &self,
+        project: crate::domain::Project,
+        media_root: Option<std::path::PathBuf>,
+    ) -> bool {
         let mut loaded = false;
         self.apply_engine(|engine| {
-            loaded = engine.replace_project(project);
+            loaded = engine.replace_project_at(project, media_root);
             true
         });
         loaded

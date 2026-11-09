@@ -192,6 +192,28 @@ pub struct Slide {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// A file a slide element shows or plays.
+///
+/// Imported FreeShow items carry the path directly (`item.src`), so an element
+/// does not need a lookup into the show's media map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MediaRef {
+    /// Forward slashes, as stored by the project.
+    pub path: String,
+    pub kind: crate::media::MediaKind,
+    pub origin: crate::media::MediaOrigin,
+    #[serde(default)]
+    pub looped: bool,
+    /// Muted by default: an output must start playing without a click, and
+    /// browsers only autoplay muted media. A project that says otherwise wins.
+    #[serde(default = "default_muted")]
+    pub muted: bool,
+}
+
+fn default_muted() -> bool {
+    true
+}
+
 /// A positioned piece of content on a slide.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SlideElement {
@@ -201,6 +223,9 @@ pub struct SlideElement {
     pub class_name: String,
     /// Inline style, already resolved. Empty means none.
     pub style: String,
+    /// Set for an image, video or audio item. `None` means text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<MediaRef>,
     /// Fields we do not model yet, preserved verbatim on save.
     #[serde(flatten, default, skip_serializing_if = "BTreeMap::is_empty")]
     pub extra: BTreeMap<String, Value>,

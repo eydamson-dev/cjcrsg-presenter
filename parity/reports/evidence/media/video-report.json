@@ -1,0 +1,25 @@
+{
+  "html": "/tmp/opencode/media/clip.html",
+  "viewport": [
+    1280,
+    720
+  ],
+  "first": {
+    "currentTime": 0.977,
+    "paused": false,
+    "readyState": 4,
+    "videoWidth": 1280,
+    "videoHeight": 720,
+    "error": null
+  },
+  "second": {
+    "currentTime": 3.017,
+    "paused": false,
+    "readyState": 4,
+    "videoWidth": 1280,
+    "videoHeight": 720,
+    "error": null
+  },
+  "advancedSeconds": 2.04,
+  "errors": []
+}

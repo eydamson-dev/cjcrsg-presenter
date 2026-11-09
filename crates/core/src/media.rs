@@ -145,6 +145,45 @@ fn looks_absolute(path: &str) -> bool {
     bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
+/// An absolute `file://` URL for a WebView.
+///
+/// Media lives outside the WebView's origin, so a relative path would resolve
+/// against the page (which has no project folder). Spaces, `#` and `%` are the
+/// characters that actually break `file:` URLs; they are percent-encoded.
+pub fn file_url(path: &Path) -> String {
+    let raw = path.to_string_lossy().replace('\\', "/");
+    // A drive path is absolute on Windows but not to `std::path::absolute` on
+    // Linux, and media paths travel between the two.
+    let mut text = if is_windows_absolute(&raw) {
+        raw
+    } else {
+        std::path::absolute(path)
+            .unwrap_or_else(|_| path.to_path_buf())
+            .to_string_lossy()
+            .replace('\\', "/")
+    };
+    if !text.starts_with('/') {
+        // Windows drive paths: `C:/…` becomes `/C:/…` inside `file://`.
+        text.insert(0, '/');
+    }
+    let mut url = String::with_capacity(text.len() + 7);
+    url.push_str("file://");
+    for byte in text.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' | b'/' | b':' => {
+                url.push(byte as char)
+            }
+            other => url.push_str(&format!("%{other:02X}")),
+        }
+    }
+    url
+}
+
+fn is_windows_absolute(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.len() >= 3 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' && bytes[2] == b'/'
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -235,6 +274,19 @@ mod tests {
     fn backslashes_are_rejected_everywhere() {
         let asset = MediaAsset::new("m1", MediaKind::Video, "media\\worship.mp4");
         assert!(matches!(asset.validate(), Err(MediaError::Backslashes(_))));
+    }
+
+    #[test]
+    fn a_file_url_is_absolute_and_percent_encoded() {
+        let url = file_url(Path::new("/media/worship clip #1.mp4"));
+        assert_eq!(url, "file:///media/worship%20clip%20%231.mp4");
+    }
+
+    #[test]
+    fn a_file_url_keeps_the_drive_letter() {
+        let url = file_url(Path::new("C:\\Media\\bg.mp4"));
+        assert!(url.starts_with("file:///C:/Media/"), "{url}");
+        assert!(url.ends_with("/bg.mp4"), "{url}");
     }
 
     #[test]

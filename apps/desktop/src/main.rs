@@ -104,6 +104,9 @@ fn render_to_file(
     };
 
     let mut engine = presenter_core::ShowEngine::new(document.project);
+    if let Some(root) = project.parent() {
+        engine = engine.with_media_root(root);
+    }
     if let Some(index) = slide {
         engine.go_to_index(index);
     }

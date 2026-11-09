@@ -7,7 +7,9 @@
 
 use std::collections::BTreeMap;
 
-use presenter_core::{MediaAsset, MediaKind, Show, Slide, SlideElement, SlideGroup, Transition};
+use presenter_core::{
+    MediaAsset, MediaKind, MediaOrigin, MediaRef, Show, Slide, SlideElement, SlideGroup, Transition,
+};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -129,6 +131,30 @@ fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
         .iter()
         .enumerate()
         .filter_map(|(index, item)| {
+            // A media item carries its path directly (`item.src`); the show's
+            // media map is for other lookups and is not needed here.
+            if item.kind.as_deref() == Some("media") {
+                let src = item
+                    .src
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())?;
+                return Some(SlideElement {
+                    id: format!("{id}-item-{index}"),
+                    class_name: "media".to_string(),
+                    style: item.style.clone(),
+                    media: Some(MediaRef {
+                        path: src.to_string(),
+                        kind: kind_from_path(src),
+                        // FreeShow keeps media outside any project folder.
+                        origin: MediaOrigin::External,
+                        looped: item.looped.unwrap_or(false),
+                        muted: item.muted.unwrap_or(true),
+                    }),
+                    ..Default::default()
+                });
+            }
+
             let text = item
                 .lines
                 .iter()
@@ -229,6 +255,16 @@ struct RawSlide {
 struct RawItem {
     #[serde(default)]
     style: String,
+    /// `text`, `media`, `clock`, …
+    #[serde(rename = "type", default)]
+    kind: Option<String>,
+    /// The media file path for a `media` item.
+    #[serde(default)]
+    src: Option<String>,
+    #[serde(default)]
+    muted: Option<bool>,
+    #[serde(rename = "loop", default)]
+    looped: Option<bool>,
     #[serde(default)]
     lines: Vec<RawLine>,
 }
@@ -276,6 +312,45 @@ mod tests {
             transition.extra.contains_key("custom"),
             "a direction we do not model is kept, not dropped"
         );
+    }
+
+    #[test]
+    fn a_media_item_keeps_its_path_kind_and_playback_flags() {
+        let json = r#"["media-show", {
+            "name": "With media",
+            "settings": {"activeLayout": "lay"},
+            "slides": {"s1": {"group": ".", "items": [
+                {"type": "media", "src": "/srv/media/bg.mp4", "style": "top:0;left:0;width:100%;height:100%;", "loop": true, "muted": false},
+                {"style": "top:0;left:0;width:100%;height:100%;", "lines": [{"text": [{"value": "Caption"}]}]}
+            ]}},
+            "layouts": {"lay": {"slides": [{"id": "s1"}]}}
+        }]"#;
+
+        let show = import_show(json).unwrap();
+        let slide = show.slides().next().unwrap().1;
+        assert_eq!(slide.elements.len(), 2);
+
+        let media = slide.elements[0].media.as_ref().expect("a media element");
+        assert_eq!(media.path, "/srv/media/bg.mp4");
+        assert_eq!(media.kind, MediaKind::Video);
+        assert_eq!(media.origin, MediaOrigin::External);
+        assert!(media.looped);
+        assert!(!media.muted, "an authored flag wins over the default");
+        assert_eq!(slide.elements[0].class_name, "media");
+
+        assert!(slide.elements[1].media.is_none(), "a text item stays text");
+        assert_eq!(slide.elements[1].text, "Caption");
+    }
+
+    #[test]
+    fn a_media_item_without_a_path_is_dropped() {
+        let json = r#"["m", {
+            "name": "M", "settings": {"activeLayout": "lay"},
+            "slides": {"s": {"group": ".", "items": [{"type": "media", "src": ""}]}},
+            "layouts": {"lay": {"slides": [{"id": "s"}]}}
+        }]"#;
+        let show = import_show(json).unwrap();
+        assert_eq!(show.slides().next().unwrap().1.elements.len(), 0);
     }
 
     #[test]

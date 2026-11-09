@@ -68,6 +68,9 @@ pub fn bundle_media(project: &mut Project, project_root: &Path) -> BundleReport 
     }
 
     let mut rewritten: BTreeMap<String, MediaAsset> = BTreeMap::new();
+    // Element media carries its own path (FreeShow stores `item.src`), so it
+    // needs the same rewrite as the project's media list.
+    let mut element_paths: BTreeMap<String, String> = BTreeMap::new();
     let media_dir = project_root.join(BUNDLE_DIR);
 
     for (id, asset) in &seen {
@@ -81,9 +84,10 @@ pub fn bundle_media(project: &mut Project, project_root: &Path) -> BundleReport 
             Ok(path) => {
                 let mut bundled = asset.clone();
                 bundled.origin = MediaOrigin::Bundled;
-                bundled.path = path;
+                bundled.path = path.clone();
                 bundled.size = std::fs::metadata(source).ok().map(|meta| meta.len());
                 bundled.relink_hint = Some(asset.path.clone());
+                element_paths.insert(asset.path.clone(), path.clone());
                 rewritten.insert(id.clone(), bundled);
                 report.bundled.push(id.clone());
             }
@@ -98,6 +102,18 @@ pub fn bundle_media(project: &mut Project, project_root: &Path) -> BundleReport 
     for show in project.shows.iter_mut() {
         for asset in show.media.iter_mut() {
             rewrite(asset, &rewritten, &mut report);
+        }
+        for group in show.groups.iter_mut() {
+            for slide in group.slides.iter_mut() {
+                for element in slide.elements.iter_mut() {
+                    if let Some(media) = element.media.as_mut() {
+                        if let Some(path) = element_paths.get(&media.path) {
+                            media.path = path.clone();
+                            media.origin = MediaOrigin::Bundled;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -291,6 +307,50 @@ mod tests {
         assert_eq!(report.copied(), 1);
         assert_eq!(project.media[0].path, "media/logo.png");
         assert_eq!(project.shows[0].media[0].path, "media/logo.png");
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn an_element_media_path_is_rewritten_too() {
+        use crate::domain::{MediaRef, SlideElement};
+
+        let root = scratch("element");
+        let source = root.join("outside/clip.mp4");
+        write(&source, b"video");
+
+        let mut project = project_with(
+            vec![MediaAsset::external(
+                "m1",
+                MediaKind::Video,
+                source.to_string_lossy().to_string(),
+            )],
+            vec![],
+        );
+        project.shows[0].groups[0].slides[0]
+            .elements
+            .push(SlideElement {
+                id: "e-media".into(),
+                class_name: "media".into(),
+                media: Some(MediaRef {
+                    path: source.to_string_lossy().to_string(),
+                    kind: MediaKind::Video,
+                    origin: MediaOrigin::External,
+                    looped: false,
+                    muted: true,
+                }),
+                ..Default::default()
+            });
+
+        let report = bundle_media(&mut project, &root);
+        assert_eq!(report.bundled, ["m1"]);
+
+        let media = project.shows[0].groups[0].slides[0].elements[0]
+            .media
+            .as_ref()
+            .expect("the element keeps its media");
+        assert_eq!(media.path, "media/clip.mp4");
+        assert_eq!(media.origin, MediaOrigin::Bundled);
 
         std::fs::remove_dir_all(&root).ok();
     }

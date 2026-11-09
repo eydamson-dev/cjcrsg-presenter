@@ -110,6 +110,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 animate,
                 revision: state.revision,
                 transition,
+                play_media: true,
             }
         }
     }

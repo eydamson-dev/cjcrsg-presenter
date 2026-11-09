@@ -52,7 +52,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
-| 4 — media engine | not started |
+| 4 — media engine | **started.** Images, video and audio items render; a video plays and advances. No playback coordinator, seeking, audio routing or multi-output measurement |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
 
@@ -74,6 +74,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
+| Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ | `parity/reports/media-playback-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -102,8 +103,8 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     76
-crates/compat   23
+crates/core     81
+crates/compat   25
 crates/remote    9
 ```
 
@@ -116,8 +117,9 @@ crates/remote    9
 3. **Install and run the installer on Windows.** The build is green; nothing has
    been executed. QEMU/KVM is enough for install, uninstall and the WebView2
    bootstrap; monitors still need hardware.
-4. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
-   CPU inside the app, where the process tree is stable.
+4. **Phase 4 media.** Items render and video plays. Next: a playback coordinator
+   behind a trait (pause/resume per slide, position), then four videos at once,
+   measured inside the app where the process tree is stable.
 
 ## Known gaps and hazards
 
@@ -125,6 +127,8 @@ crates/remote    9
   localhost or add auth before it runs on a shared network.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model.
+- **Media has no coordinator.** A slide's media autoplays while it is live and
+  restarts from zero when it returns; nothing seeks or pauses it.
 - **`nav.bounds.next-at-end` is unverified** against the reference. Ours ignores
   next at the end; FreeShow may wrap or stop.
 - **Style-level transitions are not modelled.** FreeShow resolves slide → style

@@ -305,6 +305,20 @@ footer p {
     white-space: pre;
 }
 
+/* Media items carry FreeShow's box style inline; the class only supplies the
+   fill behaviour when the item has no explicit size. */
+.slide .media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide audio {
+    display: none;
+}
+
 .slide .blank {
     color: #4a5058;
     font-size: 1.2rem;

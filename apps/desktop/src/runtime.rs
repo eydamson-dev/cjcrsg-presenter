@@ -96,7 +96,10 @@ impl AppState {
             .map_err(|error| format!("cannot open {}: {error}", path.display()))?;
 
         let name = document.project.name.clone();
-        self.engine.replace_project(document.project);
+        let root = std::path::absolute(path)
+            .ok()
+            .and_then(|absolute| absolute.parent().map(|parent| parent.to_path_buf()));
+        self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)
             .unwrap_or_else(|_| path.to_path_buf())
@@ -216,8 +219,11 @@ static SHARED: OnceLock<Arc<SharedEngine>> = OnceLock::new();
 pub fn shared_engine() -> Arc<SharedEngine> {
     SHARED
         .get_or_init(|| {
-            let project = load_project().unwrap_or_else(demo_project);
-            Arc::new(SharedEngine::new(ShowEngine::new(project)))
+            let engine = match load_project() {
+                Some((project, root)) => ShowEngine::new(project).with_media_root(root),
+                None => ShowEngine::new(demo_project()),
+            };
+            Arc::new(SharedEngine::new(engine))
         })
         .clone()
 }
@@ -237,7 +243,7 @@ pub fn session_store() -> SessionStore {
 
 /// The project to open at launch: the command-line path, else the last one
 /// opened. A stale entry falls back to the demo rather than an error screen.
-fn load_project() -> Option<Project> {
+fn load_project() -> Option<(Project, std::path::PathBuf)> {
     let store = session_store();
     let explicit = std::env::var("CJCRSG_PROJECT").ok();
     let path = explicit
@@ -258,7 +264,12 @@ fn load_project() -> Option<Project> {
                     tracing::warn!(%error, "could not record the project as recent");
                 }
             }
-            Some(document.project)
+            // Media paths in a `.cjcp` are relative to the file's folder.
+            let root = std::path::absolute(std::path::Path::new(&path))
+                .ok()
+                .and_then(|absolute| absolute.parent().map(|parent| parent.to_path_buf()))
+                .unwrap_or_else(|| std::path::PathBuf::from("."));
+            Some((document.project, root))
         }
         Err(error) => {
             tracing::error!(path = %path, %error, "could not load project; falling back to demo");
