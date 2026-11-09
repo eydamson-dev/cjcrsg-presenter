@@ -1,8 +1,10 @@
 # Parity workflow
 
-Status: **proposed, not yet built.** Scope: check that what we build matches
-FreeShow's behaviour (functionality) and look (UI), feature by feature, and
-say clearly which is which.
+Status: **proposed, not yet built.** Decided in part by D13 (`docs/decisions.md`):
+behavioural contracts are the specification, differential runs compare state
+after every action, and verification is independent. Where this document and D13
+disagree, D13 wins. Scope: check that what we build matches FreeShow's behaviour
+(functionality) and look (UI), feature by feature, and say clearly which is which.
 
 ## 1. What "similar" means
 
@@ -163,19 +165,28 @@ The workflow's calibration step should reuse its data.
 
 ## 5. Agents
 
-Four roles, each with a narrow job and a written output. None of them marks a
-feature as done. Only the gate does (§6).
+Five roles, each with a narrow job and a written output. None of them marks a
+feature as done. Only the orchestrator does, after the verifier's report (§6).
 
 | Role | Input | Output |
 | --- | --- | --- |
-| **Reader** | a FreeShow area (e.g., `src/frontend/show`) | feature YAML entries with evidence and confidence |
-| **Scenario author** | feature YAML | scenario YAML, plus a note on anything the reference cannot express |
-| **Implementer** | scenario + the behaviour notes | code in `crates/` or `apps/` |
-| **Verifier** | scenario, both adapters | run report; never edits code |
+| **Orchestrator** | milestone plan | assignments, gates, acceptance record. Owns the decision to accept |
+| **Reader** | a FreeShow area (e.g., `src/frontend/show`) | feature entries and behaviour labelled `observed` / `inferred` / `unknown`, with reference evidence |
+| **Scenario author** | approved contract | semantic scenarios, including boundary, repeat and reverse cases; a note on anything the reference cannot express |
+| **Implementer** | approved contract + scenarios | code in `crates/` or `apps/`, unit tests, implementation evidence. May declare a candidate ready, never accepted |
+| **Verifier** | contract, scenarios, reference evidence, candidate commit SHA | run report and defect list; never edits code, contracts, scenarios or baselines |
 
-The implementer and verifier must not be the same agent run, so the one that
-wrote the code does not mark its own homework. The reader's confidence rating
-is a real field: low-confidence features need a human read before implementation.
+Rules (D13):
+
+- The **implementer and verifier are separate sessions in separate worktrees.**
+  The verifier checks out the exact candidate commit, not a branch that may move.
+- The verifier does not take the implementer's account of a fix as evidence. It
+  decides from the commit, contract, scenarios and artefacts.
+- The verifier runs `scripts/check.sh` itself, and at least one scenario the
+  implementer did not supply.
+- The reader's confidence is a real field. `inferred` or `unknown` behaviour
+  needs more reference evidence, or an explicit provisional contract, before
+  implementation starts.
 
 ## 6. The gate
 

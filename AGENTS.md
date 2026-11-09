@@ -18,6 +18,23 @@ Read in this order, and stop when you have what you need:
    cannot prove.
 9. **`docs/ui-parity.md`** — the controller-shell plan: why ours differs, the
    target layout, and what moves where.
+10. **`docs/agentic-workflow.md`** — who does each stage of a behaviour's path from
+    FreeShow to an accepted milestone. Read it before starting any parity or
+    milestone work.
+
+## Agentic workflow
+
+Parity work uses separate agents, defined in `.opencode/agents/`: `reader`,
+`scenario-author`, `harness-engineer`, `implementer`, `verifier`. The orchestrator
+is the main session, and it owns contracts and acceptance. The full stage list is
+in `docs/agentic-workflow.md`.
+
+- Before writing a parity or milestone change, check which stage you are in, and
+  act only in that stage's owner role.
+- The implementer and verifier are separate sessions in separate worktrees. Never
+  both in one session.
+- Nobody marks a milestone accepted except the orchestrator, after a verifier
+  pass on the exact candidate SHA.
 
 For setting up a new machine (Rust, system libraries, Windows, the parity
 tooling) and the contribution rules in summary, see `CONTRIBUTING.md`.

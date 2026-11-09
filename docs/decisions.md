@@ -174,3 +174,44 @@ domain, which starts by modelling styles and templates, not by adding a crate.
 recorded as a decision rather than left as an open deviation. Our own clients are
 the supported surface. If a church specifically needs the FreeShow client, the
 work is a projection layer, and it should be planned as one.
+
+## D13 — Parity is checked by contracts, differential state and independent verification
+
+**Context.** The parity plan (`docs/parity-workflow.md`) compared screenshots and
+final states, and let the agent that read FreeShow also write the implementation
+and the scenarios. An agent can then implement a wrong interpretation, write tests
+that fit it, and report success. An external review of the plan (ChatGPT, project
+`cjcrsg-presenter`, 2026-11-09) reached the same conclusion.
+
+**Decision.**
+1. **Behavioural contracts are the specification.** `docs/contracts/` holds one
+   contract per behaviour: preconditions, action, expected state, events, side
+   effects, edge cases, and the reference evidence. Features, scenarios, tests and
+   deviations refer to contract IDs; they do not restate them.
+2. **Every reference observation is labelled** `observed`, `inferred` or `unknown`.
+   Only `observed` behaviour may become a required parity behaviour without
+   approval. `inferred` needs more evidence or an explicit provisional contract.
+3. **Differential runs compare normalised state after every action**, not only the
+   final state. Scenarios use semantic actions (`next_slide`), never UI selectors.
+4. **Visual parity has three separate checks:** pixels, geometry and text
+   structure, and visible-text content. Thresholds come from repeated captures on
+   the same environment, and Linux and Windows keep separate baselines.
+5. **Verification is independent.** The verifier runs in its own session, in a
+   clean worktree at the exact candidate commit. It may not edit implementation,
+   contracts, scenarios or baselines. It must run at least one scenario the
+   implementer did not supply. Only the orchestrator records acceptance.
+6. **Evidence is a manifest,** naming each artefact, what it proves, and the commit
+   it came from. A file-count check is not evidence.
+
+**Why.** The core is already engine-owned and testable without a window (D3, D4),
+so the cheapest reliable parity check is a state comparison, not a visual one.
+Independence matters because the failure to guard against is an agent confirming
+its own interpretation.
+
+**Consequences.** The first milestone is one vertical slice, Next/Previous Slide,
+run against FreeShow and our build, verified by a separate session. The
+orchestration tooling waits until that slice works. Contract and manifest formats
+are not final; changing their shape needs a note here.
+
+**Revisit when.** The slice fails to catch a deliberately wrong implementation, or
+independent verification proves too slow to run per milestone.
