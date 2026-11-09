@@ -1,0 +1,746 @@
+# Controller layout: bottom drawer, left project browser, top bar
+
+Features read from FreeShow `ff784eb` (1.6.8-beta.3). This file answers
+DEV-013's question "what does the reference's controller shell actually do?"
+and nothing else: it does not decide what we build.
+
+## How to read the labels
+
+Every entry carries a `label` and a `confidence`:
+
+- `label: observed` — the behaviour is stated literally at the cited
+  file:line. Read from source, not executed: no FreeShow window was driven for
+  this pass, because this session runs headless and may only read the checkout.
+- `label: inferred` — the behaviour follows from combining several citations or
+  from runtime event ordering that was not executed. Confirm before it becomes
+  a required parity behaviour (D13).
+- `label: unknown` — not established.
+
+`confidence` keeps the workflow's enum: `high` for observed source, `medium`
+for inference, `low` for anything a human must confirm.
+
+`area: controller` is outside the current `docs/parity-workflow.md` §3.1 enum
+(navigation | outputs | rendering | media | remote | stage | editing | import).
+It is used here because the controller shell is its own surface; the enum should
+gain the value rather than these entries pretending to be "editing".
+
+---
+
+```yaml
+id: ui.drawer.tabs.set
+area: controller
+title: The drawer tab set, in strip order, with labels and icons
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/values/tabs.ts:5-16
+    - src/frontend/types/Tabs.ts:62
+    - src/frontend/components/drawer/Drawer.svelte:238
+    - src/frontend/components/drawer/Drawer.svelte:273-285
+    - src/frontend/components/helpers/array.ts:137-140
+    - public/lang/en.json:422-443
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Eight tabs, in this order: 1 Shows, 2 Media, 3 Audio, 4 Overlays, 5 Templates,
+  6 Scripture, 7 Calendar, 8 Functions. Each entry is { name: "tabs.<id>",
+  icon: "<id>" } and the icon id equals the tab id; Drawer renders
+  <Icon id={tab.icon} size={1.3} white={active} />. Strip order is the object's
+  insertion order, because keysToID maps Object.entries (array.ts:137-140).
+  The tab label is the translated `tabs.<id>` string: Shows, Media, Audio,
+  Overlays, Templates, Scripture, Calendar, Functions.
+  DrawerTabIds also contains "timers", but "timers" is not in drawerTabs, so it
+  has no tab button; Timers is reached as a Functions sub-tab
+  (Content.svelte:71-72). Do not model "timers" as a ninth tab.
+```
+
+```yaml
+id: ui.drawer.tabs.visibility
+area: controller
+title: Which tabs the strip hides, and why
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:275
+    - src/frontend/components/drawer/Drawer.svelte:252
+    - src/frontend/utils/profile.ts:5-7
+    - src/frontend/components/context/loadItems.ts:21-30
+    - src/frontend/components/context/menuClick.ts:523-531
+    - src/frontend/stores.ts:343
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  A tab is rendered only when all three hold (Drawer.svelte:275):
+  (1) drawerTabsData[tab.id]?.enabled !== false; (2) getAccess(tab.id).global
+  !== "none" for the active profile; (3) not in focus mode, or not one of
+  hiddenInFocusMode = ["templates", "calendar"].
+  drawerTabsData starts as {} (stores.ts:343) and the user can only ever set
+  enabled: true|false through the strip's context menu (menuClick.ts:523-531),
+  so on a fresh install no tab is hidden: inferred, medium.
+  The context menu cannot hide Shows or Media: loadItems.ts:22-23 slices the
+  first two entries off the toggle list (tabsToRemove = 2).
+  Hiding a tab does not renumber the others; see ui.drawer.shortcut.ctrl-digits.
+```
+
+```yaml
+id: ui.drawer.tab.select
+area: controller
+title: Clicking a tab makes it the active drawer tab
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:132-147
+    - src/frontend/components/drawer/Drawer.svelte:277
+    - src/frontend/stores.ts:63
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  openDrawerTab returns immediately when the tab is already active. Otherwise it
+  sets a local activeTab first (immediate highlight), commits
+  activeDrawerTab after a 10 ms timeout, then blurs document.activeElement
+  10 ms later so drawer search keeps receiving keys. Clicking a tab while the
+  drawer is collapsed also expands it, because the strip click handler falls
+  through to the open branch (Drawer.svelte:87-96) and MaterialButton does not
+  stop propagation (MaterialButton.svelte:107) - that half of the entry is
+  inferred (medium) from the handler order, not executed.
+  activeDrawerTab defaults to "shows" (stores.ts:63).
+```
+
+```yaml
+id: ui.drawer.collapse.pointer
+area: controller
+title: Pointer gestures that collapse the drawer
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:81-106
+    - src/frontend/components/drawer/Drawer.svelte:113-125
+    - src/frontend/components/drawer/Drawer.svelte:108-111
+    - src/frontend/components/drawer/Drawer.svelte:277
+  read_by: reader
+label: inferred
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Double-clicking any tab calls closeDrawer() (on:dblclick, Drawer.svelte:277);
+  closeDrawer sets height = minHeight and stored = previous height.
+  A single click closes only when it lands on the strip background:
+  e.target.classList.contains("top"). The branch also tests
+  closest("#" + activeDrawerTab) (line 89), but line 82 returns first for any
+  click whose target is inside a button, and every tab is a button. So the
+  intended "click the open tab to close" path is shadowed by the button guard:
+  the source comment says it should close, the guard says it does not.
+  This is the one drawer behaviour that most needs a runtime confirmation
+  before a contract asserts it.
+  A click on the strip while collapsed opens the drawer (line 95): height
+  becomes stored when stored >= 300, else 300.
+```
+
+```yaml
+id: ui.drawer.collapse.keyboard
+area: controller
+title: Ctrl+D and Ctrl+T collapse or expand the drawer
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:184-185
+    - src/frontend/components/drawer/Drawer.svelte:81-106
+    - src/frontend/components/drawer/Drawer.svelte:255
+    - src/frontend/utils/common.ts:190-209
+    - src/frontend/utils/shortcuts.ts:57
+    - src/frontend/App.svelte:68
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Ctrl+D (or Cmd+D) runs click(null) when nothing is selected
+  ($selected?.id and $selected?.data?.length are both empty) and no edit items
+  are open; click(null) closes an expanded drawer and expands a collapsed one.
+  Ctrl+T is togglePanels (common.ts:193-209): if the drawer or either side panel
+  is open it closes all three (drawer stored = current height, panels to 4 px);
+  otherwise it reopens the drawer to stored || 300 and restores the panels it
+  had closed, unless the user closed them by hand.
+  Ctrl+D is also bound to Duplicate in shortcuts.ts (line 43, via setTimeout);
+  both handlers see the same keydown, which is why that binding is deferred.
+```
+
+```yaml
+id: ui.drawer.height.bounds
+area: controller
+title: Collapsed, default and maximum drawer heights
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:28-31
+    - src/frontend/components/drawer/Drawer.svelte:73-78
+    - src/frontend/components/drawer/Drawer.svelte:345-354
+    - src/frontend/components/drawer/Drawer.svelte:416-420
+    - src/frontend/utils/common.ts:14-16
+    - src/frontend/stores.ts:345
+    - src/frontend/components/main/Top.svelte:167-168
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  minHeight = 40 px, topHeight = 40 px, DEFAULT_DRAWER_HEIGHT = 300 px,
+  MENU_BAR_HEIGHT = 25 px. maxHeight = window.innerHeight - 40, minus
+  (MENU_BAR_HEIGHT - 0.3) on win32, i.e. innerHeight - 64.7 there.
+  The store starts at { height: 300, stored: null }.
+  The section is 40 px tall only when collapsed, which equals the tab strip
+  (.top) height, so a collapsed drawer shows the strip and nothing else.
+  Content height is calc(100% - 40px); the tab strip keeps padding-top: 4px.
+  A drag below 80 px (minHeight * 2) collapses to 40, not to the dragged value.
+```
+
+```yaml
+id: ui.drawer.drag.resize
+area: controller
+title: Dragging the strip resizes the drawer, above a threshold
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:35-46
+    - src/frontend/components/drawer/Drawer.svelte:52-78
+    - src/frontend/components/drawer/Drawer.svelte:355-363
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  The visible handle is a 4 px bar: .top::after, top: 0, height: 4px,
+  background var(--primary-lighter), cursor ns-resize. It is decoration: the
+  mousedown listener is on the whole 40 px .top element and only skips clicks
+  whose target is inside .search, so dragging anywhere on the strip resizes.
+  New height = window.innerHeight - clientY - offsetY, where
+  offsetY = innerHeight - height - clientY at mousedown; the value is clamped
+  to [40, maxHeight]. The move flag is set whenever the drag produces a height
+  inside the clamp, which is what stops the same gesture from also counting as
+  a click.
+  Side effect: mousemove clears the current selection
+  (selected.set({ id: null, data: [] })) on the first move of a drag.
+```
+
+```yaml
+id: ui.drawer.height.persisted
+area: controller
+title: The drawer restores the height it had before it was collapsed
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/stores.ts:345
+    - src/frontend/components/drawer/Drawer.svelte:80
+    - src/frontend/components/drawer/Drawer.svelte:95
+    - src/frontend/components/drawer/Drawer.svelte:109
+    - src/frontend/utils/save.ts:173-174
+    - src/frontend/utils/save.ts:187
+    - src/frontend/utils/updateSettings.ts:376-377
+    - src/frontend/utils/updateSettings.ts:390
+  read_by: reader
+label: inferred
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  drawer = { height, stored, autoclosed? }. A pointer or keyboard collapse
+  writes the current height to stored; expanding uses stored when it is >= 300,
+  else 300. A drag-collapse writes stored: null, so after dragging past the
+  threshold the drawer reopens at 300, not at the dragged height.
+  save.ts:173-174 and 187 serialise drawer, drawerTabsData and resized into the
+  saved settings, and updateSettings.ts:376-377 / 390 apply them on load, so the
+  height survives a restart. Whether a non-null `stored` survives a restart is
+  not verified: it depends on when the save happens.
+```
+
+```yaml
+id: ui.drawer.shortcut.ctrl-digits
+area: controller
+title: Ctrl+1 to Ctrl+8 select drawer tabs
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/utils/shortcuts.ts:179-189
+    - src/frontend/utils/shortcuts.ts:35
+    - src/frontend/App.svelte:24
+    - src/frontend/App.svelte:68
+    - src/frontend/components/drawer/Drawer.svelte:277
+    - src/frontend/components/drawer/Drawer.svelte:28
+    - src/frontend/components/drawer/Drawer.svelte:95
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Real. In the Ctrl/Cmd branch of keydown: drawerMenus = Object.keys(drawerTabs)
+  (fixed order from tabs.ts) and, when document.activeElement === document.body,
+  Number(e.key) - 1 indexes that array. So Ctrl+1 Shows, Ctrl+2 Media,
+  Ctrl+3 Audio, Ctrl+4 Overlays, Ctrl+5 Templates, Ctrl+6 Scripture,
+  Ctrl+7 Calendar, Ctrl+8 Functions. A tab whose profile access global is
+  "none" is skipped. After setting the tab, if drawer height < 300 it opens to
+  stored || 300.
+  Two consequences worth a scenario: the tooltip prints the tab's position in
+  the full list ("[Ctrl+{i+1}]", i from the unfiltered each), so hiding a tab
+  does not renumber the shortcut; and the handler does not consult
+  drawerTabsData[id].enabled, so a hidden tab can still be selected by number
+  (inferred - the content panel would show, without a matching tab button).
+  Focus must be on the body. A focused button is blurred first
+  (shortcuts.ts:168) so it does not block the shortcut; a focused text field
+  does, because activeElement is then the field.
+```
+
+```yaml
+id: ui.drawer.shortcut.ctrl-f
+area: controller
+title: Ctrl+F focuses the drawer search field
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:164-183
+    - src/frontend/components/drawer/Drawer.svelte:246-250
+    - src/frontend/components/drawer/Drawer.svelte:255
+    - src/frontend/components/drawer/Drawer.svelte:287-292
+    - src/frontend/utils/shortcuts.ts:40
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Bound on <svelte:window on:keydown> inside Drawer.svelte (line 255), so it
+  only exists while the drawer is mounted, i.e. on the Show and Edit pages.
+  Shift or Alt variants return immediately. Ctrl/Cmd+F calls focusSearch()
+  unless a "show" popup is open or shouldOpenReplace() is true (the Edit page's
+  text replacement dialog); focusSearch flips searchActive on the next tick so
+  the input can take focus.
+  If the drawer is closed and the current tab is media or audio, Ctrl+F first
+  switches to Shows with sub-tab "all" (lines 175-183).
+  Ctrl+F elsewhere is not drawer search: shortcuts.ts:40 maps it to find/replace
+  only inside the editor. Ctrl+G (and F8) is a different, global quick search
+  (QuickSearch.svelte:106-113).
+```
+
+```yaml
+id: ui.drawer.strip.scroll-labels
+area: controller
+title: The strip scrolls sideways and loses its labels when narrow
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:365-369
+    - src/frontend/components/drawer/Drawer.svelte:437-441
+    - src/frontend/components/drawer/Drawer.svelte:279-281
+    - src/frontend/components/drawer/Drawer.svelte:371-384
+    - src/frontend/stores.ts:368
+    - src/frontend/components/settings/tabs/General.svelte:44
+    - public/global.css:56
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  .top .tabs is display: flex with overflow-x: auto and overflow-y: hidden, so
+  the tab row scrolls horizontally and never wraps; the search box sits at the
+  far end of the strip and keeps its width (var(--navigation-width) = 290 px,
+  min-width 290 px).
+  At @media (max-width: 750px) the label span inside every tab is
+  display: none: the strip becomes icon-only. Labels are also hidden when the
+  "disable labels" setting is on ($labelsDisabled, default false) or in focus
+  mode. Tooltips (data-title) remain, and include the Ctrl+N hint.
+```
+
+```yaml
+id: ui.drawer.content.columns
+area: controller
+title: The drawer body is a three-column row: sub-navigation, content, info
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:319-329
+    - src/frontend/components/drawer/Drawer.svelte:416-420
+    - src/frontend/components/drawer/Navigation.svelte:15-39
+    - src/frontend/stores.ts:356
+    - src/frontend/components/system/Resizeable.svelte:18-22
+    - src/frontend/components/system/Resizeable.svelte:69-74
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Left: Resizeable id="leftPanelDrawer" wrapping Navigation, the per-tab
+  sub-category column (ShowsTabs, MediaTabs, AudioTabs, OverlaysTabs,
+  TemplatesTabs, ScriptureTabs, CalendarTabs, FunctionsTabs).
+  Centre: Content, the per-tab list.
+  Right: Resizeable id="rightPanelDrawer" side="right" wrapping Info.
+  resized defaults to 290 for both drawer panels. Resizeable snaps back to 290
+  within +/-20 px, snaps to 200.1 (290 * 0.69) below that, and collapses to the
+  4 px handle below 100 (Resizeable.svelte:69-74).
+  The whole drawer is the last child of MainLayout's flex column, so it spans
+  the full window width below the left/centre/right row
+  (MainLayout.svelte:118-120, 141-149).
+```
+
+```yaml
+id: ui.drawer.info.panels
+area: controller
+title: The right-hand info panel changes with the active tab
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/info/Info.svelte:19-46
+    - src/frontend/components/drawer/info/Info.svelte:48-54
+    - src/frontend/components/drawer/info/ShowInfo.svelte:105-142
+    - src/frontend/components/drawer/info/MediaInfo.svelte:74-107
+    - src/frontend/components/drawer/info/TemplateInfo.svelte:22-35
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Mapping: Shows -> ShowInfo, Media -> MediaInfo, Audio -> AudioInfo,
+  Templates -> TemplateInfo, Scripture -> ScriptureInfo, Calendar ->
+  CalendarInfo, Functions -> FunctionsInfo.
+  Overlays has no info component (the OverlayInfo branch is commented out at
+  Info.svelte:31-32), so Overlays falls through to the clock/date panel.
+  Five tabs also get an options button (hasOptions = shows, media, templates,
+  scripture, calendar) that toggles each panel's own options view; it is hidden
+  in focus mode.
+  When their normal content is absent these panels render the clock themselves:
+  ShowInfo when no show (or a non-show item) is active, MediaInfo when no
+  media/recording/online view applies, TemplateInfo whenever its options view is
+  closed. See ui.drawer.info.clock.
+```
+
+```yaml
+id: ui.drawer.info.clock
+area: controller
+title: Where the drawer clock is and what it shows
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/info/Info.svelte:41-46
+    - src/frontend/components/system/Clock.svelte:19-47
+    - src/frontend/components/system/Clock.svelte:102-114
+    - src/frontend/components/system/Date.svelte:8-23
+    - src/frontend/components/helpers/time.ts:43-106
+    - src/frontend/stores.ts:365
+    - src/frontend/stores.ts:196
+    - src/frontend/components/context/menuClick.ts:866-868
+    - src/frontend/components/context/contextMenus.ts:264
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  The clock lives in the drawer's right-hand info column, in the fall-through
+  branch of Info.svelte: <Center><Clock seconds /><Date /></Center>.
+  Format: digital, 24-hour by default (timeFormat defaults to "24"),
+  HH:mm:ss because `seconds` is passed. With timeFormat "12" it renders
+  h:mm:ss plus a small AM/PM in the accent colour. Time is re-evaluated every
+  250 ms; the date every 10 s. The date is dateToString's long form, i.e.
+  toLocaleDateString with weekday long, day numeric, month long, year numeric,
+  first letter upper-cased - locale dependent, e.g. en-GB "Monday, 9 November
+  2026", en-US "Monday, November 9, 2026".
+  Visibility: the clock is NOT always shown. It replaces the info panel only for
+  tabs with no info component, which in the current strip is Overlays alone; it
+  also shows for Shows/Media/Templates when nothing is open (inferred, medium:
+  each of those components has its own else-branch rendering it).
+  Right-clicking the info panel offers "Toggle clock" (context id drawer_info),
+  which sets forceClock and makes the clock replace the info panel on every tab.
+```
+
+```yaml
+id: ui.drawer.search
+area: controller
+title: The strip's search field and its clearing behaviour
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/Drawer.svelte:149-160
+    - src/frontend/components/drawer/Drawer.svelte:287-316
+    - src/frontend/components/drawer/Drawer.svelte:229-234
+    - src/frontend/components/drawer/Drawer.svelte:186-226
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  The strip has one text input at the right, 290 px wide, whose placeholder is
+  translateText("main.search...") (translator resolves main.search = "Search"
+  and leaves the dots), plus a Search button while the input is idle. Activating
+  either shows the input and a clear button; the Scripture tab also adds an
+  autofill hint and an options button.
+  Typing collapses runs of whitespace to single spaces and keeps one trailing
+  space if the user typed one. The value resets whenever the active tab changes,
+  and Escape clears it and leaves search mode.
+  Enter acts only when the input itself has focus, the value is non-empty, a
+  first match exists, focus mode is off and the tab is Shows: Ctrl/Cmd+Enter
+  loads and plays the first slide of that show, plain Enter opens it in the
+  project or inserts it. The literal "SEARCH_CREATE" result opens the quick-text
+  popup instead.
+  Input does not force the drawer open in general: search() returns early when
+  nothing is stored and the drawer is already expanded.
+```
+
+```yaml
+id: ui.drawer.autoclose-in-edit
+area: controller
+title: The drawer collapses when the editor opens and returns afterwards
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/edit/Editor.svelte:53-58
+    - src/frontend/components/drawer/Drawer.svelte:48-49
+    - src/frontend/components/drawer/Drawer.svelte:96
+    - src/frontend/stores.ts:64
+  read_by: reader
+label: inferred
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  When Editor mounts it closes the drawer unless drawerOpenedInEdit is true:
+  height 40, stored = previous height, autoclosed = true. Back on the Show page,
+  Drawer waits 100 ms and reopens to stored ?? 300, clearing autoclosed.
+  Opening the drawer by hand while in Edit sets drawerOpenedInEdit, so the next
+  Editor mount leaves it open.
+  Inferred: no state was captured, only the two handlers read.
+```
+
+```yaml
+id: ui.projects.tree
+area: controller
+title: The left column lists a tree of project folders and projects
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/MainLayout.svelte:40-56
+    - src/frontend/components/show/Projects.svelte:40-91
+    - src/frontend/components/show/Projects.svelte:529-535
+    - src/frontend/components/show/ProjectList.svelte:64-86
+    - src/frontend/components/show/ProjectList.svelte:145-212
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  This column is the Show page's left panel only (Edit swaps in the editor
+  navigation, Stage/Draw/Settings swap their own). Default width 290 px,
+  resizable.
+  Projects and folders live in one tree; each entry is sorted by name unless
+  $sorted.projects says created/modified/name_des, and archived projects sort
+  last. Rendering groups them: each root-level folder starts a rounded section,
+  its children are indented 8 px per level, and root-level projects are
+  collected at the bottom under an "Unlabeled" heading. A "Show archived"
+  row with a count reveals archived projects inside a folder.
+  An empty folder shows an "Empty" line with a New project button.
+  Project templates are a separate block pinned under the list.
+```
+
+```yaml
+id: ui.projects.row
+area: controller
+title: What one project row shows, and how the active project is marked
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/show/ProjectList.svelte:162-181
+    - src/frontend/components/show/Projects.svelte:508-521
+    - src/frontend/components/inputs/MaterialButton.svelte:166-169
+    - src/frontend/components/inputs/HiddenInput.svelte:35-50
+    - src/frontend/components/show/project.ts:10-22
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  A row is a full-width button with: an icon (cloud when the project is linked
+  to a content provider, otherwise "project"; archived projects render it
+  white), the project name, and no other metadata. Folder rows use folder /
+  folderOpen and append a child count on root folders.
+  Active project: isActive when $activeProject === id, styled as the "tab"
+  variant of an active button - no bottom border, a 4 px left border in the
+  accent colour. A folder on the active project's path is also marked active.
+  Opening: a click calls openProject(id, !alt); Alt-click opens the project
+  without opening its first item; Ctrl-click is ignored.
+  Rename: press-and-hold the name for 700 ms (HiddenInput), or the context menu
+  / F2. The name field commits on Enter or Tab.
+```
+
+```yaml
+id: ui.projects.actions
+area: controller
+title: Add, edit, export and context-menu actions in the project column
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/show/Projects.svelte:478-504
+    - src/frontend/components/show/Projects.svelte:545-582
+    - src/frontend/components/show/Projects.svelte:394-462
+    - src/frontend/components/context/contextMenus.ts:339-343
+    - src/frontend/components/context/contextMenus.ts:365
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Header: back button (leaves a project or recently-used view), title, and a
+  "more" button opening a dropdown. With no project open the dropdown only has
+  "Options" (default project name, startup projects list). With a project open
+  it gains export, data link, timeline toggle, collapse/lock sections, and
+  save-to-file when the project has a sourcePath, plus sync rows when the project
+  is linked to OnStage or Planning Center.
+  Add: a round "+" button bottom-right opens a menu - New project, New folder,
+  Project template, Import (project/shows/json/zip), and Planning Center when
+  that provider is connected. Double-clicking "+" creates a project directly.
+  Right-click menus: project -> rename, duplicate, delete, copy to template,
+  archive; folder -> remove; project tab -> close; read-only profiles get an
+  empty menu. A project is not renamed inline by a single click.
+```
+
+```yaml
+id: ui.projects.recent
+area: controller
+title: Recently used projects replace the tree on startup
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/show/Projects.svelte:136-145
+    - src/frontend/components/show/Projects.svelte:508-521
+    - src/frontend/components/show/project.ts:66-75
+    - src/frontend/stores.ts:70
+    - src/frontend/utils/shortcuts.ts:127-135
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  showRecentlyUsedProjects defaults to true. When at least two unarchived
+  projects were used within the last five days (used timestamp), the column
+  shows only those, most recently used first, under an italic "Recently used"
+  heading; opening one clears the flag so the normal tree comes back. With
+  fewer than two the list is empty and the flag is cleared automatically.
+  Enter on startup opens the most recent of that list when no show is open.
+```
+
+```yaml
+id: ui.top.commands
+area: controller
+title: What the top bar contains
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/main/Top.svelte:95-159
+    - src/frontend/components/main/Top.svelte:161-174
+    - src/frontend/components/inputs/TopButton.svelte:15
+    - src/frontend/components/inputs/TopButton.svelte:46-48
+    - src/frontend/MainLayout.svelte:36-38
+    - src/frontend/utils/shortcuts.ts:256-265
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  40 px tall, three spans: a 290 px brand span ("FreeShow" title, plus a 5 px
+  unsaved marker on non-Windows); a centre span with the three view buttons
+  Show / Edit / Stage; a 290 px right span with Draw, Settings (omitted when the
+  profile's settings access lists every settings tab, i.e. settingsDisabled,
+  Top.svelte:59-61) and the output-display toggle.
+  The output toggle maps to Ctrl+O and needs a second click within 1.8 s to
+  stop an active output; it is disabled when no physical output exists and the
+  disabled area offers a shortcut into output settings.
+  Cloud-sync user avatars overlay the top-left corner when connected.
+  The whole bar is hidden in focus mode.
+  Plain number keys 1-5 switch pages when the "number keys" setting is off;
+  that is a different binding from Ctrl+1..8 for drawer tabs.
+```
+
+```yaml
+id: ui.top.clock
+area: controller
+title: The top bar shows no clock or time
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/main/Top.svelte:1-159
+    - src/frontend/components/system/Clock.svelte:1-20
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Top.svelte imports Button, TopButton, Icon and T only; there is no Clock,
+  Date or time element anywhere in its markup. The clock in the reference UI
+  belongs to the drawer's info column (ui.drawer.info.clock) and to the stage,
+  not to the top bar. A contract that puts a clock in our top bar is not
+  matching the reference.
+```

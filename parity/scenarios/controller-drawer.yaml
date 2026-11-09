@@ -1,0 +1,1396 @@
+# Controller drawer — parity scenarios (DEV-013 milestone 1)
+#
+# Contract: docs/contracts/ui-drawer.md, behaviours B1–B12.
+# Reference evidence: parity/features/controller-layout.yaml and
+#   parity/reports/reader/controller-layout-2026-11-09.md.
+# Reference commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3 (1.6.8-beta.3).
+#
+# ## Harness status — read this first
+#
+# The controller is a **native WebView window**. The current parity harness has
+# no adapter that can drive it: `parity/adapters/` drives the slide renderer as
+# a web build and checks desktop-level behaviour with a separate, smaller set of
+# native tests (`docs/parity-workflow.md` §3.3, D13). No scenario in this file
+# can therefore be executed by `parity run` today.
+#
+# They are written so that:
+#
+#   1. an operator can run them by hand against the real controller now
+#      (`GDK_BACKEND=x11 cargo run -p cjcrsg-presenter`, project fixtures from
+#      `parity/fixtures/`), and
+#   2. a future Electron/Playwright adapter — or a DOM harness over a web build
+#      of the controller — can execute them unchanged.
+#
+# Steps that need a capability the current harness lacks are marked
+# `# CAPABILITY:` inline. They are **not passes**: an adapter that cannot
+# perform a step must fail loudly, never skip it (`docs/parity-workflow.md`
+# §3.2). A manual run may perform them by hand; a runner must not report them
+# green until an adapter can.
+#
+# The gesture and geometry scenarios need a project and a show but do not
+# assert the content rows. The content scenarios need the proposed fixtures at
+# the end of this file; until those are authored, those rows cannot be run
+# literally by hand.
+#
+# ## Conventions
+#
+# - Actions are operator intent, never selectors or coordinates. The adapter
+#   maps them to the UI.
+# - `viewports` are the WebView **content box** (`innerWidth` × `innerHeight`),
+#   not the outer window. `1280x800` therefore means `innerHeight == 800` and
+#   `max_height == 760`.
+# - Tabs are named by id in actions (`action: select_tab` with `tab: media`).
+#   The visible labels, which include the digit, are asserted separately.
+# - `expect` is the normalised state after the preceding step. `drawer`,
+#   `tab_strip`, `content`, `clock`, `stage_message` and `render_state_*` are
+#   the controller-side fields; the harness engineer implements their schema
+#   from these names.
+# - `project` and `show` are the loaded project and show; `live_show` is the
+#   show currently live. `focus` names the control that has keyboard focus.
+# - `media_list_instances` counts rendered media lists on the controller screen
+#   (B12); `content.row_count` is the number of rows in the active tab.
+# - `render_state_unchanged: true` compares the published render state (active
+#   slide, slide content, outputs) with the previous expect. This is how B12
+#   ("the drawer is a consumer") is checked; revision numbers are ignored.
+# - `unchanged_since: <snapshot>` compares the drawer/tab/content state with a
+#   named snapshot, ignoring the clock.
+# - Clock assertions use a deterministic clock (`freeze_clock`, `advance_clock`)
+#   so the seconds are stable. A manual run uses the real clock and checks the
+#   format plus that the seconds tick.
+# - `start_session: fresh` means launch with an empty session directory
+#   (`CJCRSG_DATA_DIR`), so there is no remembered height and no recent
+#   projects. `restart_app` reuses the same directory.
+# - `set_session_value` names a semantic session field
+#   (`drawer_remembered_height`); the adapter maps it to the session file's key.
+# - The fixtures named here are proposed by this stage and are **not created**
+#   by it. See "Proposed fixtures" at the end.
+#
+# ## Semantic actions used here
+#
+#   select_tab <id>           single click on a tab; from collapsed it opens
+#   click_strip_background    click the empty strip, not a tab or button
+#   double_click_tab <id>
+#   drag_hold <to_height>     press on the strip, move to the height, hold
+#     grab: strip_background | top_edge_bar | tab_button
+#   drag_drawer <to_height>   press, move and release in one gesture
+#     (defaults to grab: strip_background)
+#   release_drag              release a held drag
+#   press_shortcut <chord>
+#   focus_control <name>      page_body, stage_message_input
+#   type_text <text>
+#   play_show <name>          activate the Play control on a show row
+#   scroll_content {to: end}
+#   scroll_tab_strip {to: end}
+#
+#   Environment setup (all CAPABILITY: the harness has no session or clock
+#   control today):
+#   start_session: fresh · quit_app · launch_app · restart_app
+#   set_session_value {name, value} · freeze_clock · advance_clock
+#
+# ---------------------------------------------------------------------------
+
+# Geometry: collapsed 40, default open 300, maximum innerHeight - 40.
+#
+# The initial open/collapsed state after `start_session: fresh` is not asserted:
+# the contract states the default *open* height, not whether the drawer starts
+# open. `select_tab shows` normalises either initial state to open 300 (if
+# already open on Shows it is an active-tab click and changes nothing; if
+# collapsed it opens to the default).
+
+```yaml
+id: controller-drawer-geometry
+feature: [ui.drawer.height.bounds]
+contract: [ui-drawer/B1, ui-drawer/B4, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: true
+        height: 300          # B1 default open height
+        strip_height: 40     # B1
+        content_height: 260  # B1: height - 40
+        max_height: 760      # B1: innerHeight 800 - 40
+        spans_window_width: true    # scope; CAPABILITY: layout measurement
+        below_main_columns: true    # scope; CAPABILITY: layout measurement
+        active_tab: shows
+      strip_handle:
+        height: 4            # B1; CAPABILITY: computed style
+        accent_tinted: true  # B1; CAPABILITY: computed style
+      render_state_unchanged: true   # B12
+  - action: drag_hold
+    to_height: 520
+    grab: tab_button       # B1: buttons are excluded from the drag surface
+  - expect:
+      drawer:
+        open: true
+        height: 300        # no resize: the gesture started on a tab button
+  - action: release_drag
+  - expect:
+      drawer:
+        open: true
+        height: 300
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        content_height: 0
+        remembered_height: 300   # B5: collapse records the current height
+        active_tab: shows
+  - action: click_strip_background
+  - expect:
+      drawer:
+        open: true
+        height: 300
+        content_height: 260
+        remembered_height: 300
+      render_state_unchanged: true
+  - action: drag_hold
+    to_height: 2000
+    grab: strip_background   # B1: the whole strip is the drag surface
+  - expect:
+      drawer:
+        height: 760            # clamped to innerHeight - 40
+        max_height: 760
+        remembered_height: 300 # B4: persisted after release, not during
+  - action: release_drag
+  - expect:
+      drawer:
+        open: true
+        height: 760
+        content_height: 720
+        remembered_height: 760
+  - action: drag_hold
+    to_height: 0
+    grab: top_edge_bar        # B1: the 4 px bar is a grab point too
+  - expect:
+      drawer:
+        height: 40             # B4 lower clamp
+  - action: release_drag
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        # remembered_height is deliberately not asserted after a sub-80
+        # release: B4 collapses to 40, and B5 says the collapsed height is not
+        # used as the remembered height, but does not say what replaces it.
+  - snapshot: drawer-geometry-collapsed
+```
+
+# Tab strip: order, labels, default tab, and selection changing content.
+# Labels are asserted once; a selection must not reorder or relabel them.
+
+```yaml
+id: controller-drawer-tabs
+feature: [ui.drawer.tabs.set, ui.drawer.tab.select]
+contract: [ui-drawer/B2, ui-drawer/B3, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      project: Controller Drawer Fixture
+      show: Worship
+      drawer:
+        active_tab: shows   # B2 default tab
+      tab_strip:
+        labels:
+          - "1 Shows"
+          - "2 Media"
+          - "3 Audio"
+          - "4 Overlays"
+          - "5 Templates"
+          - "6 Scripture"
+          - "7 Calendar"
+          - "8 Functions"
+        wrapped: false                    # CAPABILITY: layout
+        labels_visible: true              # CAPABILITY: layout
+        active_underline_px: 2            # B2; CAPABILITY: computed style
+        active_background_lighter: true   # B2; CAPABILITY: computed style
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+      render_state_unchanged: true
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer: { open: true, height: 300, active_tab: media }
+      content: { tab: media }
+      tab_strip:
+        active_underline_px: 2            # the underline follows the active tab
+      render_state_unchanged: true
+  - snapshot: drawer-tabs-media
+  - action: select_tab
+    tab: audio
+  - expect:
+      drawer: { open: true, height: 300, active_tab: audio }
+      content: { tab: audio }
+  - action: select_tab
+    tab: overlays
+  - expect:
+      drawer: { open: true, height: 300, active_tab: overlays }
+      content: { tab: overlays, heading: "Overlays" }
+  - action: select_tab
+    tab: shows              # reversal
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+  - snapshot: drawer-tabs-shows
+  - action: select_tab
+    tab: shows              # active tab, drawer open: B3 says nothing changes
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+      unchanged_since: drawer-tabs-shows
+```
+
+# Narrow strip: labels stay visible and the strip scrolls horizontally; it
+# never wraps (B2, DEV-014: no 750 px icon-only cut-off).
+#
+# If the window manager enforces a minimum wider than 400 px, run this at that
+# minimum and record the width. Do not skip the check.
+
+```yaml
+id: controller-drawer-tabs-narrow
+feature: [ui.drawer.tabs.set, ui.drawer.strip.scroll-labels]
+contract: [ui-drawer/B2]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["400x600"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      project: Controller Drawer Fixture
+      show: Worship
+      tab_strip:
+        labels:
+          - "1 Shows"
+          - "2 Media"
+          - "3 Audio"
+          - "4 Overlays"
+          - "5 Templates"
+          - "6 Scripture"
+          - "7 Calendar"
+          - "8 Functions"
+        wrapped: false            # CAPABILITY: layout
+        labels_visible: true      # DEV-014: labels are not hidden by width
+        scrollable_x: true        # eight labels cannot fit in 400 px
+        active_underline_px: 2    # B2; CAPABILITY: computed style
+        active_background_lighter: true   # B2; CAPABILITY: computed style
+  - action: scroll_tab_strip   # CAPABILITY: no adapter scrolls the strip today
+    to: end
+  - expect:
+      tab_strip:
+        last_label_visible: true  # "8 Functions" is reachable by scrolling
+        wrapped: false
+```
+
+# Opening from collapsed by clicking a tab: the drawer uses the remembered
+# height and then selects the tab.
+
+```yaml
+id: controller-drawer-open-from-collapsed
+feature: [ui.drawer.tab.select, ui.drawer.height.persisted]
+contract: [ui-drawer/B3, ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: drag_drawer
+    to_height: 520
+  - expect:
+      drawer:
+        open: true
+        height: 520
+        remembered_height: 520
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 520
+  - action: select_tab
+    tab: shows              # collapsed even though Shows is already active
+  - expect:
+      drawer:
+        open: true
+        height: 520          # B3: a collapsed tab click still opens
+        remembered_height: 520
+        active_tab: shows
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 520
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer:
+        open: true
+        height: 520          # B3: opens to the remembered open height
+        remembered_height: 520
+        active_tab: media    # B3: then selects the tab
+      content: { tab: media }
+  - action: double_click_tab
+    tab: media
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 520
+  - action: select_tab
+    tab: audio             # reversal: a different tab, same remembered height
+  - expect:
+      drawer:
+        open: true
+        height: 520
+        remembered_height: 520
+        active_tab: audio
+      content: { tab: audio }
+```
+
+# Clicking the empty strip toggles. The reopened height is asserted only where
+# the remembered height is 300, because B3 names the remembered height for a
+# tab click but not for a strip background click; with a remembered height of
+# 300 both the remembered value and the default agree.
+
+```yaml
+id: controller-drawer-strip-toggle
+feature: [ui.drawer.collapse.pointer]
+contract: [ui-drawer/B3, ui-drawer/B5, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: click_strip_background
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 300
+        active_tab: shows      # the strip click must not change the tab
+      render_state_unchanged: true
+  - action: click_strip_background
+  - expect:
+      drawer:
+        open: true
+        height: 300
+        remembered_height: 300
+        active_tab: shows
+      render_state_unchanged: true
+  - action: click_strip_background   # repeated
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 300 }
+  - action: click_strip_background   # reversal
+  - expect:
+      drawer: { open: true, height: 300, remembered_height: 300 }
+```
+
+# Double-clicking a tab collapses. The active tab after the gesture is not
+# asserted: a double click contains two clicks, and the contract does not say
+# whether the first one selects the tab before the drawer closes.
+
+```yaml
+id: controller-drawer-double-click-collapse
+feature: [ui.drawer.collapse.pointer]
+contract: [ui-drawer/B3, ui-drawer/B5, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 300
+      render_state_unchanged: true
+  - action: click_strip_background
+  - expect:
+      drawer: { open: true, height: 300, remembered_height: 300 }
+  - action: double_click_tab
+    tab: media
+  - expect:
+      drawer:
+        open: false
+        height: 40
+        remembered_height: 300
+  - action: click_strip_background
+  - expect:
+      drawer: { open: true, height: 300 }
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 300 }
+  - action: double_click_tab
+    tab: shows              # repeated while already collapsed
+  - expect:
+      drawer: { open: false, height: 40 }
+```
+
+# Drag resize: normal growth and shrink, the 79/80/81 release boundary, clamp
+# at the maximum, and the rule that the height is persisted on release rather
+# than during the drag.
+
+```yaml
+id: controller-drawer-drag-resize
+feature: [ui.drawer.drag.resize, ui.drawer.height.bounds, ui.drawer.height.persisted]
+contract: [ui-drawer/B1, ui-drawer/B3, ui-drawer/B4, ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: double_click_tab
+    tab: shows              # establish a known remembered height of 300
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 300 }
+  - action: click_strip_background
+  - expect:
+      drawer: { open: true, height: 300, remembered_height: 300 }
+  - action: drag_hold
+    to_height: 520
+    grab: top_edge_bar
+  - expect:
+      drawer:
+        open: true
+        height: 520
+        remembered_height: 300   # B4: not persisted until release
+  - action: release_drag
+  - expect:
+      drawer:
+        open: true
+        height: 520
+        remembered_height: 520   # B4: kept and recorded on release
+  - action: drag_drawer
+    to_height: 300
+    grab: strip_background      # B1: drag anywhere on the strip
+  - expect:
+      drawer:
+        open: true
+        height: 300
+        remembered_height: 300   # reversal: shrink is kept and recorded
+  - action: drag_drawer
+    to_height: 79
+  - expect:
+      drawer:
+        open: false              # B4: below 80 collapses
+        height: 40
+        # remembered_height is not asserted: see the geometry scenario note.
+  - action: drag_drawer
+    to_height: 80
+  - expect:
+      drawer:
+        open: true               # B4: at 80 the height is kept
+        height: 80
+        remembered_height: 80
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 80 }
+  - action: select_tab
+    tab: media                 # B3: a remembered height below 300 is used
+  - expect:
+      drawer:
+        open: true
+        height: 80
+        remembered_height: 80
+        active_tab: media
+  - action: select_tab
+    tab: shows                 # back to Shows for the next drag
+  - expect:
+      drawer: { open: true, height: 80, active_tab: shows }
+  - action: drag_drawer
+    to_height: 81
+  - expect:
+      drawer:
+        open: true
+        height: 81
+        remembered_height: 81
+  - action: drag_hold
+    to_height: 2000
+  - expect:
+      drawer:
+        open: true
+        height: 760              # upper clamp at innerHeight 800 - 40
+        max_height: 760
+        remembered_height: 81    # still not persisted during the drag
+  - action: release_drag
+  - expect:
+      drawer:
+        open: true
+        height: 760
+        remembered_height: 760
+```
+
+# Remembered height across a restart. The drawer's current height immediately
+# after relaunch is not asserted: B5 promises the remembered *open* height, not
+# the launch state. Opening by clicking a tab reaches the remembered height
+# whether the app restarted open or collapsed.
+
+```yaml
+id: controller-drawer-persistence
+feature: [ui.drawer.height.persisted]
+contract: [ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: drag_drawer
+    to_height: 520
+  - expect:
+      drawer: { open: true, height: 520, remembered_height: 520 }
+  - action: double_click_tab
+    tab: shows
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 520 }
+  - action: restart_app        # CAPABILITY: no session/restart adapter today
+  - expect:
+      app: { running: true }
+  - open_project: Controller Drawer Fixture   # no-op if the app restores it
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: true
+        height: 520            # B5: remembered open height survived
+        remembered_height: 520
+        active_tab: shows
+  - snapshot: drawer-after-restart
+```
+
+# Hand-edited session value above the 40..=1200 range. The tall viewport makes
+# innerHeight - 40 (1360) larger than 1200, so the rendered height proves the
+# 1200 clamp rather than the window clamp.
+#
+# CAPABILITY: this needs a WebView content height above 1240 px. A 1080p desktop
+# cannot show it; use a virtual display, a DOM adapter, or an oversized window.
+# If none is available, record the measured max and do not claim the 1200 clamp.
+
+```yaml
+id: controller-drawer-session-clamp-high
+feature: [ui.drawer.height.persisted]
+contract: [ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x1400"]
+steps:
+  - start_session: fresh
+  - quit_app                   # CAPABILITY: no session adapter today
+  - action: set_session_value
+    name: drawer_remembered_height
+    value: 1201
+  - action: launch_app
+  - expect:
+      app: { running: true }
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: true
+        height: 1200           # B5: clamped to 40..=1200
+        max_height: 1360       # innerHeight 1400 - 40, so not the window clamp
+        # remembered_height is not asserted: the contract does not say whether
+        # the clamped value is written back to the session or only used.
+```
+
+# Hand-edited session value above the range, at a viewport where the window
+# clamp is the tighter one: 1201 -> 1200 by the session clamp, then 760 by
+# innerHeight - 40. This is the "then again when rendered" half of B5.
+
+```yaml
+id: controller-drawer-session-clamp-max
+feature: [ui.drawer.height.persisted]
+contract: [ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - quit_app                   # CAPABILITY: no session adapter today
+  - action: set_session_value
+    name: drawer_remembered_height
+    value: 1201
+  - action: launch_app
+  - expect:
+      app: { running: true }
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        open: true
+        height: 760             # innerHeight 800 - 40 wins over the 1200 clamp
+        max_height: 760
+```
+
+# Hand-edited session value below the range.
+#
+# Height 40 is the collapsed height, so `open` is not asserted here: B1 defines
+# collapsed as 40 and B5 allows a remembered value of 40, and the contract does
+# not say which state wins when they coincide. Only the rendered height is a
+# well-defined check.
+
+```yaml
+id: controller-drawer-session-clamp-low
+feature: [ui.drawer.height.persisted]
+contract: [ui-drawer/B5]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - quit_app                   # CAPABILITY: no session adapter today
+  - action: set_session_value
+    name: drawer_remembered_height
+    value: 39
+  - action: launch_app
+  - expect:
+      app: { running: true }
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        height: 40             # B5: clamped up to the lower bound
+        content_height: 0
+```
+
+# Ctrl+1..8 select the tab at that position. All eight are exercised, then a
+# repeated shortcut, then the collapsed case, then the "no other drawer
+# shortcut" clause.
+
+```yaml
+id: controller-drawer-shortcuts
+feature: [ui.drawer.shortcut.ctrl-digits]
+contract: [ui-drawer/B6, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: focus_control
+    control: page_body
+  - expect:
+      focus: page_body
+  - action: press_shortcut
+    key: "Ctrl+1"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+  - action: press_shortcut
+    key: "Ctrl+2"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: media }
+      content: { tab: media }
+      render_state_unchanged: true
+  - action: press_shortcut
+    key: "Ctrl+3"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: audio }
+      content: { tab: audio }
+  - action: press_shortcut
+    key: "Ctrl+4"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: overlays }
+      content: { tab: overlays }
+  - action: press_shortcut
+    key: "Ctrl+5"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: templates }
+      content: { tab: templates }
+  - action: press_shortcut
+    key: "Ctrl+6"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: scripture }
+      content: { tab: scripture }
+  - action: press_shortcut
+    key: "Ctrl+7"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: calendar }
+      content: { tab: calendar }
+  - action: press_shortcut
+    key: "Ctrl+8"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: functions }
+      content: { tab: functions }
+  - action: press_shortcut
+    key: "Ctrl+8"           # repeated: no change
+  - expect:
+      drawer: { open: true, height: 300, active_tab: functions }
+      content: { tab: functions }
+  - action: double_click_tab
+    tab: functions
+  - expect:
+      drawer: { open: false, height: 40, remembered_height: 300 }
+  - action: press_shortcut
+    key: "Ctrl+5"           # from collapsed: opens to at least 300
+  - expect:
+      drawer:
+        open: true
+        height_at_least: 300
+        active_tab: templates
+      content: { tab: templates }
+  - snapshot: drawer-shortcut-from-collapsed
+  - action: press_shortcut
+    key: "Ctrl+9"           # out of range: no drawer shortcut
+  - expect:
+      unchanged_since: drawer-shortcut-from-collapsed
+  - action: press_shortcut
+    key: "Ctrl+D"           # deliberately not a drawer shortcut in this build
+  - expect:
+      unchanged_since: drawer-shortcut-from-collapsed
+  - action: press_shortcut
+    key: "Ctrl+T"           # deliberately not a drawer shortcut in this build
+  - expect:
+      unchanged_since: drawer-shortcut-from-collapsed
+```
+
+# The shortcut is ignored while the event target is an input. The stage-message
+# input is the control named by B6. No textarea/select in this milestone's
+# surface is exercised; see the notes.
+
+```yaml
+id: controller-drawer-shortcuts-input-focus
+feature: [ui.drawer.shortcut.ctrl-digits]
+contract: [ui-drawer/B6]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+  - action: focus_control
+    control: stage_message_input   # CAPABILITY: named control access
+  - expect:
+      focus: stage_message_input
+  - action: type_text
+    text: "Welcome"
+  - expect:
+      stage_message: { text: "Welcome" }
+  - action: press_shortcut
+    key: "Ctrl+2"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+      stage_message: { text: "Welcome" }   # text is not lost
+  - action: press_shortcut
+    key: "Ctrl+4"
+  - expect:
+      drawer: { open: true, height: 300, active_tab: shows }
+      content: { tab: shows }
+      stage_message: { text: "Welcome" }
+  - action: focus_control
+    control: page_body
+  - expect:
+      focus: page_body
+  - action: press_shortcut
+    key: "Ctrl+2"           # focus has left the input: the shortcut works
+  - expect:
+      drawer: { open: true, height: 300, active_tab: media }
+      content: { tab: media }
+      # stage_message text is not asserted after blur: B6 only promises that
+      # the shortcut is ignored while the input is focused.
+```
+
+# Shows tab: rows in project order, name and slide count, the live marker, and
+# the Play control moving it.
+
+```yaml
+id: controller-drawer-content-shows
+feature: [ui.drawer.content.columns]
+contract: [ui-drawer/B7]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, active_tab: shows }
+      content: { tab: shows, row_count: 3 }
+  - action: play_show
+    show: Worship
+  - expect:
+      live_show: Worship
+      drawer: { open: true, active_tab: shows }
+      content:
+        tab: shows
+        rows:
+          - { name: "Worship", slide_count: 3, live: true }
+          - { name: "Announcements", slide_count: 2, live: false }
+          - { name: "Communion", slide_count: 4, live: false }
+  - action: play_show
+    show: Announcements
+  - expect:
+      live_show: Announcements
+      drawer: { active_tab: shows }
+      content:
+        tab: shows
+        rows:
+          - { name: "Worship", slide_count: 3, live: false }
+          - { name: "Announcements", slide_count: 2, live: true }
+          - { name: "Communion", slide_count: 4, live: false }
+  - action: play_show
+    show: Announcements       # repeated: drawer rows and live marker unchanged
+  - expect:
+      live_show: Announcements
+      content:
+        tab: shows
+        rows:
+          - { name: "Worship", slide_count: 3, live: false }
+          - { name: "Announcements", slide_count: 2, live: true }
+          - { name: "Communion", slide_count: 4, live: false }
+  - action: play_show
+    show: Worship             # reversal
+  - expect:
+      live_show: Worship
+      content:
+        tab: shows
+        rows:
+          - { name: "Worship", slide_count: 3, live: true }
+          - { name: "Announcements", slide_count: 2, live: false }
+          - { name: "Communion", slide_count: 4, live: false }
+```
+
+# Media tab: every non-audio asset, project order, row fields, the missing
+# marker, and no audio. The audio rows are also asserted so the split is
+# checked from both sides.
+
+```yaml
+id: controller-drawer-content-media
+feature: [ui.drawer.content.columns]
+contract: [ui-drawer/B8, ui-drawer/B12]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer: { open: true, active_tab: media }
+      content:
+        tab: media
+        read_only: true          # B8; CAPABILITY: DOM structural check
+        rows:
+          - { name: "sunrise.jpg", kind: image, origin: bundled, size_human_readable: true, tags: ["background"], missing: false }
+          - { name: "loop.mp4", kind: video, origin: external, size_human_readable: true, tags: ["loop"], missing: false }
+          - { name: "missing-photo.png", kind: image, origin: bundled, size_human_readable: true, tags: [], missing: true }
+      media_list_instances: 1    # B12; CAPABILITY: DOM structural check
+  - snapshot: drawer-media
+  - action: select_tab
+    tab: audio                 # the other half of the split
+  - expect:
+      drawer: { active_tab: audio }
+      content:
+        tab: audio
+        rows:
+          - { name: "track-one.mp3", kind: audio, origin: bundled, size_human_readable: true, tags: ["music"], missing: false }
+          - { name: "track-two.wav", kind: audio, origin: external, size_human_readable: true, tags: [], missing: false }
+  - action: select_tab
+    tab: media                 # reversal
+  - expect:
+      drawer: { active_tab: media }
+      content:
+        tab: media
+        rows:
+          - { name: "sunrise.jpg", kind: image, origin: bundled, size_human_readable: true, tags: ["background"], missing: false }
+          - { name: "loop.mp4", kind: video, origin: external, size_human_readable: true, tags: ["loop"], missing: false }
+          - { name: "missing-photo.png", kind: image, origin: bundled, size_human_readable: true, tags: [], missing: true }
+  - action: select_tab
+    tab: media                 # active tab, no change
+  - expect:
+      unchanged_since: drawer-media
+```
+
+# Audio tab: every audio asset and only audio assets.
+
+```yaml
+id: controller-drawer-content-audio
+feature: [ui.drawer.content.columns]
+contract: [ui-drawer/B9]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: audio
+  - expect:
+      drawer: { open: true, active_tab: audio }
+      content:
+        tab: audio
+        rows:
+          - { name: "track-one.mp3", kind: audio, origin: bundled, size_human_readable: true, tags: ["music"], missing: false }
+          - { name: "track-two.wav", kind: audio, origin: external, size_human_readable: true, tags: [], missing: false }
+  - snapshot: drawer-audio
+  - action: select_tab
+    tab: media                 # reversal: no audio leaks into Media
+  - expect:
+      drawer: { active_tab: media }
+      content:
+        tab: media
+        rows:
+          - { name: "sunrise.jpg", kind: image, origin: bundled, size_human_readable: true, tags: ["background"], missing: false }
+          - { name: "loop.mp4", kind: video, origin: external, size_human_readable: true, tags: ["loop"], missing: false }
+          - { name: "missing-photo.png", kind: image, origin: bundled, size_human_readable: true, tags: [], missing: true }
+  - action: select_tab
+    tab: audio                 # back to audio
+  - expect:
+      drawer: { active_tab: audio }
+      content:
+        tab: audio
+        rows:
+          - { name: "track-one.mp3", kind: audio, origin: bundled, size_human_readable: true, tags: ["music"], missing: false }
+          - { name: "track-two.wav", kind: audio, origin: external, size_human_readable: true, tags: [], missing: false }
+  - action: select_tab
+    tab: audio                 # active tab, no change
+  - expect:
+      unchanged_since: drawer-audio
+```
+
+# Audio tab with no audio at all. B9 says the tab "says so" but does not fix
+# the sentence, so the check is that a message is present and refers to audio,
+# not that it matches a literal string.
+
+```yaml
+id: controller-drawer-content-audio-empty
+feature: [ui.drawer.content.columns]
+contract: [ui-drawer/B9]
+fixture: fixtures/controller-drawer-no-audio.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer No Audio
+  - expect:
+      project: Controller Drawer No Audio
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: audio
+  - expect:
+      drawer: { open: true, active_tab: audio }
+      content:
+        tab: audio
+        rows: []
+        empty: true
+        message_present: true
+        message_mentions_audio: true
+```
+
+# The five tabs with no library behind them: each shows its name and its
+# sentence, not a blank panel and not a disabled control.
+
+```yaml
+id: controller-drawer-empty-tabs
+feature: [ui.drawer.content.columns]
+contract: [ui-drawer/B10]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: overlays
+  - expect:
+      drawer: { open: true, active_tab: overlays }
+      content:
+        tab: overlays
+        heading: "Overlays"
+        empty: true
+        text_contains: "no overlay library in this build"   # case-insensitive
+        disabled_control: false       # B10; CAPABILITY: DOM structural check
+  - action: select_tab
+    tab: templates
+  - expect:
+      drawer: { active_tab: templates }
+      content:
+        tab: templates
+        heading: "Templates"
+        empty: true
+        text_contains: "no template library in this build"
+        disabled_control: false
+  - action: select_tab
+    tab: scripture
+  - expect:
+      drawer: { active_tab: scripture }
+      content:
+        tab: scripture
+        heading: "Scripture"
+        empty: true
+        text_contains: "no Bible translation loaded"
+        disabled_control: false
+  - action: select_tab
+    tab: calendar
+  - expect:
+      drawer: { active_tab: calendar }
+      content:
+        tab: calendar
+        heading: "Calendar"
+        empty: true
+        text_contains: "no calendar source connected"
+        disabled_control: false
+  - action: select_tab
+    tab: functions
+  - expect:
+      drawer: { active_tab: functions }
+      content:
+        tab: functions
+        heading: "Functions"
+        empty: true
+        text_contains: "no action library in this build"
+        disabled_control: false
+  - action: select_tab
+    tab: shows                 # reversal: real content returns
+  - expect:
+      drawer: { active_tab: shows }
+      content: { tab: shows, row_count: 3 }
+  - action: select_tab
+    tab: overlays              # and the empty state returns
+  - expect:
+      drawer: { active_tab: overlays }
+      content:
+        tab: overlays
+        heading: "Overlays"
+        empty: true
+        text_contains: "no overlay library in this build"
+```
+
+# Clock: HH:mm:ss, 24-hour, and a long-form date with the weekday, on every
+# tab. Accent colour and centring are computed-style claims.
+
+```yaml
+id: controller-drawer-clock
+feature: [ui.drawer.info.clock]
+contract: [ui-drawer/B11]
+fixture: fixtures/controller-drawer-project.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Fixture
+  - expect:
+      project: Controller Drawer Fixture
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: freeze_clock
+    at: "2026-11-09T14:05:06"   # local time; CAPABILITY: deterministic clock
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { open: true, active_tab: shows }
+      clock:
+        present: true
+        column_width: 290                # B11
+        time: "14:05:06"                 # B11: HH:mm:ss, 24-hour
+        format: "24h"
+        seconds: true
+        date:
+          year: 2026
+          month: 11
+          day: 9
+          weekday_present: true          # B11: weekday in the date
+          long_form: true
+        colour_role: accent              # CAPABILITY: computed style
+        text_align: centre               # CAPABILITY: computed style
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer: { active_tab: media }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: audio
+  - expect:
+      drawer: { active_tab: audio }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: overlays
+  - expect:
+      drawer: { active_tab: overlays }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: templates
+  - expect:
+      drawer: { active_tab: templates }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: scripture
+  - expect:
+      drawer: { active_tab: scripture }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: calendar
+  - expect:
+      drawer: { active_tab: calendar }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - action: select_tab
+    tab: functions
+  - expect:
+      drawer: { active_tab: functions }
+      clock: { present: true, column_width: 290, time: "14:05:06", date_present: true }
+  - snapshot: drawer-clock
+  - action: advance_clock
+    by: "1s"                    # B11; CAPABILITY: deterministic clock
+  - expect:
+      clock: { present: true, time: "14:05:07", date_present: true }
+```
+
+# The content area is height - 40 and scrolls; it never grows the drawer or
+# overflows it, even with a list taller than the content area.
+
+```yaml
+id: controller-drawer-content-overflow
+feature: [ui.drawer.height.bounds]
+contract: [ui-drawer/B1]
+fixture: fixtures/controller-drawer-many-media.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Controller Drawer Many Media
+  - expect:
+      project: Controller Drawer Many Media
+  - open_show: Worship
+  - expect:
+      show: Worship
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer:
+        open: true
+        height: 300
+        content_height: 260
+      content:
+        tab: media
+        scrollable: true                 # CAPABILITY: DOM measurement
+        scroll_height_gt_client: true    # CAPABILITY: DOM measurement
+        overflows_drawer: false          # B1
+  - action: scroll_content     # CAPABILITY: DOM scroll and measurement
+    to: end
+  - expect:
+      drawer:
+        height: 300
+        content_height: 260
+      content:
+        at_end: true
+        overflows_drawer: false
+```
+
+## Coverage map
+
+| Contract | Scenarios |
+| --- | --- |
+| B1 geometry, content area, drag surface | `controller-drawer-geometry`, `controller-drawer-content-overflow` |
+| B2 tab strip, order, labels, styling, narrow widths | `controller-drawer-tabs`, `controller-drawer-tabs-narrow` |
+| B3 selection, opening from collapsed, strip toggle, double-click | `controller-drawer-tabs`, `controller-drawer-open-from-collapsed`, `controller-drawer-strip-toggle`, `controller-drawer-double-click-collapse`, `controller-drawer-drag-resize` |
+| B4 drag resize, 79/80/81, clamp, persistence after release | `controller-drawer-drag-resize`, `controller-drawer-geometry` |
+| B5 remembered height, restart, hand-edit clamps | `controller-drawer-open-from-collapsed`, `controller-drawer-drag-resize`, `controller-drawer-persistence`, `controller-drawer-session-clamp-high`, `controller-drawer-session-clamp-max`, `controller-drawer-session-clamp-low` |
+| B6 Ctrl+1..8, at least 300, input ignored, no other shortcut | `controller-drawer-shortcuts`, `controller-drawer-shortcuts-input-focus` |
+| B7 Shows content | `controller-drawer-content-shows` |
+| B8 Media content | `controller-drawer-content-media` |
+| B9 Audio content and its empty state | `controller-drawer-content-audio`, `controller-drawer-content-audio-empty` |
+| B10 the five empty tabs | `controller-drawer-empty-tabs` |
+| B11 clock and date on every tab | `controller-drawer-clock` |
+| B12 consumer, one media list | `render_state_unchanged` in the geometry/tabs/strip/double-click/shortcuts steps; `media_list_instances` in `controller-drawer-content-media` |
+
+## Notes and unresolved clauses
+
+- **Not covered here: "no engine change" (B12).** That is a code and
+  architecture claim, verified by the existing engine tests and by review of the
+  candidate diff, not by a UI scenario. "No output-window change" is covered
+  only as far as `render_state_unchanged`; window lifecycle stays with the
+  existing output scenarios.
+- **B4/B5 remembered value after a drag-collapse below 80.** B4 collapses to 40;
+  B5 says collapsing records the current height but that the collapsed height is
+  not used. The contract does not say whether 79 is recorded or discarded, so
+  the 79 px case asserts the collapsed height only. The next drag (80 px)
+  overwrites the remembered value, so nothing downstream depends on it.
+- **B3/B5 remembered height below 300.** The reference reopens at `stored`
+  only when it is >= 300, otherwise at 300 (reader report §1.2). The contract
+  says a tab click opens to "the remembered open height", allows a remembered
+  value from 40, and B4 records an 80 px release. The drag scenario therefore
+  asserts that a remembered 80 opens at 80. If the reference's 300 px floor was
+  intended, the contract needs to say so.
+- **B5 hand-edited value write-back.** The contract says the value is clamped
+  before use; it does not say whether the clamped 1200 is written back to the
+  session. Only the rendered height is asserted.
+- **B3 strip-toggle open height with a remembered height other than 300.** B3
+  names the remembered height for a tab click, not for a strip background
+  click. The strip scenario therefore establishes a remembered height of 300,
+  where the remembered value and the default agree.
+- **B3 collapsed click on the already-active tab.** The reference's
+  `openDrawerTab` returns early when the tab is already active (reader report
+  §1.3 / `ui.drawer.tab.select`), but the contract does not except that case
+  from "clicking a tab when the drawer is collapsed opens it". The
+  open-from-collapsed scenario follows the contract and asserts that the drawer
+  opens. If the reference's early return was intended, the contract needs an
+  explicit exception.
+- **B3 active tab after a double-click.** A double click contains two clicks;
+  the contract does not say whether the first selects the tab before the drawer
+  closes. The double-click scenario avoids asserting the active tab.
+- **B1 open state at exactly 40 px.** B1 calls 40 the collapsed height and B5
+  allows a remembered value of 40; the contract does not say which wins. The
+  low-clamp scenario asserts the height only.
+- **B6 textarea and select.** B6 names `input`, `textarea` and `select`. Only
+  the stage-message input exists in this milestone's surface, so only that case
+  is exercised. If a textarea or select is added to the controller, extend
+  `controller-drawer-shortcuts-input-focus` rather than adding a new ID.
+- **Empty Shows and Media.** B7 and B8 do not state what those tabs show when
+  the project has no shows or no non-audio media; only B9 names an audio-empty
+  state. No expectation is asserted for those two empty cases, because the
+  contract gives no sentence to check. Do not invent one.
+- **B8 human-readable size.** The contract fixes "human-readable", not the unit
+  set or rounding. The scenario asserts `size_human_readable`, not a literal
+  string or a particular unit.
+- **B10 heading wording.** The contract says "the tab's name", so the heading is
+  asserted as `Overlays`, `Templates`, etc., not the strip label with its digit
+  (`4 Overlays`). The digit is a shortcut hint, not part of the name.
+- **B9 empty-audio wording.** The contract says "the tab says so" but gives no
+  sentence. The scenario asserts a message is present and mentions audio, not a
+  literal string.
+- **B11 date literal.** The reference date is locale-dependent
+  (`toLocaleDateString`; reader report §1.7). The scenario asserts the structured
+  date parts and that a long-form weekday is present, not a literal English
+  string. The frozen date 2026-11-09 is a Monday in the Gregorian calendar; if
+  the test machine's locale uses another calendar, record its parts and do not
+  treat the mismatch as a product failure.
+- **Visual claims.** Active-tab underline and background, the 4 px accent bar,
+  the clock's accent colour and centring, label visibility, and the drawer's
+  full-width placement below the three columns are computed-style or layout
+  claims. They are marked `# CAPABILITY:` inline; a DOM adapter with computed
+  style and bounding boxes, or a capture, must provide them.
+- **Feature-inventory gap.** The reader's entries cover the drawer frame, tabs,
+  heights, drag, shortcuts and clock, but not the Shows, Media, Audio or
+  empty-tab content (B7–B10). Those scenarios link to
+  `ui.drawer.content.columns` as the nearest existing entry and carry the
+  contract clause; the inventory should gain entries for them.
+- **Out of scope.** Drawer search, the per-tab left sub-column, per-tab info
+  panels, profile access, Ctrl+D/Ctrl+T as drawer toggles, and the reference
+  icon set are outside this milestone (contract Scope). The only related checks
+  are the B6 negative shortcuts and the text-only labels; their absence is not
+  otherwise asserted.
+- **Fixture dependency.** The content expectations are tied to the proposed
+  fixtures below. A different fixture changes the expected rows, not the
+  contract.
+
+## Proposed fixtures (not created by this stage)
+
+`fixtures/controller-drawer-project.cjcp` — one project named
+`Controller Drawer Fixture`, with three shows in this order:
+
+- Worship — 3 slides
+- Announcements — 2 slides
+- Communion — 4 slides
+
+`project.media`, in this order:
+
+1. `sunrise.jpg` — image, bundled, tags `["background"]`, present
+2. `track-one.mp3` — audio, bundled, tags `["music"]`, present
+3. `loop.mp4` — video, external, tags `["loop"]`, present
+4. `track-two.wav` — audio, external, tags `[]`, present
+5. `missing-photo.png` — image, bundled, tags `[]`, referenced but absent
+
+`fixtures/controller-drawer-no-audio.cjcp` — project name
+`Controller Drawer No Audio`; the same shows; media contains no audio assets and
+at least one image.
+
+`fixtures/controller-drawer-many-media.cjcp` — project name
+`Controller Drawer Many Media`; the same shows; at least 40 non-audio assets so
+the media list is taller than the 260 px content area at 1280×800; no audio is
+needed.

@@ -53,7 +53,7 @@ parity/
 
 ```yaml
 id: slide.next.keyboard
-area: navigation            # navigation | outputs | rendering | media | remote | stage | editing | import
+area: navigation            # navigation | outputs | rendering | media | remote | stage | editing | import | controller
 title: Advance to next slide with the keyboard
 reference:
   commit: <pinned FreeShow sha>
