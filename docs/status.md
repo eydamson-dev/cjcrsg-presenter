@@ -68,6 +68,13 @@ Pictures and raw artefacts: `EVIDENCE.md`.
 `docs/deviations.md` — ten entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
+## Windows
+
+Never run. See `docs/windows.md`. CI now compiles the desktop crate on
+`windows-latest`, and runs the library tests on Windows too — that is the first
+time this code touches Windows at all. Running it, monitors, DPI and fullscreen
+need a real machine.
+
 ## Tests
 
 ```

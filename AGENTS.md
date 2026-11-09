@@ -14,6 +14,8 @@ Read in this order, and stop when you have what you need:
 5. **`docs/plan.md`** — phases and exit criteria.
 6. **`docs/deviations.md`** — what we knowingly do not match, with IDs.
 7. **`docs/reference.md`** — how to run FreeShow, its ports, its file format.
+8. **`docs/windows.md`** — the Windows plan, its traps, and what CI can and
+   cannot prove.
 
 `docs/status.md` is the only place that describes current state. Do not restate
 it here: this file drifted once already by carrying a "current phase" that was

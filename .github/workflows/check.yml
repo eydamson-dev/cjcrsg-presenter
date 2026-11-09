@@ -6,10 +6,46 @@ on:
   pull_request:
   workflow_dispatch:
 
-jobs:
-  check:
-    runs-on: ubuntu-24.04
+permissions:
+  contents: read
 
+jobs:
+  # Library crates only: no display, no WebView, no system libraries. Fast enough
+  # to run on every OS, which is the point — it exercises Windows paths.
+  library:
+    name: library (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: >
+          cargo clippy
+          -p presenter-core -p presenter-compat -p presenter-remote
+          --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test -p presenter-core -p presenter-compat -p presenter-remote
+
+  # The full workspace on Linux: builds the desktop shell and checks that
+  # EVIDENCE.md still declares the right test count.
+  desktop-linux:
+    name: desktop (ubuntu-24.04)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -35,3 +71,28 @@ jobs:
 
       - name: Check
         run: ./scripts/check.sh
+
+  # First real Windows build of the shell. Compiling proves the crate graph and
+  # the MSVC link path; it does not prove the app runs (see docs/windows.md).
+  desktop-windows:
+    name: desktop (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust (MSVC)
+        run: |
+          rustup toolchain install stable --profile minimal --target x86_64-pc-windows-msvc
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --target x86_64-pc-windows-msvc -p cjcrsg-presenter
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjcrsg-presenter-windows-x64
+          path: target/x86_64-pc-windows-msvc/release/cjcrsg-presenter.exe
+          if-no-files-found: error
