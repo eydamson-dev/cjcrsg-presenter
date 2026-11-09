@@ -108,7 +108,39 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Controller drawer: 8 tabs, 40/300/744 px geometry, 79/80 px drag threshold, remembered height across restart, 17 images and 9 session files | `parity/reports/ui-drawer-2026-11-09.md` |
 | Project browser: open project first, recents newest first, missing-file flag, Forget, and the outline in the Shows tab | `parity/reports/ui-project-browser-2026-11-09.md` |
 
+| FreeShow reference: 225 features, 60 pages, 1,630 code citations, 30 screenshots | `docs/freeshow-reference/` |
+
 Pictures and raw artefacts: `EVIDENCE.md`.
+
+## FreeShow reference documentation
+
+`docs/freeshow-reference/` describes the pinned reference (`ff784eb`, 1.6.8-beta.3)
+feature by feature. It is built from the published docs and the source, not from
+memory.
+
+- `source/` mirrors all 54 published pages and 34 images from
+  `ChurchApps/FreeShowWeb` at `8d875b5`; `scripts/fetch_freeshow_docs.sh` refreshes it.
+- `feature-inventory.md` lists 225 features with stable IDs; every ID is mentioned
+  by at least one detail page.
+- 60 pages cover getting started, projects, shows, the drawer, outputs, the remote
+  clients, cloud and transfer, advanced topics, formats, and the internal
+  architecture (IPC, servers, settings, persistence, API, stores, media, i18n,
+  security, build).
+- Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`.
+  Nothing is `observed` yet: the reference was run only to capture screenshots, so
+  no page is a runtime-verified contract. `USING-THIS.md` says what each label
+  permits.
+- 30 screenshots of the running reference are in `screenshots/`, with the state and
+  viewport of each in its README.
+- `scripts/check_freeshow_refs.py` verifies every `src/...:line` citation against
+  the pinned checkout (1,628 at present). `scripts/check_freeshow_coverage.py`
+  reports inventory IDs no page mentions.
+
+`audit.md` records contradictions found while writing it. The first is still open:
+`parity/reports/navigation-end-behaviour-2026-11-09.md` says next-at-end has no
+configuration branch, but `OutputHelper.ts:131` checks
+`special.nextItemOnLastSlide`, and its default is on. The report needs correcting
+before that behaviour becomes a contract.
 
 ## Not using Craft Anything
 
@@ -142,6 +174,10 @@ apps/desktop    24
 ```
 
 ## Next, in order
+
+Before the list: close the reference audit items. A-001 is the first — the
+navigation report's "no configuration branch" claim is wrong, and
+`special.nextItemOnLastSlide` belongs in the contract and its scenarios.
 
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is

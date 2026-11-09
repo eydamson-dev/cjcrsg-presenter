@@ -62,20 +62,30 @@ notes: >
 ```yaml
 id: nav.bounds.next-at-end
 area: navigation
-title: Next on the last slide does not wrap
+title: Next at the end of a show selects the next project item, then plays it
 ui: false
 reference:
   commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
-  evidence: []
-  confidence: low
+  evidence:
+    - src/frontend/components/helpers/OutputHelper.ts:80-99
+    - src/frontend/components/helpers/OutputHelper.ts:130-194
+    - src/frontend/components/helpers/OutputHelper.ts:240-264
+    - src/frontend/components/show/project.ts:35-64
+  read_by: reader
+  confidence: high
 scenarios: [nav-next-edge-cases]
-status: planned
-deviations: []
+status: known-deviation
+deviations: [DEV-015]
 notes: >
-  Unverified in the reference. Our engine currently ignores next at the end
-  (crates/core/src/engine.rs). The reference may instead advance to the next
-  group or stop the show. This is the first behaviour to confirm, because both
-  answers are plausible and they feel different in a service.
+  Observed on 2026-11-09 with two shows in one project. With the default
+  special.nextItemOnLastSlide: the first Next selects the next project item and
+  the output stays on the old show; the second Next outputs it. With the setting
+  off, neither happens. At the end of the project, Next does nothing. The
+  setting is read at OutputHelper.ts:131; openProjectItem only sets activeShow,
+  and only the playNext paths play directly (OutputHelper.ts:183-193).
+  Evidence and captures: parity/reports/reader/next-at-end-2026-11-09.md.
+  Our engine advances to the next show in one press and does not model the
+  setting (DEV-015).
 ```
 
 ## Deviations

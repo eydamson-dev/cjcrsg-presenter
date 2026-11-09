@@ -630,6 +630,26 @@ multi-monitor behaviour are on the manual checklist in `docs/windows.md`.
 
 Report: `parity/reports/windows-packaging-2026-11-09.md`.
 
+## FreeShow reference documentation
+
+The written reference of the pinned FreeShow (`ff784eb`, 1.6.8-beta.3) lives in
+`docs/freeshow-reference/`: 225 features with stable IDs, 60 detail pages, and
+1,630 `src/...:line` citations, all checked against the checkout.
+
+![FreeShow 1.6.8-beta.3 at rest](docs/freeshow-reference/screenshots/main-show-view.png)
+
+- 30 screenshots of the running reference, captured under Playwright, not by
+  desktop screenshot tools. `docs/freeshow-reference/screenshots/README.md` names
+  the state and viewport of each.
+- `scripts/check_freeshow_refs.py` — 1,630 references, 0 failed.
+- `scripts/check_freeshow_coverage.py` — 225 of 225 IDs mentioned by a page.
+- Upstream docs mirror: 54 pages and 34 images at `8d875b5`, refreshed with
+  `scripts/fetch_freeshow_docs.sh`.
+
+Nothing here is a behavioural observation: the app was run only to capture
+screenshots, and the pages label every claim `code`, `doc`, `unknown` or
+`observed`. A page becomes a contract only through a scenario.
+
 ## Verification
 
 | Check | Result |

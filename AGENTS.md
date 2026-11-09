@@ -21,6 +21,12 @@ Read in this order, and stop when you have what you need:
 10. **`docs/agentic-workflow.md`** — who does each stage of a behaviour's path from
     FreeShow to an accepted milestone. Read it before starting any parity or
     milestone work.
+11. **`docs/freeshow-reference/WHAT-IS-THIS.md`**, then `USING-THIS.md` — the written
+    description of FreeShow's behaviour at the pinned commit. For any
+    FreeShow-derived behaviour, find the feature ID in `feature-inventory.md` and
+    read its page before you design, implement, or verify it. The reference is
+    living: correct it when the code or a run shows it wrong, and never change it to
+    match our port.
 
 ## Agentic workflow
 

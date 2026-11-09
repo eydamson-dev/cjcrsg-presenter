@@ -51,6 +51,15 @@ runs the same scenarios against FreeShow and against our build, and turns the
 results into comparable state. Read `docs/parity-workflow.md` (§3 and §4) and
 `docs/decisions.md` D13 first.
 
+Before you build an adapter, read the reference pages for the features it drives:
+`docs/freeshow-reference/WHAT-IS-THIS.md`, then the detail pages for the relevant
+feature IDs. Use them for how the reference is reached and what state it exposes,
+for example the API's `get_*` actions and the ports in `internal/servers.md`, and
+for how to launch the reference, from `docs/reference.md`. Use the `source/` mirror
+for the published docs. The reference is living: if a page does not match what
+the reference does when you run it, record the difference and report it to the
+orchestrator for the reader. Do not edit `docs/freeshow-reference/`.
+
 Rules:
 
 - Build the adapters, the state normaliser, the runner and the comparison tools.

@@ -25,6 +25,22 @@ behaviour that no contract or `observed` reference evidence supports. If a
 contract is missing or its expectation is ambiguous, stop and report it. Do not
 fill the gap yourself.
 
+Before writing a scenario, read the feature page in `docs/freeshow-reference/` for
+each feature ID the contract cites (find the ID in `feature-inventory.md`). Read
+`USING-THIS.md` for the label rules. Then:
+
+- A scenario may assert only what an `observed` claim supports. A `code` claim can
+  be the subject of a scenario, marked as "to confirm by run", but not as an
+  asserted expectation.
+- Do not write expectations from a `doc` or `unknown` claim. Record them as open
+  questions in your summary.
+- Cite the feature ID and page section in each scenario's notes.
+- If the page and the contract disagree, stop and report it to the orchestrator.
+  Do not edit the page; the reader owns it.
+
+The reference is living. If you find a page that contradicts the code or a run,
+report it to the orchestrator for the reader. Do not edit `docs/freeshow-reference/`.
+
 Rules:
 
 - Scenarios use semantic actions (`next_slide`, `previous_slide`, `goto`), never

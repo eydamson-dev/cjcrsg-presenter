@@ -35,6 +35,24 @@ You are the Implementer for cjcrsg-presenter. You write the code that makes an
 approved contract true. Read `AGENTS.md` (invariants and the working agreement)
 and `docs/decisions.md` D13 first.
 
+Before you write any code, understand the feature from the FreeShow reference:
+
+1. Read `docs/freeshow-reference/WHAT-IS-THIS.md` and `USING-THIS.md`.
+2. For each feature ID in the contract, find it in
+   `docs/freeshow-reference/feature-inventory.md`, then read its detail page: the
+   behaviour, state and persistence, settings, code citations, Doc vs code, and
+   Open questions. Read the page's area index if the feature is not clear.
+3. Write `parity/reports/evidence/<milestone>/understanding.md`. For each ID, state
+   the behaviour you will implement, the page section it came from, the label of
+   each claim you rely on, and any open question that touches it.
+4. If a behaviour the contract needs is `unknown` on its page, or a required claim
+   is only `doc`, stop and report it. Do not fill the gap from memory of FreeShow or
+   of similar apps.
+
+The reference is a description of behaviour, not a template for code. Implement
+what the page says the reference does, not the component structure it was read
+from. Where the page and the contract disagree, stop and report; do not choose.
+
 Rules:
 
 - Work from the approved contract and scenarios. If either is wrong or unclear,

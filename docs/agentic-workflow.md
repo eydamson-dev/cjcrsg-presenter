@@ -23,12 +23,71 @@ does the work is never the one that grades it.
 ## Gates
 
 - A contract is approved by the user before stage 3 starts.
+- Before stage 5 writes any code, the implementer reads the feature's reference
+  pages and writes an understanding note (see *Understanding before building*).
 - A candidate is ready when stage 5 reports `scripts/check.sh` exit code 0, with
   evidence. Ready is not accepted.
 - A milestone is accepted only when stage 6 reports pass for the exact candidate
   SHA, and the orchestrator records it at stage 7.
 - A failed verdict goes back to stage 5 with the defect list. The verifier does not
   fix anything.
+- A feature gets at most three rework rounds. After the third failed verdict, the
+  orchestrator stops the loop and reports to the user: the open defects, and
+  whether the spec, the reference page or the code is the thing that is wrong.
+
+## The feature reference
+
+`docs/freeshow-reference/` is the written description of FreeShow at the pinned
+commit. It is the behavioural source for stages 1, 3, 5 and 6, and it is read
+through `docs/freeshow-reference/WHAT-IS-THIS.md` and `USING-THIS.md`.
+
+Every claim on a page carries one label. The label decides what it may do:
+
+| Label | May fail a feature? | May be a requirement? |
+| --- | --- | --- |
+| `observed` | Yes, through a scenario | Yes |
+| `code` | No. Produces a finding: "needs a scenario" | Only after a scenario confirms it, or with user approval as provisional |
+| `doc` | No | No, until checked in code or at runtime |
+| `unknown` | No. Recorded as an open question | No |
+
+### Understanding before building
+
+The implementer does not start from the contract alone. Before writing code it:
+
+1. Looks up each feature ID in `feature-inventory.md` and reads its detail page,
+   including Doc vs code and Open questions.
+2. Writes `parity/reports/evidence/<milestone>/understanding.md`, listing for each
+   ID: the behaviour it will implement, the page section it came from, the label
+   of each claim it relies on, and the open questions that touch it.
+3. Stops and reports if a behaviour the contract needs is `unknown`, or if a
+   required claim is only `doc`. It does not fill the gap from memory.
+
+The verifier checks that this note exists and that the implementation's behaviour
+matches the cited claims. A missing or inaccurate note is a defect.
+
+### Validating a feature
+
+Stage 6 validates a feature against its reference page, not only its scenarios.
+The verifier:
+
+1. Runs the scenarios derived from `observed` claims, against both adapters.
+2. For each `code` claim the feature touches, records whether a scenario exists. If
+   none does, the finding is "not yet exercised", which blocks acceptance of that
+   claim but does not fail the feature.
+3. Notes `doc` and `unknown` claims touched, without judging them.
+4. Checks that a page and the code disagree only where the page's Doc vs code
+   section already records the difference. A new disagreement is a finding for the
+   reader, not a fail for the implementer.
+
+Verdicts are `pass`, `fail` (with defects), or `blocked` (a scenario or page is
+missing or wrong, so no fair verdict is possible). A `blocked` verdict goes to the
+orchestrator, not back to the implementer.
+
+### When the reference is wrong
+
+If the implementer or verifier finds that a page is wrong, the fix is a correction
+to the page with its evidence, recorded in `docs/freeshow-reference/audit.md`. It
+is not a code change to match the page, and it is not a silent edit to the page.
 
 ## Rules that apply to every stage
 
@@ -40,6 +99,12 @@ does the work is never the one that grades it.
   tolerance or a contract.
 - Only the orchestrator records acceptance. No agent marks its own work accepted.
 - Steps 1 and 4 do not touch product code. Steps 5 and 6 do.
+- Every role reads the feature pages in `docs/freeshow-reference/` for the IDs it
+  touches. The reader owns those pages. Other roles report a suspected error to the
+  orchestrator, who routes it to the reader.
+- The reference is living. Its source of truth is the pinned reference code and the
+  running reference, not our port. A page is corrected when either shows it wrong,
+  with an audit entry. A port difference is a deviation, not a page change.
 
 ## Running a milestone
 
