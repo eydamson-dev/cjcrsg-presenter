@@ -137,14 +137,17 @@ apps/desktop     7
 
 ## Next, in order
 
-1. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
+1. **Controller information architecture** — DEV-013's remainder. The shell
+   matches FreeShow; the project browser, bottom tab strip (Media, Audio,
+   Overlays, Templates…), clock and slide editor do not exist.
+2. **Section actions** — DEV-009. The focus view and outline exist; FreeShow's
    per-section actions (skip, loop, notes) are still not executed, and the view
    has no drag, auto-scroll or keyboard traversal.
-2. **Windows runtime, remainder.** Install and launch are verified; uninstall,
+3. **Windows runtime, remainder.** Install and launch are verified; uninstall,
    DPI, multi-monitor, fullscreen, audio and H.264/WebView2 playback are not.
-3. **Second physical display.** Experiment 1's placement and focus criteria are
+4. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-4. **Audio routing and a shared start instant.** Drift is single-digit ms, but
+5. **Audio routing and a shared start instant.** Drift is single-digit ms, but
    outputs still start at different moments; routing and channels are Phase 5.
 
 ## Controller UI

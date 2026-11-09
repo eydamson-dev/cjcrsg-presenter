@@ -72,6 +72,7 @@ not a working feature.
 | `crates/core`, `compat`, `remote` | `cargo test` — no display server, no window |
 | the renderer, CSS, transitions | `render` → `capture_page.mjs` → **open the image and look at it** |
 | window lifecycle, recovery | `CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter` |
+| the controller UI | run with `GDK_BACKEND=x11`, then `scripts/capture_window.sh CJCRSG out.png`, and look at the image |
 | the remote | `serve`, then `curl` the endpoints |
 | anything visual | also update `EVIDENCE.md` (invariant 9) |
 

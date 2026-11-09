@@ -467,8 +467,9 @@ compiling there.
 
 ## Controller shell
 
-The controller now has FreeShow's shape — top bar, three columns, live preview —
-captured from the running window (X11 backend, window id), not a mock-up:
+The controller now has FreeShow's shape and palette — top bar, three resizable
+columns, live preview, focus in the centre — captured from the running window
+(X11 backend, window id), not a mock-up:
 
 ![Controller shell](parity/reports/evidence/ui-shell/controller-shell-styled.png)
 

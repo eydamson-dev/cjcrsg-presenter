@@ -88,21 +88,6 @@ survives an output restart mid-playback.
 **Exit criteria:** each integration runs a documented hardware test; absent
 hardware skips cleanly rather than failing the suite.
 
-## Phase 7 — Controller UI parity
-
-Planned in `docs/ui-parity.md`; DEV-013. The outputs already target FreeShow's
-look; the controller does not.
-
-- [ ] Top bar and three resizable columns (left projects, centre show, right preview/tools)
-- [ ] Live slide preview in the centre, fed by `RenderState`
-- [ ] FreeShow palette, spacing and type, with attribution in `docs/provenance.md`
-- [ ] Column widths persisted in the session
-- [ ] Side-by-side controller screenshots as evidence
-
-**Exit criteria:** the controller has FreeShow's three-column shell, the live
-preview, resizable columns, and a screenshot comparison in `EVIDENCE.md`.
-Functionality already present keeps working; no engine changes.
-
 ## Phase 6 — Compatibility and release
 
 - Remote protocol parity, including auth and reconnection
@@ -113,6 +98,23 @@ Functionality already present keeps working; no engine changes.
 
 **Exit criteria:** a full service runs on the target machine, with the old app
 available as a fallback.
+
+## Phase 7 — Controller UI parity
+
+Planned in `docs/ui-parity.md`; DEV-013. The outputs already targeted FreeShow's
+look; the controller now does too.
+
+- [x] Top bar and three resizable columns
+- [x] Live slide preview in the centre, fed by `RenderState`
+- [x] FreeShow palette, spacing and type
+- [x] Column widths persisted in the session
+- [x] Side-by-side controller screenshots as evidence
+- [x] Focus mode inside the centre column
+
+**Exit criteria met.** The comparison is in
+`parity/reports/ui-shell-2026-11-09.md`. What remains from DEV-013 is
+information architecture — project browser, bottom tab strip, clock, editor —
+which are features, not the shell.
 
 ## Risk order
 
