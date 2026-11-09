@@ -1,0 +1,8 @@
+# The Windows build must not depend on the Visual C++ redistributable.
+#
+# A clean Windows 11 has no VCRUNTIME140.dll; the app installed and then died
+# with exactly that dialog in the VM test. Linking the CRT statically removes
+# the dependency, which also keeps the per-user installer free of an
+# administrator-elevated vc_redist step.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -1,0 +1,14 @@
+From C:\oem-result.txt on the Windows 11 VM (dockur, 2026-11-09):
+
+CJCRSG installer test
+Time: Sun 11/08/2026 21:22:45.81
+
+INSTALL: exe present
+REGISTRY: uninstall entry present
+
+Launching the app...
+Image Name               PID Session Name   Session#  Mem Usage
+cjcrsg-presenter.exe     9072 Console        1         11,272 K
+
+A dialog on screen: "The code execution cannot proceed because
+VCRUNTIME140.dll was not found. Reinstalling the program may fix this problem."
