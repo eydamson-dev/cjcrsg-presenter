@@ -124,6 +124,7 @@ jobs:
       - name: Build installer
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
           $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
           & "C:\Program Files (x86)\NSIS\makensis.exe" "/DAPP_VERSION=$version" "installer\windows.nsi"
 

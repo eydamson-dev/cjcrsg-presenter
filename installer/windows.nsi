@@ -9,7 +9,8 @@
 ;   installer/MicrosoftEdgeWebview2Setup.exe   (CI downloads the Evergreen
 ;                                               bootstrapper; see the workflow)
 ;
-; Usage: makensis /DAPP_VERSION=0.1.0 installer/windows.nsi
+; Usage: mkdir -p dist && makensis /DAPP_VERSION=0.1.0 installer/windows.nsi
+;        (`dist` must exist; NSIS will not create the output directory.)
 
 Unicode true
 
