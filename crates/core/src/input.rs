@@ -11,6 +11,8 @@ pub enum Command {
     Previous,
     NextGroup,
     PreviousGroup,
+    NextSection,
+    PreviousSection,
     First,
     Last,
     /// Blank the output. Navigation restores it, as it does in FreeShow.

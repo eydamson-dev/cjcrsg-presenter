@@ -8,7 +8,7 @@ deviation is closed, delete the entry rather than marking it done.
 
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
-| DEV-009 | The engine is linear; project sections are imported as markers but focus mode and section actions do not exist | A sectioned service cannot be navigated section-by-section | Model sections in the navigation when a feature needs them |
+| DEV-009 | No focus-mode stage view and no section actions (skip, loop, notes) | Sections navigate, but a service cannot be run in FreeShow's section-by-section presentation mode | Model section actions when a service needs them |
 
 ## Rules
 

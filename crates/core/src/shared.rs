@@ -64,6 +64,14 @@ impl SharedEngine {
         })
     }
 
+    pub fn next_section(&self) -> bool {
+        self.apply_engine(ShowEngine::next_section)
+    }
+
+    pub fn previous_section(&self) -> bool {
+        self.apply_engine(ShowEngine::previous_section)
+    }
+
     pub fn next_group(&self) -> bool {
         self.apply_engine(ShowEngine::next_group)
     }

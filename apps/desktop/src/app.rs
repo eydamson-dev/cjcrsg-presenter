@@ -176,6 +176,22 @@ pub fn App() -> Element {
                         },
                         "Next group"
                     }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.previous_section(); }
+                        },
+                        "Prev section"
+                    }
+                    button {
+                        class: "btn",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.next_section(); }
+                        },
+                        "Next section"
+                    }
                 }
             }
 

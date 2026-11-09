@@ -39,6 +39,8 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/timer/clear", post(timer_clear))
         .route("/api/stage-layout", post(stage_layout))
         .route("/api/next-group", post(next_group))
+        .route("/api/next-section", post(next_section))
+        .route("/api/previous-section", post(previous_section))
         .route("/api/goto", post(goto))
         .route("/api/previous-group", post(previous_group))
         .with_state(engine)
@@ -100,6 +102,14 @@ async fn goto(
     Json(body): Json<GotoBody>,
 ) -> impl IntoResponse {
     command(engine.go_to_index(body.index))
+}
+
+async fn next_section(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.next_section())
+}
+
+async fn previous_section(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
+    command(engine.previous_section())
 }
 
 async fn next_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
@@ -505,6 +515,24 @@ mod tests {
             .unwrap();
         assert!(!shared.is_cleared(), "navigation reveals the slide");
         assert_eq!(shared.state().slide_id, "b");
+    }
+
+    #[tokio::test]
+    async fn section_jumps_are_reachable_over_http() {
+        // The engine fixture has no sections, so both are no-ops; what matters
+        // here is the routes exist and report honestly.
+        let shared = engine();
+        let app = router(shared);
+
+        let response = app
+            .oneshot(
+                Request::post("/api/next-section")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CONFLICT);
     }
 
     #[tokio::test]

@@ -139,6 +139,14 @@ impl AppState {
         self.engine.set_message(message)
     }
 
+    pub fn next_section(&self) -> bool {
+        self.engine.next_section()
+    }
+
+    pub fn previous_section(&self) -> bool {
+        self.engine.previous_section()
+    }
+
     pub fn set_stage_layout(&self, layout: presenter_core::StageLayout) -> bool {
         self.engine.set_stage_layout(layout)
     }

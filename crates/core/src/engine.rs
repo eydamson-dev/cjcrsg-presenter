@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::clock::{Clock, SystemClock};
-use crate::domain::{MediaRef, Project, Show, Slide, SlideGroup, Transition};
+use crate::domain::{MediaRef, Project, ProjectEntry, Show, Slide, SlideGroup, Transition};
 use crate::input::Command;
 use crate::render::{
     RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageLayout, StageTimer,
@@ -106,6 +106,9 @@ pub struct ShowEngine {
     /// Presentable slides in order. Flattening keeps navigation linear and makes
     /// empty groups a non-issue — a group with no slides is simply not addressed.
     order: Vec<Position>,
+    /// Which section each show belongs to, parallel to `project.shows`.
+    /// Sections are project markers that group shows; they have no slides.
+    sections: Vec<usize>,
     index: usize,
     revision: Revision,
     /// Applies when a slide does not declare its own transition. FreeShow's
@@ -136,9 +139,11 @@ pub struct ShowEngine {
 impl ShowEngine {
     pub fn new(project: Project) -> Self {
         let order = Self::build_order(&project);
+        let sections = Self::build_sections(&project);
         Self {
             project,
             order,
+            sections,
             index: 0,
             revision: 0,
             policy: Transition::default(),
@@ -291,6 +296,23 @@ impl ShowEngine {
         self
     }
 
+    /// Assign each show a section group from the project's ordered entries.
+    fn build_sections(project: &Project) -> Vec<usize> {
+        let mut groups = vec![0usize; project.shows.len()];
+        let mut current = 0usize;
+        for entry in &project.entries {
+            match entry {
+                ProjectEntry::Section { .. } => current += 1,
+                ProjectEntry::Show { id } | ProjectEntry::Other { id, .. } => {
+                    if let Some(index) = project.shows.iter().position(|show| &show.id == id) {
+                        groups[index] = current;
+                    }
+                }
+            }
+        }
+        groups
+    }
+
     fn build_order(project: &Project) -> Vec<Position> {
         let mut order = Vec::with_capacity(project.slide_count());
         for (show, show_ref) in project.shows.iter().enumerate() {
@@ -330,6 +352,7 @@ impl ShowEngine {
         let now = self.clock.now_ms();
         self.timeline.restart(now, 0);
         self.order = Self::build_order(&project);
+        self.sections = Self::build_sections(&project);
         self.project = project;
         self.index = 0;
         self.cleared = false;
@@ -390,6 +413,49 @@ impl ShowEngine {
         self.index -= 1;
         self.bump();
         true
+    }
+
+    /// Jump to the first slide of the next section.
+    ///
+    /// A section groups the shows that follow it, so the target is the first
+    /// slide of the first show in the next group. A project without sections
+    /// has one group, so this is a no-op.
+    pub fn next_section(&mut self) -> bool {
+        let Some(current) = self.position() else {
+            return false;
+        };
+        let Some(group) = self.sections.get(current.show).copied() else {
+            return false;
+        };
+        self.jump_to_section(group + 1)
+    }
+
+    /// Jump to the first slide of the previous section.
+    pub fn previous_section(&mut self) -> bool {
+        let Some(current) = self.position() else {
+            return false;
+        };
+        let Some(group) = self.sections.get(current.show).copied() else {
+            return false;
+        };
+        if group == 0 {
+            return false;
+        }
+        self.jump_to_section(group - 1)
+    }
+
+    fn jump_to_section(&mut self, group: usize) -> bool {
+        let Some(show) = self
+            .sections
+            .iter()
+            .position(|candidate| *candidate == group)
+        else {
+            return false;
+        };
+        let Some(index) = self.order.iter().position(|position| position.show == show) else {
+            return false;
+        };
+        self.go_to_index(index)
     }
 
     /// Jump to the first slide of the next group.
@@ -512,6 +578,8 @@ impl ShowEngine {
             Command::Previous => self.previous_slide(),
             Command::NextGroup => self.next_group(),
             Command::PreviousGroup => self.previous_group(),
+            Command::NextSection => self.next_section(),
+            Command::PreviousSection => self.previous_section(),
             Command::First => self.go_to_index(0),
             Command::Last => self.go_to_index(self.order.len().saturating_sub(1)),
             Command::Clear => self.set_cleared(true),
@@ -1026,6 +1094,45 @@ mod tests {
             !engine.apply(Command::Restore),
             "restoring twice is a no-op"
         );
+    }
+
+    fn sectioned_project() -> Project {
+        let mut project = fixture();
+        project.entries = vec![
+            ProjectEntry::Section {
+                id: "sec-a".into(),
+                name: "Opening".into(),
+            },
+            ProjectEntry::Show { id: "s1".into() },
+            ProjectEntry::Section {
+                id: "sec-b".into(),
+                name: "Sermon".into(),
+            },
+            ProjectEntry::Show { id: "s2".into() },
+        ];
+        project
+    }
+
+    #[test]
+    fn next_and_previous_section_jump_between_show_groups() {
+        let mut engine = ShowEngine::new(sectioned_project());
+
+        // s1 has three slides; the section jump goes to s2's first slide.
+        assert!(engine.next_section());
+        assert_eq!(engine.state().slide_id, "c1");
+        assert!(!engine.next_section(), "no section after the last");
+
+        assert!(engine.previous_section());
+        assert_eq!(engine.state().slide_id, "a1");
+        assert!(!engine.previous_section(), "no section before the first");
+    }
+
+    #[test]
+    fn a_project_without_sections_has_one_group() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(!engine.next_section());
+        assert!(!engine.previous_section());
+        assert_eq!(engine.revision(), 0);
     }
 
     #[test]
