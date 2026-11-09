@@ -220,8 +220,16 @@ uninstall key, launches the app, and writes `C:\oem-result.txt` for the console
 screenshot. The web console at `:8006` is readable from Playwright
 (`parity/tools/watch_vm.mjs`), which is how the result is captured.
 
-Status of that run: **in progress** — this section will say what it proved, or
-that it did not, before any release claim is made.
+**Trap: `/tmp` is RAM on this desktop.** `/tmp` is a 16 GB `tmpfs`, and the first
+attempt put the VM's storage there (`/tmp/opencode/win-storage`). The Windows ISO
+and disk image consumed **15 GB of RAM** as shared memory; with the desktop's
+other services the machine had 1.5 GB available and swap fully used.
+
+The run was stopped before Windows finished installing. What it proved: the
+container boots Windows 11 unattended and exposes the console at `:8006`. What it
+did **not** prove: the installer, the app, DPI, or uninstall. Put `-v
+<storage>` on a real disk (for example `~/var/windows-vm`) and re-run before
+claiming any of those.
 
 Good enough for: MSVC builds, WebView2 install and launch, native menus, tray,
 basic fullscreen, filesystem behaviour, installer testing, font rendering
