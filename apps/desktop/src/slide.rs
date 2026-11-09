@@ -137,7 +137,9 @@ pub fn StageView(
 /// same audio; the engine still owns whether the output is live.
 #[component]
 fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) -> Element {
-    let autoplay = play && media.playing;
+    // A stage shows the same picture but must never be a second audio source,
+    // so its videos are forced silent and its audio elements are not rendered.
+    let autoplay = media.playing;
     // Media fragments start the clip at a position. That is how a reopened
     // output resumes mid-video without a script or per-frame traffic.
     let src = if media.position_ms > 0 && matches!(media.kind, MediaKind::Video | MediaKind::Audio)
@@ -156,19 +158,25 @@ fn MediaView(class_name: String, style: String, media: RenderMedia, play: bool) 
                 src: "{src}",
                 style: "{style}",
                 autoplay,
-                muted: media.muted,
+                muted: media.muted || !play,
                 loop: media.looped,
                 playsinline: true,
             }
         },
-        MediaKind::Audio => rsx! {
-            audio {
-                src: "{src}",
-                autoplay,
-                muted: media.muted,
-                loop: media.looped,
+        MediaKind::Audio => {
+            if play {
+                rsx! {
+                    audio {
+                        src: "{src}",
+                        autoplay,
+                        muted: media.muted,
+                        loop: media.looped,
+                    }
+                }
+            } else {
+                rsx! {}
             }
-        },
+        }
         MediaKind::Other => rsx! {},
     }
 }

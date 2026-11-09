@@ -69,7 +69,8 @@ without loss; importers match the converters on a golden corpus.
 - [x] Media items render: image, video, audio; a live slide's video plays
 - [ ] Playback coordinator behind a trait: pause/resume per slide, position
 - [ ] Media position in `RenderState` for correct recovery mid-playback
-- [ ] Four outputs playing video at once, measured
+- [x] Four outputs playing video at once, measured (30 s, 1080p, 0 dropped)
+- [ ] The same over 10 minutes, with H.264 and WebView2
 - GStreamer pipeline for synchronised audio/video
 - Audio routing, multi-channel, low-latency output
 - Capture, LTC

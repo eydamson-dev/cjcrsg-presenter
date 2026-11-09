@@ -52,7 +52,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs, clear with restore, keyboard, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
 | 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
-| 4 — media engine | **started.** Items render, video plays; a timeline with position, pause, restore and seek resumes mid-clip. No continuous sync, audio routing or four-output measurement |
+| 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, four outputs decode 1080p with 0 dropped frames over 30 s. No continuous sync, audio routing, CPU figures or 10-minute run |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: MSVC build, embedded DPI manifest and NSIS installer built in CI, never run. Linux packaging not started |
 
@@ -75,6 +75,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
+| Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s | `parity/reports/media-four-outputs-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -103,9 +104,10 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     87
+crates/core     88
 crates/compat   25
 crates/remote    9
+apps/desktop     3
 ```
 
 ## Next, in order
@@ -127,8 +129,11 @@ crates/remote    9
   localhost or add auth before it runs on a shared network.
 - **The engine is linear within a show.** Groups are navigation sections, not
   FreeShow's full layout/section model.
-- **Media has no coordinator.** A slide's media autoplays while it is live and
-  restarts from zero when it returns; nothing seeks or pauses it.
+- **Media has a partial coordinator.** Position, pause, restore and seek exist;
+  continuous sync between outputs and audio routing do not.
+- **Media URLs are loopback HTTP.** The app serves only the project's own files;
+  an external file outside the project is allowed only because the project
+  references it.
 - **`nav.bounds.next-at-end` is unverified** against the reference. Ours ignores
   next at the end; FreeShow may wrap or stop.
 - **Style-level transitions are not modelled.** FreeShow resolves slide → style

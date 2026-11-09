@@ -175,8 +175,15 @@ poll Rust for progress.
 
 `<video>` in the WebView first. It is the cheapest path to parity for ordinary
 playback, and it is what exists: a FreeShow media item becomes an `<img>`,
-`<video>` or `<audio>` in the slide, with its path resolved to a `file://` URL
-by the engine, never by the renderer.
+`<video>` or `<audio>` in the slide, with its URL resolved by the engine, never
+by the renderer.
+
+**Media is served over loopback HTTP, not `file://`.** The app's page origin is
+`dioxus://index.html/`, and a WebView refuses `file://` subresources from a
+non-file origin — measured as `NETWORK_NO_SOURCE` with zero frames. A small
+allowlisting server on `127.0.0.1` serves the project's own files, with Range
+support for seeking. The headless render harness keeps `file://` because its
+page is loaded from disk.
 
 **What the engine owns.** Whether the slide is live, and therefore whether its
 media plays; the current position belongs here too, so a reopened output can

@@ -1,0 +1,43 @@
+{
+  "Audience": {
+    "samples": 16,
+    "seconds": 30.0,
+    "frames": 841,
+    "fps": 28.0,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 30
+  },
+  "Stage": {
+    "samples": 16,
+    "seconds": 30.1,
+    "frames": 843,
+    "fps": 28.0,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 30
+  },
+  "Preview": {
+    "samples": 16,
+    "seconds": 30.0,
+    "frames": 841,
+    "fps": 27.99,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 30
+  },
+  "Confidence": {
+    "samples": 15,
+    "seconds": 28.0,
+    "frames": 841,
+    "fps": 29.99,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": false,
+    "final_t": 29.69
+  },
+  "_all_four_playing": true
+}

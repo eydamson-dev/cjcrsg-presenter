@@ -1,5 +1,7 @@
 //! One output window: an independent `VirtualDom` fed by the shared hub.
 
+use std::time::Duration;
+
 use dioxus::prelude::*;
 use presenter_core::Revision;
 
@@ -65,6 +67,42 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         "#;
         let _ = document::eval(script).await;
     });
+
+    // Experiment 3c: how many frames each output actually decodes and drops.
+    // Off by default; it is a measurement harness, not a feature.
+    if std::env::var("CJCRSG_MEDIA_PROBE").is_ok() {
+        let output = kind.label();
+        use_future(move || async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(2)).await;
+                let mut probe = document::eval(
+                    r#"
+                    (() => {
+                        const videos = [...document.querySelectorAll('video')];
+                        dioxus.send(JSON.stringify(videos.map((video) => {
+                            const quality = video.getVideoPlaybackQuality();
+                            return {
+                                href: location.href,
+                                error: video.error ? video.error.message : null,
+                                network: video.networkState,
+                                t: video.currentTime,
+                                total: quality.totalVideoFrames,
+                                dropped: quality.droppedVideoFrames,
+                                w: video.videoWidth,
+                                h: video.videoHeight,
+                                paused: video.paused,
+                                seeking: video.seeking,
+                            };
+                        })));
+                    })();
+                    "#,
+                );
+                if let Ok(report) = probe.recv::<String>().await {
+                    tracing::info!(output, report = %report, "media probe");
+                }
+            }
+        });
+    }
 
     // A stage clock ticks in the page, not through Rust: a per-second state
     // publish would wake every output for a label.

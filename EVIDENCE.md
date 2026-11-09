@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 121 -->
+**As of `main`, 2026-11-09.** <!-- tests: 125 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -123,6 +123,24 @@ shows the difference is the video advancing.
 produces `src="…clip.webm#t=2.500"`; headless Chromium reports `currentTime`
 **3.468 s** 500 ms later and then advances 2.039 s over 2 s. The clip resumes
 where the show was, not from zero.
+
+**Four outputs, 1080p, 30 s.** The real app with four output windows, each
+probing `getVideoPlaybackQuality()`:
+
+| Output | Frames | FPS | Dropped |
+| --- | --- | --- | --- |
+| Audience | 841 | 28.00 | 0 |
+| Stage (muted) | 843 | 28.01 | 0 |
+| Preview | 841 | 27.99 | 0 |
+| Confidence | 841 | 29.99 | 0 |
+
+The same measurement caught a defect the harness hid: the app's page origin is
+`dioxus://`, where `file://` media is blocked (`NETWORK_NO_SOURCE`, zero
+frames). A loopback media server with an allowlist and Range support fixed it;
+this table is from the app, not the harness.
+
+Raw: `parity/reports/evidence/media/four-outputs/`.
+Report: `parity/reports/media-four-outputs-2026-11-09.md`.
 
 Raw: `parity/reports/evidence/media/video-report.json`,
 `evidence/media/resume/video-report.json`.

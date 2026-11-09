@@ -25,5 +25,7 @@ dioxus-desktop.workspace = true
 dioxus-ssr.workspace = true
 
 tokio.workspace = true
+tokio-util = { version = "0.7", features = ["io"] }
+axum.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

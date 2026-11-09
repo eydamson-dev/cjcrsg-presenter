@@ -83,6 +83,10 @@ pub struct ShowEngine {
     /// Project folder for `Bundled` media. Without it, a relative path cannot
     /// become a URL, and the renderer would resolve it against the page.
     media_root: Option<PathBuf>,
+    /// When set, media is served over loopback HTTP at this base instead of
+    /// `file://`. A WebView page loaded from a custom scheme cannot read
+    /// `file://` subresources; the app uses this, the render harness does not.
+    media_base: Option<String>,
     /// Where the live slide's media is. Advanced by reading the clock, never by
     /// a timer thread: the state is computed when someone asks for it.
     timeline: MediaTimeline,
@@ -101,6 +105,7 @@ impl ShowEngine {
             transition: None,
             cleared: false,
             media_root: None,
+            media_base: None,
             // The first slide is live from construction; its media starts now.
             timeline: MediaTimeline {
                 offset_ms: 0,
@@ -140,6 +145,12 @@ impl ShowEngine {
 
     pub fn media_root(&self) -> Option<&Path> {
         self.media_root.as_deref()
+    }
+
+    /// Serve media from `base` (`http://127.0.0.1:PORT`) instead of `file://`.
+    pub fn with_media_base(mut self, base: impl Into<String>) -> Self {
+        self.media_base = Some(base.into());
+        self
     }
 
     fn build_order(project: &Project) -> Vec<Position> {
@@ -405,13 +416,14 @@ impl ShowEngine {
         };
 
         let root = self.media_root.as_deref();
+        let base = self.media_base.as_deref();
         let playing = !self.cleared;
         let position_ms = self.timeline.position(self.clock.now_ms());
         let next = self
             .order
             .get(self.index + 1)
             .and_then(|position| self.slide_at(*position))
-            .map(|slide| project_slide(slide, root, playing, 0));
+            .map(|slide| project_slide(slide, root, base, playing, 0));
 
         if self.cleared {
             // A cleared output still reports which slide is live, so a remote
@@ -431,7 +443,7 @@ impl ShowEngine {
             revision: self.revision,
             show_id: show.id.clone(),
             slide_id: slide.id.clone(),
-            slide: project_slide(slide, root, playing, position_ms),
+            slide: project_slide(slide, root, base, playing, position_ms),
             notes: slide.notes.clone(),
             next,
             transition: self.transition.clone(),
@@ -443,6 +455,7 @@ impl ShowEngine {
 fn project_slide(
     slide: &Slide,
     root: Option<&Path>,
+    base: Option<&str>,
     playing: bool,
     position_ms: u64,
 ) -> RenderSlide {
@@ -459,7 +472,7 @@ fn project_slide(
                 media: element
                     .media
                     .as_ref()
-                    .map(|media| project_media(media, root, playing, position_ms)),
+                    .map(|media| project_media(media, root, base, playing, position_ms)),
             })
             .collect(),
     }
@@ -468,6 +481,7 @@ fn project_slide(
 fn project_media(
     media: &MediaRef,
     root: Option<&Path>,
+    base: Option<&str>,
     playing: bool,
     position_ms: u64,
 ) -> RenderMedia {
@@ -483,9 +497,17 @@ fn project_media(
         }
     };
 
+    let src = match base {
+        Some(base) => format!(
+            "{base}/media/{}",
+            crate::media::url_path_component(&resolved)
+        ),
+        None => crate::media::file_url(&resolved),
+    };
+
     RenderMedia {
         kind: media.kind,
-        src: crate::media::file_url(&resolved),
+        src,
         looped: media.looped,
         muted: media.muted,
         playing,

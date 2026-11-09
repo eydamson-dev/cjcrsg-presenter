@@ -1,5 +1,12 @@
 # Media playback — first slice, 2026-11-09
 
+> **Correction, same day.** The playback measured below was rendered by the SSR
+> harness, which loads its page from `file://`. In the real app the page comes
+> from `dioxus://`, where `file://` media is blocked: the element existed and
+> never decoded. A loopback media server fixed it
+> (`media-four-outputs-2026-11-09.md`). The numbers in this report are real but
+> they describe the harness until the server landed.
+
 Phase 4 starts with the smallest thing that proves the pipeline: a FreeShow
 media item becomes a real `<video>`/`<img>`/`<audio>` in the output, and a video
 actually decodes and advances.
@@ -100,6 +107,12 @@ Raw: `evidence/media/resume/video-report.json`.
 - seeking moves the position, bumps the revision and emits no transition;
 - a fresh snapshot reports the live position while the cached state keeps the
   one from publication.
+
+## Serving media to the app
+
+Media elements ask `http://127.0.0.1:<ephemeral>/media/<path>`; the server
+serves only files the loaded project references, with Range support. The render
+CLI keeps `file://`, because its page is loaded from `file://`.
 
 ## Not done
 

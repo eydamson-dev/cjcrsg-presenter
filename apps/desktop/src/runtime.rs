@@ -99,6 +99,13 @@ impl AppState {
         let root = std::path::absolute(path)
             .ok()
             .and_then(|absolute| absolute.parent().map(|parent| parent.to_path_buf()));
+
+        // Allow the new project's files before publishing it: an output must
+        // never render a URL the server would refuse.
+        media_server().access.allow_project(
+            &document.project,
+            root.as_deref().unwrap_or_else(|| std::path::Path::new(".")),
+        );
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)
@@ -216,12 +223,26 @@ impl AppState {
 /// same instance the windows do; two engines would mean two shows.
 static SHARED: OnceLock<Arc<SharedEngine>> = OnceLock::new();
 
+/// The loopback server that lets the WebViews load project media. Started once,
+/// before the engine exists, because the engine's media URLs contain its port.
+static MEDIA: OnceLock<crate::media_server::MediaServer> = OnceLock::new();
+
+pub fn media_server() -> &'static crate::media_server::MediaServer {
+    MEDIA.get_or_init(crate::media_server::start)
+}
+
 pub fn shared_engine() -> Arc<SharedEngine> {
     SHARED
         .get_or_init(|| {
+            let server = media_server();
             let engine = match load_project() {
-                Some((project, root)) => ShowEngine::new(project).with_media_root(root),
-                None => ShowEngine::new(demo_project()),
+                Some((project, root)) => {
+                    server.access.allow_project(&project, &root);
+                    ShowEngine::new(project)
+                        .with_media_root(root)
+                        .with_media_base(server.base_url())
+                }
+                None => ShowEngine::new(demo_project()).with_media_base(server.base_url()),
             };
             Arc::new(SharedEngine::new(engine))
         })

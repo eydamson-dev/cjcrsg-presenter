@@ -179,6 +179,34 @@ pub fn file_url(path: &Path) -> String {
     url
 }
 
+/// The path as one URL path component: no leading slash, forward slashes,
+/// percent-encoded.
+///
+/// Used by the loopback media server, whose route is `/media/{path}`.
+pub fn url_path_component(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    let text = text.strip_prefix('/').unwrap_or(&text).to_string();
+    let mut out = String::with_capacity(text.len());
+    for byte in text.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' | b'/' | b':' => {
+                out.push(byte as char)
+            }
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
+}
+
+/// Inverse of [`url_path_component`] for a server route.
+pub fn component_to_path(component: &str) -> std::path::PathBuf {
+    if is_windows_absolute(component) {
+        std::path::PathBuf::from(component)
+    } else {
+        std::path::PathBuf::from(format!("/{component}"))
+    }
+}
+
 fn is_windows_absolute(text: &str) -> bool {
     let bytes = text.as_bytes();
     bytes.len() >= 3 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' && bytes[2] == b'/'
@@ -284,6 +312,18 @@ mod tests {
         assert!(
             !url.contains(' ') && !url.contains('#'),
             "not encodable: {url}"
+        );
+    }
+
+    #[test]
+    fn a_url_path_component_strips_the_leading_slash_and_encodes() {
+        assert_eq!(
+            url_path_component(Path::new("/srv/media/clip one.mp4")),
+            "srv/media/clip%20one.mp4"
+        );
+        assert_eq!(
+            component_to_path("srv/media/clip%20one.mp4"),
+            Path::new("/srv/media/clip%20one.mp4")
         );
     }
 
