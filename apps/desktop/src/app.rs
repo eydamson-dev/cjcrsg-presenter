@@ -10,6 +10,7 @@ use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
 use presenter_core::{Command, Revision, StageLayout};
 
+use crate::outline::OutlinePanel;
 use crate::output::{OutputProps, OutputRoot};
 use crate::recent::RecentProjects;
 use crate::runtime::{AppState, OutputKind, Shared};
@@ -193,6 +194,17 @@ pub fn App() -> Element {
                         "Next section"
                     }
                 }
+            }
+
+            OutlinePanel {
+                items: app.outline(),
+                current: app.current_show(),
+                on_play: Some(EventHandler::new({
+                    let app = app.clone();
+                    move |index: usize| {
+                        app.go_to_show(index);
+                    }
+                })),
             }
 
             section { class: "panel",

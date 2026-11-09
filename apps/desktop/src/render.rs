@@ -9,6 +9,7 @@ use dioxus::prelude::*;
 use presenter_core::{Session, SharedEngine, Transition};
 
 use crate::assets::MAIN_CSS;
+use crate::outline::OutlinePanel;
 use crate::recent::RecentProjects;
 use crate::slide::{SlideView, StageView};
 
@@ -20,6 +21,8 @@ pub enum Layout {
     Preview,
     /// The speaker's view: live slide plus a clock.
     Confidence,
+    /// The project outline panel, as the controller renders it.
+    Outline,
     /// The controller's recent-projects panel. The project file is not read for
     /// this layout; it comes from the session store.
     Recent,
@@ -92,6 +95,15 @@ pub fn render(
                     play_media: true,
                 }
                 span { class: "confidence-clock", id: "confidence-clock", "--:--" }
+            }
+        },
+        Layout::Outline => rsx! {
+            div { class: "controller",
+                OutlinePanel {
+                    items: crate::outline::build(&engine.project()),
+                    current: engine.current_show(),
+                    on_play: None,
+                }
             }
         },
         // `main` renders this layout from the session store, because it has

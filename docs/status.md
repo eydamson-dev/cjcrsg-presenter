@@ -79,6 +79,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
 | Store import: 3 projects → 2 written, 1 broken project reported, others unaffected; category `Songs` and tags resolve | `parity/reports/store-import-2026-11-09.md` |
 | Sections: ordered entries; next/previous section jumps fx-1 (1/6) → tx-1 (4/6) → 409 → fx-1 | `parity/reports/sections-2026-11-09.md` |
+| Outline: play a show by index, live marker; remote fx-1 → tx-1 → fx-1 | `parity/reports/outline-focus-2026-11-09.md` |
 | Media tags from `media.json` attach to the imported asset (`tags=worship,background`) | `parity/reports/store-import-2026-11-09.md` |
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
@@ -117,16 +118,16 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     98
+crates/core     99
 crates/compat   40
-crates/remote   13
+crates/remote   14
 apps/desktop     3
 ```
 
 ## Next, in order
 
-1. **Focus mode** — DEV-009. Sections import and navigate; FreeShow's
-   section-by-section presentation view and section actions do not exist.
+1. **Focus view and section actions** — DEV-009. Shows start from the outline
+   panel and the remote; the full-screen view and section actions do not exist.
 2. **Windows runtime verification.** The installer builds but has never run.
    QEMU/KVM covers install/uninstall and the WebView2 bootstrap; H.264 four-output
    playback on WebView2 is also unmeasured.

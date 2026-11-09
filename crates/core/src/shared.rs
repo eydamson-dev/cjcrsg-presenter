@@ -64,6 +64,14 @@ impl SharedEngine {
         })
     }
 
+    pub fn go_to_show(&self, show: usize) -> bool {
+        self.apply_engine(|engine| engine.go_to_show(show))
+    }
+
+    pub fn current_show(&self) -> Option<usize> {
+        self.lock().current_show()
+    }
+
     pub fn next_section(&self) -> bool {
         self.apply_engine(ShowEngine::next_section)
     }

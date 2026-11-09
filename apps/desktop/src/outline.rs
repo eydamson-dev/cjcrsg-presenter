@@ -1,0 +1,103 @@
+//! The project outline: sections and shows, in project order.
+//!
+//! This is the navigation half of FreeShow's focus mode. It is a panel rather
+//! than a full-screen view: the service can be started item by item, but the
+//! controller keeps its other tools visible.
+
+use dioxus::prelude::*;
+use presenter_core::{Project, ProjectEntry};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OutlineEntry {
+    Section { name: String },
+    Show { name: String, index: usize },
+    Other { label: String },
+}
+
+/// Build the outline from the project's ordered entries.
+///
+/// A project built from a single show has no entries; its shows are the outline.
+pub fn build(project: &Project) -> Vec<OutlineEntry> {
+    if project.entries.is_empty() {
+        return project
+            .shows
+            .iter()
+            .enumerate()
+            .map(|(index, show)| OutlineEntry::Show {
+                name: show.name.clone(),
+                index,
+            })
+            .collect();
+    }
+
+    let mut outline = Vec::with_capacity(project.entries.len());
+    for entry in &project.entries {
+        match entry {
+            ProjectEntry::Section { name, .. } => {
+                outline.push(OutlineEntry::Section { name: name.clone() })
+            }
+            ProjectEntry::Show { id } => {
+                if let Some(index) = project.shows.iter().position(|show| &show.id == id) {
+                    outline.push(OutlineEntry::Show {
+                        name: project.shows[index].name.clone(),
+                        index,
+                    });
+                }
+            }
+            ProjectEntry::Other { item_type, .. } => outline.push(OutlineEntry::Other {
+                label: item_type.clone(),
+            }),
+        }
+    }
+    outline
+}
+
+#[component]
+pub fn OutlinePanel(
+    items: Vec<OutlineEntry>,
+    current: Option<usize>,
+    /// Optional so the panel can be rendered headlessly for evidence.
+    on_play: Option<EventHandler<usize>>,
+) -> Element {
+    rsx! {
+        section { class: "panel",
+            h2 { "Project" }
+
+            if items.is_empty() {
+                p { class: "hint", "No project loaded." }
+            } else {
+                div { class: "outline",
+                    for (position, item) in items.iter().cloned().enumerate() {
+                        match item {
+                            OutlineEntry::Section { name } => rsx! {
+                                div { key: "section-{position}", class: "outline-section", "{name}" }
+                            },
+                            OutlineEntry::Show { name, index } => rsx! {
+                                div {
+                                    key: "show-{index}",
+                                    class: if current == Some(index) { "outline-show current" } else { "outline-show" },
+                                    span { class: "name", "{name}" }
+                                    if current == Some(index) {
+                                        span { class: "outline-badge", "live" }
+                                    }
+                                    button {
+                                        class: "btn small",
+                                        onclick: move |_| {
+                                            if let Some(on_play) = on_play {
+                                                on_play.call(index);
+                                            }
+                                        },
+                                        "Play"
+                                    }
+                                }
+                            },
+                            OutlineEntry::Other { label } => rsx! {
+                                div { key: "other-{position}", class: "outline-other", "{label}" }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

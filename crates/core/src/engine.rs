@@ -514,6 +514,19 @@ impl ShowEngine {
         self.go_to_index(target)
     }
 
+    /// Jump to the first slide of a show by project index.
+    pub fn go_to_show(&mut self, show: usize) -> bool {
+        let Some(index) = self.order.iter().position(|position| position.show == show) else {
+            return false;
+        };
+        self.go_to_index(index)
+    }
+
+    /// The project index of the live show.
+    pub fn current_show(&self) -> Option<usize> {
+        self.position().map(|position| position.show)
+    }
+
     pub fn go_to_index(&mut self, index: usize) -> bool {
         if index >= self.order.len() || index == self.index {
             return false;
@@ -1133,6 +1146,23 @@ mod tests {
         assert!(!engine.next_section());
         assert!(!engine.previous_section());
         assert_eq!(engine.revision(), 0);
+    }
+
+    #[test]
+    fn a_show_can_be_started_by_index() {
+        let mut engine = ShowEngine::new(fixture());
+        assert_eq!(engine.current_show(), Some(0));
+
+        assert!(engine.go_to_show(1));
+        assert_eq!(engine.state().slide_id, "c1");
+        assert_eq!(engine.current_show(), Some(1));
+
+        assert!(!engine.go_to_show(9));
+        assert_eq!(
+            engine.state().slide_id,
+            "c1",
+            "an unknown show changes nothing"
+        );
     }
 
     #[test]

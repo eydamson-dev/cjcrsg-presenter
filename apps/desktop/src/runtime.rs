@@ -67,19 +67,37 @@ pub struct AppState {
     /// does not touch the disk every 250 ms.
     store: SessionStore,
     session: Mutex<Session>,
+    /// The project's sections and shows, built once per open. Rendering the
+    /// controller must not clone the whole project every 250 ms.
+    outline: Mutex<Vec<crate::outline::OutlineEntry>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         let store = session_store();
         let session = store.load();
+        let engine = shared_engine();
+        let outline = crate::outline::build(&engine.project());
         Self {
-            engine: shared_engine(),
+            engine,
             windows: Mutex::new(HashMap::new()),
             applied: Mutex::new(HashMap::new()),
             store,
             session: Mutex::new(session),
+            outline: Mutex::new(outline),
         }
+    }
+
+    pub fn outline(&self) -> Vec<crate::outline::OutlineEntry> {
+        self.outline.lock().expect("outline lock").clone()
+    }
+
+    pub fn current_show(&self) -> Option<usize> {
+        self.engine.current_show()
+    }
+
+    pub fn go_to_show(&self, show: usize) -> bool {
+        self.engine.go_to_show(show)
     }
 
     /// Recently opened projects, newest first.
@@ -106,6 +124,7 @@ impl AppState {
             &document.project,
             root.as_deref().unwrap_or_else(|| std::path::Path::new(".")),
         );
+        *self.outline.lock().expect("outline lock") = crate::outline::build(&document.project);
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)

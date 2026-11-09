@@ -8,7 +8,7 @@ deviation is closed, delete the entry rather than marking it done.
 
 | ID | Deviation | Impact | Close by |
 | --- | --- | --- | --- |
-| DEV-009 | No focus-mode stage view and no section actions (skip, loop, notes) | Sections navigate, but a service cannot be run in FreeShow's section-by-section presentation mode | Model section actions when a service needs them |
+| DEV-009 | No full-screen focus view and no section actions (skip, loop, notes) | A service can be started show-by-show from a panel, but not run in FreeShow's focus mode | Build the focus view and section actions when a service needs them |
 
 ## Rules
 

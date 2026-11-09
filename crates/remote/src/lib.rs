@@ -42,6 +42,7 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/next-section", post(next_section))
         .route("/api/previous-section", post(previous_section))
         .route("/api/goto", post(goto))
+        .route("/api/show", post(show))
         .route("/api/previous-group", post(previous_group))
         .with_state(engine)
 }
@@ -110,6 +111,19 @@ async fn next_section(State(engine): State<Arc<SharedEngine>>) -> impl IntoRespo
 
 async fn previous_section(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
     command(engine.previous_section())
+}
+
+#[derive(Debug, Deserialize)]
+struct ShowBody {
+    /// Zero-based index into the project's shows.
+    index: usize,
+}
+
+async fn show(
+    State(engine): State<Arc<SharedEngine>>,
+    Json(body): Json<ShowBody>,
+) -> impl IntoResponse {
+    command(engine.go_to_show(body.index))
 }
 
 async fn next_group(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
@@ -515,6 +529,36 @@ mod tests {
             .unwrap();
         assert!(!shared.is_cleared(), "navigation reveals the slide");
         assert_eq!(shared.state().slide_id, "b");
+    }
+
+    #[tokio::test]
+    async fn a_show_can_be_started_by_index_over_http() {
+        let shared = engine();
+        let app = router(shared.clone());
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/show")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"index":0}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        // The fixture has one show and starts on it, so this is a no-op.
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+
+        let missing = app
+            .oneshot(
+                Request::post("/api/show")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"index":9}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(missing.status(), StatusCode::CONFLICT);
     }
 
     #[tokio::test]

@@ -8,6 +8,7 @@ mod app;
 mod assets;
 mod cli;
 mod media_server;
+mod outline;
 mod output;
 mod recent;
 mod render;

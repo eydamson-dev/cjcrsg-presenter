@@ -1,0 +1,5 @@
+state      fx-1 1 / 6
+show 1     200
+state      tx-1 4 / 6
+show 0     200
+state      fx-1 1 / 6
