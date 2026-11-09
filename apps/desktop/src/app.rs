@@ -85,7 +85,8 @@ pub fn App() -> Element {
     let mut open_error = use_signal(|| Option::<String>::None);
     let mut message_text = use_signal(String::new);
     let mut timer_minutes = use_signal(|| 5u64);
-    let mut focus = use_signal(|| false);
+    // Test-only: start in focus mode so the layout can be screenshotted.
+    let mut focus = use_signal(|| std::env::var("CJCRSG_FOCUS").is_ok());
     let mut bundle_status = use_signal(String::new);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
@@ -185,27 +186,13 @@ pub fn App() -> Element {
                 }
             }
 
-            if focus() {
-                FocusView {
-                    items: outline.clone(),
-                    current: app.current_show(),
-                    on_play: Some(EventHandler::new({
-                        let app = app.clone();
-                        move |index: usize| { app.go_to_show(index); }
-                    })),
-                    on_exit: Some(EventHandler::new(move |_| focus.set(false))),
-                    slide: slide_id.clone(),
-                    position,
-                    total,
-                }
-            } else {
-                div {
-                    class: "workspace",
-                    style: "--left-w: {left_width}px; --right-w: {right_width}px;",
+            div {
+                class: "workspace",
+                style: "--left-w: {left_width}px; --right-w: {right_width}px;",
 
                     aside { class: "column left",
                         OutlinePanel {
-                            items: outline,
+                            items: outline.clone(),
                             current: app.current_show(),
                             on_play: Some(EventHandler::new({
                                 let app = app.clone();
@@ -246,13 +233,28 @@ pub fn App() -> Element {
                     div { class: "resize-handle", "data-side": "left" }
 
                     main { class: "column center",
-                        PreviewPane {
-                            slide: slide,
-                            slide_id: slide_id.clone(),
-                            position,
-                            total,
+                        if focus() {
+                            FocusView {
+                                items: outline.clone(),
+                                current: app.current_show(),
+                                on_play: Some(EventHandler::new({
+                                    let app = app.clone();
+                                    move |index: usize| { app.go_to_show(index); }
+                                })),
+                                on_exit: Some(EventHandler::new(move |_| focus.set(false))),
+                                slide: slide_id.clone(),
+                                position,
+                                total,
+                            }
+                        } else {
+                            PreviewPane {
+                                slide: slide,
+                                slide_id: slide_id.clone(),
+                                position,
+                                total,
+                            }
+                            MediaPanel { items: media }
                         }
-                        MediaPanel { items: media }
                     }
 
                     div { class: "resize-handle", "data-side": "right" }
@@ -384,7 +386,6 @@ pub fn App() -> Element {
                         }
                     }
                 }
-            }
         }
     }
 }

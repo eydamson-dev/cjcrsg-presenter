@@ -61,7 +61,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. Linux: per-user tarball with desktop entry, icon and install script, built in CI. DPI/monitors/audio, Windows uninstall and AppImage/Flatpak unverified |
-| 7 — controller UI parity | **mostly done.** Top bar, three columns, live preview, FreeShow palette and resizable persisted columns are in and screenshotted; focus-in-centre and a comparison screenshot remain (DEV-013) |
+| 7 — controller UI parity | **shell done.** Top bar, three columns, live preview, FreeShow palette, resizable persisted columns, focus-in-centre, and a side-by-side comparison against FreeShow 1.6.8. Remaining is information architecture: project browser, tab strip, clock, editor (DEV-013) |
 
 ## Measured, with evidence
 
@@ -150,12 +150,14 @@ apps/desktop     7
 ## Controller UI
 
 The **outputs** target FreeShow's look (renderer parity 0.35 % differing
-pixels). The **controller** does not: it is a panel stack built to drive the
-experiments, and it still said "Experiment 1" until this change. Porting the
-shell — top bar, left panel, show area, right preview/tools, resizable — is
-phase 7 and DEV-013, planned in `docs/ui-parity.md`. Everything the panels do
-now would move into it; none of the engine or format work depends on the
-layout.
+pixels). The **controller** now has FreeShow's shell: top bar, three columns,
+live preview, palette, resizable columns and focus-in-centre, compared
+side-by-side with FreeShow 1.6.8 in `parity/reports/ui-shell-2026-11-09.md`.
+
+What still differs is information architecture, not layout: FreeShow has a
+project browser, a bottom tab strip (Media, Audio, Overlays, Templates…) and a
+slide editor; we have the open project's shows and a live preview. DEV-013 and
+`docs/ui-parity.md` record the boundary.
 
 ## Known gaps and hazards
 

@@ -472,6 +472,10 @@ captured from the running window (X11 backend, window id), not a mock-up:
 
 ![Controller shell](parity/reports/evidence/ui-shell/controller-shell-styled.png)
 
+Compared with FreeShow 1.6.8, captured from its running window on X11:
+
+![Controller comparison](parity/reports/evidence/ui-shell/comparison.png)
+
 Report: `parity/reports/ui-shell-2026-11-09.md`.
 
 ## Media panel

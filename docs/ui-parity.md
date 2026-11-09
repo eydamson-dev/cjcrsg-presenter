@@ -1,9 +1,10 @@
 # Controller UI parity
 
-Status: **mostly done.** Frame, live preview, FreeShow palette and resizable
-columns are in and screenshotted; focus-in-centre and a side-by-side comparison
-remain. Recorded as DEV-013. The outputs already targeted FreeShow's look; the
-controller has caught up structurally.
+Status: **shell done.** Frame, live preview, FreeShow palette, resizable
+columns, focus-in-centre and a side-by-side comparison against FreeShow are in.
+What remains is information architecture, not the shell: a project browser, the
+bottom tab strip (Media/Audio/Overlays/Templates…), a clock and the slide
+editor. Recorded as DEV-013.
 
 ## The difference, plainly
 
@@ -70,8 +71,9 @@ Columns should be resizable, with widths remembered in the session store
    session.~~ Done: two 6 px handles, widths clamped to 200–480 / 260–520 and
    saved in the session. The drag itself was not automated; clamping and
    session round-trip are tested.
-5. **Comparison evidence.** Side-by-side controller screenshots, ours and
-   FreeShow's, in `EVIDENCE.md`.
+5. ~~**Comparison evidence.**~~ Done: FreeShow 1.6.8 captured on X11 with
+   `--ozone-platform=x11`, ours with `scripts/capture_window.sh`, both in
+   `evidence/ui-shell/comparison.png`.
 
 ## Evidence method
 
