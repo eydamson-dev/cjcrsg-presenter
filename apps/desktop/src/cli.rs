@@ -320,7 +320,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
                      [--layout stage|audience] [--slide N] [--transition NAME] \
                      [--duration MS] [--easing NAME] [--resume-at MS] \
-                     [--message TEXT] [--timer SECONDS] [--stage-layout split|live-only]"
+                     [--message TEXT] [--timer SECONDS] [--stage-layout split|live-only] \
+                     [--direction left_right|right_left|bottom_top|top_bottom]"
                     .into());
             }
             let project = PathBuf::from(&rest[0]);
@@ -357,6 +358,21 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                                 serde_json::to_string(kind).unwrap().trim_matches('"') == name
                             })
                             .ok_or_else(|| format!("unknown transition {name:?}"))?;
+                    }
+                    "--direction" => {
+                        let name = args.next().ok_or("--direction needs a name")?;
+                        if !matches!(
+                            name.as_str(),
+                            "left_right" | "right_left" | "bottom_top" | "top_bottom"
+                        ) {
+                            return Err(format!("unknown direction {name:?}"));
+                        }
+                        let chosen = transition
+                            .get_or_insert_with(presenter_core::Transition::default);
+                        chosen.extra.insert(
+                            "custom".to_string(),
+                            serde_json::json!({ "direction": name }),
+                        );
                     }
                     "--duration" => {
                         let value = args.next().ok_or("--duration needs milliseconds")?;

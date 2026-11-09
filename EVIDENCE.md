@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 135 -->
+**As of `main`, 2026-11-09.** <!-- tests: 139 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -119,9 +119,21 @@ also uncovered that a transition keyframe replaced the slide's `scale()`: at
 1280×720 mid-effect the surface measured **1920×1080** before the fix and
 **1280×720** after it.
 
+**Slide direction comes from the project.** Same effect, same 900 ms point,
+three directions. Centroid of lit pixels against the centred (960, 540):
+
+| Frame | Centroid |
+| --- | --- |
+| default (left to right) | (825, 546) |
+| imported `bottom_top` | (943, 612) |
+| `top_bottom` | (960, 470) |
+
+![Transition direction](parity/reports/evidence/transition-direction/montage.png)
+
 Reports: `parity/reports/stage-2026-11-09.md`,
 `parity/reports/transitions-2026-11-09.md`,
-`parity/reports/transition-timing-2026-11-09.md`.
+`parity/reports/transition-timing-2026-11-09.md`,
+`parity/reports/transition-direction-2026-11-09.md`.
 
 ---
 

@@ -12,7 +12,6 @@ deviation is closed, delete the entry rather than marking it done.
 | DEV-005 | FreeShow's own database is not imported | Migrating a library loses its categories, tags and media metadata | Read FreeShow's store and map it to a project |
 | DEV-009 | The engine is linear inside a show; groups are navigation only | FreeShow's layout/section model is richer | Model layout sections when a feature needs them |
 | DEV-011 | `elastic` and `bounce` easings are approximated by one cubic-bézier | Those two curves are not exactly FreeShow's | Keyframes with intermediate stops per curve |
-| DEV-012 | The `slide` transition always enters from the right | FreeShow's default enters from the left and `custom.direction` selects an edge | Apply `custom.direction` in the renderer |
 
 ## Rules
 

@@ -80,6 +80,40 @@ pub fn easing_css(name: &str) -> &'static str {
     }
 }
 
+/// Which edge a `slide` transition enters from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SlideDirection {
+    /// Enters from the left, moving right. FreeShow's default.
+    #[default]
+    LeftRight,
+    RightLeft,
+    BottomTop,
+    TopBottom,
+}
+
+impl SlideDirection {
+    /// The offset the effect starts from, as CSS `translate(x, y)` components.
+    pub fn start_offset(self) -> (&'static str, &'static str) {
+        match self {
+            SlideDirection::LeftRight => ("-100%", "0%"),
+            SlideDirection::RightLeft => ("100%", "0%"),
+            SlideDirection::BottomTop => ("0%", "100%"),
+            SlideDirection::TopBottom => ("0%", "-100%"),
+        }
+    }
+
+    fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "left_right" => Some(SlideDirection::LeftRight),
+            "right_left" => Some(SlideDirection::RightLeft),
+            "bottom_top" => Some(SlideDirection::BottomTop),
+            "top_bottom" => Some(SlideDirection::TopBottom),
+            _ => None,
+        }
+    }
+}
+
 /// When and how a slide comes to air, as authored.
 ///
 /// Field names follow FreeShow so a `.show`'s transition object deserialises
@@ -109,6 +143,22 @@ fn default_duration() -> u32 {
 
 fn default_easing() -> String {
     "sine".to_string()
+}
+
+impl Transition {
+    /// The `slide` direction, read from FreeShow's `custom.direction`.
+    ///
+    /// Kept in `extra` rather than lifted into a field: that is how FreeShow
+    /// stores it, and an unknown direction must round-trip untouched. An
+    /// unknown or missing value is FreeShow's default, left to right.
+    pub fn direction(&self) -> SlideDirection {
+        self.extra
+            .get("custom")
+            .and_then(|custom| custom.get("direction"))
+            .and_then(serde_json::Value::as_str)
+            .and_then(SlideDirection::from_name)
+            .unwrap_or_default()
+    }
 }
 
 impl Default for Transition {
@@ -373,6 +423,39 @@ mod tests {
         project.collect_media();
         let ids: Vec<&str> = project.media.iter().map(|a| a.id.as_str()).collect();
         assert_eq!(ids, ["keep", "new"], "deduped, order preserved");
+    }
+
+    #[test]
+    fn a_slide_direction_is_read_from_custom_and_defaults_left_to_right() {
+        let with = |direction: &str| {
+            let json = format!(
+                r#"{{"type":"slide","duration":500,"easing":"sine","custom":{{"direction":"{direction}"}}}}"#
+            );
+            serde_json::from_str::<Transition>(&json)
+                .unwrap()
+                .direction()
+        };
+        assert_eq!(with("left_right"), SlideDirection::LeftRight);
+        assert_eq!(with("right_left"), SlideDirection::RightLeft);
+        assert_eq!(with("bottom_top"), SlideDirection::BottomTop);
+        assert_eq!(with("top_bottom"), SlideDirection::TopBottom);
+
+        // No custom block, and an unknown value, both mean FreeShow's default.
+        let plain: Transition =
+            serde_json::from_str(r#"{"type":"slide","duration":500,"easing":"sine"}"#).unwrap();
+        assert_eq!(plain.direction(), SlideDirection::LeftRight);
+        assert_eq!(with("sideways"), SlideDirection::LeftRight);
+    }
+
+    #[test]
+    fn an_unknown_direction_round_trips_untouched() {
+        let json =
+            r#"{"type":"slide","duration":500,"easing":"sine","custom":{"direction":"sideways"}}"#;
+        let transition: Transition = serde_json::from_str(json).unwrap();
+        assert_eq!(transition.direction(), SlideDirection::LeftRight);
+        assert!(serde_json::to_string(&transition)
+            .unwrap()
+            .contains("sideways"));
     }
 
     #[test]

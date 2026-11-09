@@ -1,0 +1,23 @@
+{
+  "default-left-right": {
+    "inkPixels": 7918,
+    "centroid": [
+      825,
+      546
+    ]
+  },
+  "imported-bottom-top": {
+    "inkPixels": 8027,
+    "centroid": [
+      943,
+      612
+    ]
+  },
+  "top-bottom": {
+    "inkPixels": 7876,
+    "centroid": [
+      960,
+      470
+    ]
+  }
+}

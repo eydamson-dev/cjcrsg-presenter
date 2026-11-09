@@ -51,7 +51,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | --- | --- |
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
-| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing, remote, groups. Missing style-level transitions and `custom.direction` |
+| 2 — presentation engine | mostly: outputs with distinct roles, clear with restore, keyboard, stage with message/countdown/layouts, transitions with project timing and direction, remote, groups. Missing style-level transitions |
 | 3 — data | import + native format + media copy-in + document import (PDF, DOCX via LibreOffice) + recent/restore. Missing FreeShow DB import |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes. No continuous sync, audio routing or A/V drift measurement |
 | 5 — professional AV | not started (needs hardware) |
@@ -77,6 +77,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Documents: 3-page PDF → 3 contained image slides; DOCX through LibreOffice | `parity/reports/documents-2026-11-09.md` |
 | Media CPU: 112.6 % of one core (9.4 % of 12 CPUs), 2.2 GB RSS, three 1080p decoders | `parity/reports/media-cpu-2026-11-09.md` |
 | Next at the end: project boundary is a no-op, as in FreeShow | `parity/reports/navigation-end-behaviour-2026-11-09.md` |
+| Slide direction: imported bottom_top moves down, top_bottom up, default left | `parity/reports/transition-direction-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
@@ -93,7 +94,7 @@ Anything does not produce.
 
 ## Known deviations
 
-`docs/deviations.md` — five entries, each with an impact and a way to close it.
+`docs/deviations.md` — four entries, each with an impact and a way to close it.
 Read it before claiming parity on anything.
 
 ## Windows
@@ -110,7 +111,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core     91
+crates/core     95
 crates/compat   29
 crates/remote   12
 apps/desktop     3

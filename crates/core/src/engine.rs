@@ -543,6 +543,7 @@ impl ShowEngine {
             revision: self.revision,
             kind: transition.kind,
             duration_ms: transition.duration_ms,
+            direction: transition.direction(),
             easing: transition.easing.clone(),
         }
     }
@@ -840,6 +841,29 @@ mod tests {
         assert_eq!(transition.kind, TransitionKind::Slide);
         assert_eq!(transition.duration_ms, 1200);
         assert_eq!(transition.easing, "cubic");
+    }
+
+    #[test]
+    fn a_slides_transition_direction_reaches_the_state() {
+        let mut project = fixture();
+        project.shows[0].groups[0].slides[1].transition = Some(Transition {
+            kind: TransitionKind::Slide,
+            duration_ms: 800,
+            easing: "sine".to_string(),
+            extra: [(
+                "custom".to_string(),
+                serde_json::json!({"direction": "bottom_top"}),
+            )]
+            .into_iter()
+            .collect(),
+        });
+
+        let mut engine = ShowEngine::new(project);
+        engine.next_slide();
+        assert_eq!(
+            engine.state().transition.unwrap().direction,
+            crate::domain::SlideDirection::BottomTop
+        );
     }
 
     #[test]

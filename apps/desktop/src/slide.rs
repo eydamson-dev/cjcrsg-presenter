@@ -6,6 +6,7 @@
 use dioxus::prelude::*;
 use presenter_core::{
     easing_css, MediaFit, MediaKind, RenderMedia, RenderSlide, StageLayout, StageTimer, Transition,
+    TransitionKind,
 };
 
 #[component]
@@ -30,7 +31,7 @@ pub fn SlideView(
 
     // Duration and curve come from the project, not the stylesheet. The class
     // sets a default, these longhands override it; inline wins over the class.
-    let timing = if animate && transition.kind.animation().is_some() {
+    let mut timing = if animate && transition.kind.animation().is_some() {
         format!(
             "animation-duration: {}ms; animation-timing-function: {};",
             transition.duration_ms,
@@ -39,6 +40,12 @@ pub fn SlideView(
     } else {
         String::new()
     };
+    // A slide enters from the edge the project chose; the keyframes read it from
+    // variables so one pair of keyframes serves all four directions.
+    if animate && transition.kind == TransitionKind::Slide {
+        let (x, y) = transition.direction().start_offset();
+        timing.push_str(&format!(" --tx-slide-x: {x}; --tx-slide-y: {y};"));
+    }
 
     rsx! {
         div { class: "slide",

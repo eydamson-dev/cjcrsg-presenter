@@ -114,6 +114,9 @@ pub struct TransitionState {
     pub revision: Revision,
     pub kind: TransitionKind,
     pub duration_ms: u32,
+    /// Which edge a `slide` transition enters from.
+    #[serde(default)]
+    pub direction: crate::domain::SlideDirection,
     /// The authored easing name (`sine`, `cubic`, …). Kept as a name, not a
     /// resolved CSS curve, so the state stays renderer-neutral; a renderer
     /// resolves it with [`crate::domain::easing_css`].
@@ -123,11 +126,22 @@ pub struct TransitionState {
 impl TransitionState {
     /// The authored transition this state describes.
     pub fn spec(&self) -> crate::domain::Transition {
+        let mut extra = std::collections::BTreeMap::new();
+        if self.kind == TransitionKind::Slide {
+            // Round-trip the direction through the shape FreeShow stores, so a
+            // renderer reading `transition.direction()` sees the same answer.
+            if let Ok(direction) = serde_json::to_value(self.direction) {
+                extra.insert(
+                    "custom".to_string(),
+                    serde_json::json!({ "direction": direction }),
+                );
+            }
+        }
         crate::domain::Transition {
             kind: self.kind,
             duration_ms: self.duration_ms,
             easing: self.easing.clone(),
-            extra: Default::default(),
+            extra,
         }
     }
 }
@@ -170,6 +184,21 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TransitionKind::Crossfade).unwrap(),
             "\"crossfade\""
+        );
+    }
+
+    #[test]
+    fn a_state_spec_carries_the_slide_direction() {
+        let state = TransitionState {
+            revision: 1,
+            kind: TransitionKind::Slide,
+            duration_ms: 500,
+            direction: crate::domain::SlideDirection::BottomTop,
+            easing: "sine".to_string(),
+        };
+        assert_eq!(
+            state.spec().direction(),
+            crate::domain::SlideDirection::BottomTop
         );
     }
 

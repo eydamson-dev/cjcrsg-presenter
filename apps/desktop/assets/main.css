@@ -528,13 +528,15 @@ footer p {
     to { transform: none; opacity: 1; }
 }
 
+/* Direction comes from the project (`custom.direction`), defaulting to
+   FreeShow's left-to-right. */
 @keyframes tx-slide-a {
-    from { transform: translateX(100%); }
+    from { transform: translate(var(--tx-slide-x, -100%), var(--tx-slide-y, 0%)); }
     to { transform: none; }
 }
 
 @keyframes tx-slide-b {
-    from { transform: translateX(100%); }
+    from { transform: translate(var(--tx-slide-x, -100%), var(--tx-slide-y, 0%)); }
     to { transform: none; }
 }
 
