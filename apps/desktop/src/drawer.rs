@@ -129,17 +129,32 @@ pub struct DrawerContent {
     pub audio: Vec<MediaItem>,
 }
 
-/// The largest height the window can give the drawer: `innerHeight - 40` (B1).
+/// The measured content box: the drawer may use everything below the top bar.
 ///
-/// Before the page has reported its height, the session's own maximum is used;
-/// CSS also caps the rendered drawer, so the first frame cannot overflow.
-pub fn max_height(inner_height: Option<u32>) -> u32 {
-    inner_height
-        .map(|height| {
-            height
-                .saturating_sub(COLLAPSED_HEIGHT)
-                .max(COLLAPSED_HEIGHT)
-        })
+/// Both numbers come from the page, so `100vh - var(--topbar-h)` in CSS and
+/// this value in Rust describe the same limit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Viewport {
+    pub inner_height: u32,
+    pub top_bar_height: u32,
+}
+
+impl Viewport {
+    pub fn max_height(self) -> u32 {
+        self.inner_height
+            .saturating_sub(self.top_bar_height)
+            .max(COLLAPSED_HEIGHT)
+    }
+}
+
+/// The largest height the window can give the drawer (B1): the space below the
+/// top bar, not FreeShow's literal 40 px (our bar is taller).
+///
+/// Before the page has reported its measurements, the session's own maximum is
+/// used; CSS also caps the rendered drawer, so the first frame cannot overflow.
+pub fn max_height(viewport: Option<Viewport>) -> u32 {
+    viewport
+        .map(Viewport::max_height)
         .unwrap_or(MAX_DRAWER_HEIGHT)
 }
 
@@ -314,14 +329,32 @@ pub const DRAWER_SCRIPT: &str = r#"
         if (window.__cjcpDrawer) return;
         window.__cjcpDrawer = true;
 
+        const root = document.documentElement;
+
+        // The maximum is the space below the real top bar (B1); both CSS and
+        // the drag use the measured value, so they cannot disagree.
+        const syncTopBar = () => {
+            const bar = document.querySelector('.topbar');
+            const height = bar ? Math.round(bar.getBoundingClientRect().height) : 56;
+            root.style.setProperty('--topbar-h', height + 'px');
+            return height;
+        };
+
         const reportViewport = () => {
             dioxus.send(JSON.stringify({
                 kind: 'viewport',
                 height: Math.round(window.innerHeight),
+                top_bar: syncTopBar(),
             }));
         };
         reportViewport();
+        requestAnimationFrame(reportViewport);
+        window.setTimeout(reportViewport, 500);
         window.addEventListener('resize', reportViewport);
+        const bar = document.querySelector('.topbar');
+        if (bar && 'ResizeObserver' in window) {
+            new ResizeObserver(reportViewport).observe(bar);
+        }
 
         document.addEventListener('pointerdown', (event) => {
             if (event.button !== 0) return;
@@ -334,14 +367,17 @@ pub const DRAWER_SCRIPT: &str = r#"
             const startY = event.clientY;
             let height = Math.round(drawer.getBoundingClientRect().height);
             let moved = false;
-            const root = document.documentElement;
+            const maxHeight = Math.max(
+                40,
+                Math.round(window.innerHeight) - syncTopBar(),
+            );
 
             root.style.setProperty('--drawer-drag-h', height + 'px');
             document.body.classList.add('drawer-dragging');
 
             const move = (ev) => {
                 height = Math.round(window.innerHeight - ev.clientY);
-                height = Math.max(40, Math.min(window.innerHeight - 40, height));
+                height = Math.max(40, Math.min(maxHeight, height));
                 if (Math.abs(ev.clientY - startY) >= 2) moved = true;
                 root.style.setProperty('--drawer-drag-h', height + 'px');
             };
@@ -353,7 +389,12 @@ pub const DRAWER_SCRIPT: &str = r#"
                 drawer.style.setProperty('--drawer-h', height + 'px');
                 if (!moved) return;
                 window.__cjcpSuppressClickUntil = performance.now() + 80;
-                dioxus.send(JSON.stringify({ kind: 'drawer_resize', height }));
+                dioxus.send(JSON.stringify({
+                    kind: 'drawer_resize',
+                    height,
+                    inner_height: Math.round(window.innerHeight),
+                    top_bar: syncTopBar(),
+                }));
             };
 
             window.addEventListener('pointermove', move);
@@ -431,28 +472,55 @@ mod tests {
 
     #[test]
     fn a_remembered_height_below_the_default_reopens_at_300() {
-        assert_eq!(remembered_open_height(40, 760), 300);
-        assert_eq!(remembered_open_height(80, 760), 300);
-        assert_eq!(remembered_open_height(299, 760), 300);
-        assert_eq!(remembered_open_height(300, 760), 300);
+        assert_eq!(remembered_open_height(40, 744), 300);
+        assert_eq!(remembered_open_height(80, 744), 300);
+        assert_eq!(remembered_open_height(299, 744), 300);
+        assert_eq!(remembered_open_height(300, 744), 300);
     }
 
     #[test]
     fn a_remembered_height_above_the_default_is_kept_and_window_clamped() {
-        assert_eq!(remembered_open_height(520, 760), 520);
-        assert_eq!(remembered_open_height(1200, 760), 760);
-        assert_eq!(remembered_open_height(1200, 1360), 1200);
+        assert_eq!(remembered_open_height(520, 744), 520);
+        assert_eq!(remembered_open_height(1200, 744), 744);
+        assert_eq!(remembered_open_height(1200, 1344), 1200);
         assert_eq!(remembered_open_height(520, 40), 40);
     }
 
     #[test]
     fn drag_heights_are_clamped_to_the_drawer_range() {
-        assert_eq!(clamp_drag_height(0, 760), 40);
-        assert_eq!(clamp_drag_height(-20, 760), 40);
-        assert_eq!(clamp_drag_height(520, 760), 520);
-        assert_eq!(clamp_drag_height(2000, 760), 760);
-        assert_eq!(max_height(Some(800)), 760);
+        let at_800 = Viewport {
+            inner_height: 800,
+            top_bar_height: 56,
+        };
+        assert_eq!(at_800.max_height(), 744);
+        assert_eq!(max_height(Some(at_800)), 744);
+        assert_eq!(
+            max_height(Some(Viewport {
+                inner_height: 800,
+                top_bar_height: 40,
+            })),
+            760
+        );
+        assert_eq!(
+            max_height(Some(Viewport {
+                inner_height: 1400,
+                top_bar_height: 56,
+            })),
+            1344
+        );
+        assert_eq!(
+            max_height(Some(Viewport {
+                inner_height: 50,
+                top_bar_height: 56,
+            })),
+            40
+        );
         assert_eq!(max_height(None), 1200);
+
+        assert_eq!(clamp_drag_height(0, 744), 40);
+        assert_eq!(clamp_drag_height(-20, 744), 40);
+        assert_eq!(clamp_drag_height(520, 744), 520);
+        assert_eq!(clamp_drag_height(2000, 744), 744);
     }
 
     #[test]

@@ -119,11 +119,22 @@ body {
 
 .workspace {
     flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* The padding lives on the inner frame: the outer flex item can shrink to zero
+   when the drawer takes everything below the top bar, while the ordinary
+   layout keeps its 12 px breathing room. */
+.workspace-grid {
+    flex: 1 1 auto;
+    min-height: 0;
     display: grid;
     grid-template-columns: var(--left-w, 280px) 6px minmax(0, 1fr) 6px var(--right-w, 360px);
     gap: 6px;
     padding: 12px;
-    min-height: 0;
+    box-sizing: border-box;
 }
 
 /* ---------- drawer ---------- */
@@ -134,7 +145,7 @@ body {
     flex-direction: column;
     height: var(--drawer-h, 300px);
     min-height: 40px;
-    max-height: calc(100vh - 40px);
+    max-height: calc(100vh - var(--topbar-h, 56px));
     box-sizing: border-box;
     overflow: hidden;
     background: var(--panel);

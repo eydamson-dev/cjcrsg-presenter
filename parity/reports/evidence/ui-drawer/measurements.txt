@@ -6,14 +6,33 @@ X11 client window: 1280x827. Native menu bar inside the window: 27 px.
 WebView content box measured by window.innerWidth x window.innerHeight: 1280x800.
 Content crops in this folder are the WebView area only: 1280x800.
 
-4 px accent-tinted grab bar: rows 500..503 at x=500, colour (145, 15, 96).
-Strip background below it: (30, 34, 43) (36 rows + the 4 px bar = 40).
-Open drawer top: y=500; content starts at y=540; default height 300, content 260.
-Collapsed drawer top: y=760; height 40; no content below it.
+Maximum derived from the shell
+------------------------------
+The page measures `.topbar` itself; in the steady layout it is 56 px
+(44 px bar + 6 px padding top/bottom). `--topbar-h` is set to that measurement,
+and CSS uses `max-height: calc(100vh - var(--topbar-h))`. The drag script and
+the Rust clamp use the same number. At innerHeight 800 the maximum is 744.
 
-Active tab background at (120,520): (47, 53, 66).
-Inactive tab background at (300,520): (30, 34, 43).
-Active underline rows y=538..539: (240, 0, 140) / (240, 0, 140) (2 px, accent #f0008c).
+drawer-max-1280x800.png: the drawer top bar starts at y=56 and the bottom row of
+y=799 is still drawer panel (36,40,50): the full 744 px drawer is visible, with
+its bottom edge on the window edge. Content height = 744 - 40 = 704.
+
+The workspace is wrapped in an inner frame so its 12 px padding cannot force the
+drawer past the window bottom; at the maximum the three columns have no height.
+
+Default and collapsed
+---------------------
+4 px accent-tinted grab bar: rows 500..503 at x=500, colour (145,15,96).
+Strip background below it: (30,34,43); 4 + 36 = 40 px.
+drawer-media-1280x800.png: open drawer top y=500, content starts y=540,
+default height 300, content 260.
+drawer-collapsed-1280x800.png: drawer top y=760, height 40, Media still active,
+no content below it.
+
+Active tab background at (120,520): (47,53,66).
+Inactive tab background at (300,520): (30,34,43).
+Active underline rows y=538..539: (240,0,140) / (240,0,140) (2 px, accent
+#f0008c).
 
 Info column left border at x=990; column spans x=990..1279 = 290 px.
 Clock time glyphs: accent #f0008c, bounding box x=1064..1200, y=644..669 in the
@@ -21,18 +40,34 @@ open-Media capture; centred in x=990..1279 (column centre 1134.5).
 
 Clock: same session, captures 1.4 s apart, 16:29:18 -> 16:29:19 (clock-tick.png).
 
-Persistence (session.json observed, CJCRSG_DATA_DIR=/tmp/opencode/ui-drawer-data):
+Content overflow
+----------------
+drawer-overflow-1280x800.png: a 45-asset project on the Media tab at the default
+300 px height. The content area is 260 px, a vertical scrollbar is visible at
+x=983, rows are clipped at the drawer boundary, and the drawer stays at 300
+(top y=500). The 290 px clock column is not pushed sideways.
+
+Session clamp and remembered heights
+------------------------------------
+Persistence (session.json observed):
   drag release at 520 -> layout.drawer_height = 520
-  drag release at 79  -> collapsed to 40; remembered stayed 300 (sub-80 release is not persisted)
+  drag release at 79  -> collapsed to 40; remembered stayed 300 (sub-80 release
+                         is not persisted)
   drag release at 80  -> open at 80; layout.drawer_height = 80
   remembered 80 at launch -> drawer opened at 300 (B5 floor); session stayed 80
-  hand-edited 1201 at innerHeight 800 -> max-height clamps the rendered drawer to 760
-    (drawer-clamp-1201-1280x800.png: drawer top at CSS y=80; bottom 40 px clipped by the controller)
+  drag to the maximum at innerHeight 800 -> layout.drawer_height = 744
+  hand-edited 1201 at innerHeight 800 -> rendered at the 744 maximum
+  hand-edited 1201 at innerHeight 1302 -> session clamp wins: drawer 1200,
+    top y=102, bottom y=1301 (drawer-clamp-1200-1280x1302.png)
 
-Narrow width: the window's minimum inner size is 1024x640 (main.rs), so 400x600
-could not be reached; at 1024x640 all eight labels are visible and the strip does not wrap
+Narrow width
+------------
+The window's minimum inner size is 1024x640 (main.rs), so 400x600 could not be
+reached; at 1024x640 all eight labels are visible and the strip does not wrap
 (drawer-narrow-1024x640.png).
 
-Keyboard: parity/tools/check_keys.mjs run against apps/desktop/assets/keys.js in
-headless Chromium: 29/29 cases pass (keys-report.json). Ctrl+1..8 forwarded; Ctrl+0,
+Keyboard
+--------
+parity/tools/check_keys.mjs run against apps/desktop/assets/keys.js in headless
+Chromium: 29/29 cases pass (keys-report.json). Ctrl+1..8 forwarded; Ctrl+0,
 Ctrl+9, Ctrl+D, Ctrl+T not forwarded; Ctrl+1 and Ctrl+2 ignored in an input.

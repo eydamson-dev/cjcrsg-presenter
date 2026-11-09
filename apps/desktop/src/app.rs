@@ -46,9 +46,9 @@ pub fn App() -> Element {
             presenter_core::MAX_DRAWER_HEIGHT,
         )
     });
-    let mut viewport_height = use_signal(|| Option::<u32>::None);
+    let mut viewport = use_signal(|| Option::<drawer::Viewport>::None);
 
-    // The page reports its inner height (the contract's `innerHeight`) and the
+    // The page reports its inner height, the measured top-bar height and the
     // released drag height. The drag itself stays in the page so Rust is not
     // driven by pointer-move traffic.
     use_hook({
@@ -62,16 +62,30 @@ pub fn App() -> Element {
                     };
                     match value["kind"].as_str() {
                         Some("viewport") => {
-                            if let Some(height) = value["height"].as_u64() {
-                                tracing::debug!(height, "drawer viewport");
-                                viewport_height.set(Some(height.min(u32::MAX as u64) as u32));
-                            }
+                            let (Some(height), Some(top_bar)) =
+                                (value["height"].as_u64(), value["top_bar"].as_u64())
+                            else {
+                                continue;
+                            };
+                            tracing::debug!(height, top_bar, "drawer viewport");
+                            viewport.set(Some(drawer::Viewport {
+                                inner_height: height.min(u32::MAX as u64) as u32,
+                                top_bar_height: top_bar.min(u32::MAX as u64) as u32,
+                            }));
                         }
                         Some("drawer_resize") => {
                             let Some(height) = value["height"].as_i64() else {
                                 continue;
                             };
-                            let max = drawer::max_height(viewport_height());
+                            if let (Some(inner), Some(top_bar)) =
+                                (value["inner_height"].as_u64(), value["top_bar"].as_u64())
+                            {
+                                viewport.set(Some(drawer::Viewport {
+                                    inner_height: inner.min(u32::MAX as u64) as u32,
+                                    top_bar_height: top_bar.min(u32::MAX as u64) as u32,
+                                }));
+                            }
+                            let max = drawer::max_height(viewport());
                             let height = drawer::clamp_drag_height(height, max);
                             if height < drawer::COLLAPSE_THRESHOLD {
                                 // A sub-80 release collapses; B5 does not use
@@ -90,9 +104,9 @@ pub fn App() -> Element {
     });
 
     // A hand-edited remembered height (or a resized window) can exceed what the
-    // window can show; CSS clamps the rendered height to `100vh - 40`, and the
-    // handlers below collapse to the height that was actually visible.
-    let visible_height = move || drawer_height().min(drawer::max_height(viewport_height()));
+    // window can show; CSS clamps the rendered height to the space below the
+    // measured top bar, and the handlers below collapse to what was visible.
+    let visible_height = move || drawer_height().min(drawer::max_height(viewport()));
 
     // Global keyboard shortcuts, with FreeShow's bindings. The listener lives in
     // the page rather than on a focused element: an operator must not have to
@@ -106,7 +120,7 @@ pub fn App() -> Element {
                     if let Some(tab) = DrawerTab::from_shortcut(&key) {
                         drawer_tab.set(tab);
                         if drawer_height() < drawer::DEFAULT_OPEN_HEIGHT {
-                            let max = drawer::max_height(viewport_height());
+                            let max = drawer::max_height(viewport());
                             drawer_height.set(drawer::remembered_open_height(
                                 app.drawer_remembered_height(),
                                 max,
@@ -132,6 +146,12 @@ pub fn App() -> Element {
             spawn(async move {
                 tokio::time::sleep(Duration::from_millis(700)).await;
                 for step in action.split(',') {
+                    if let Some(ms) = step.strip_prefix("wait:") {
+                        if let Ok(ms) = ms.parse::<u64>() {
+                            tokio::time::sleep(Duration::from_millis(ms)).await;
+                        }
+                        continue;
+                    }
                     let script = match step {
                         "tab:shows" => "document.querySelectorAll('.drawer-tab')[0]?.click()".to_string(),
                         "tab:media" => "document.querySelectorAll('.drawer-tab')[1]?.click()".to_string(),
@@ -259,7 +279,7 @@ pub fn App() -> Element {
     let app_select = app.clone();
     let select_tab = move |tab: DrawerTab| {
         if drawer_height() <= drawer::COLLAPSED_HEIGHT {
-            let max = drawer::max_height(viewport_height());
+            let max = drawer::max_height(viewport());
             drawer_height.set(drawer::remembered_open_height(
                 app_select.drawer_remembered_height(),
                 max,
@@ -273,7 +293,7 @@ pub fn App() -> Element {
     let app_toggle = app.clone();
     let toggle_drawer = move |_| {
         if drawer_height() <= drawer::COLLAPSED_HEIGHT {
-            let max = drawer::max_height(viewport_height());
+            let max = drawer::max_height(viewport());
             drawer_height.set(drawer::remembered_open_height(
                 app_toggle.drawer_remembered_height(),
                 max,
@@ -362,6 +382,7 @@ pub fn App() -> Element {
                 class: "workspace",
                 style: "--left-w: {left_width}px; --right-w: {right_width}px;",
 
+                div { class: "workspace-grid",
                     aside { class: "column left",
                         OutlinePanel {
                             items: outline.clone(),
@@ -557,6 +578,7 @@ pub fn App() -> Element {
                         }
                     }
                 }
+            }
 
             Drawer {
                 active: drawer_tab(),

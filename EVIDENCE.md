@@ -483,8 +483,9 @@ Report: `parity/reports/ui-shell-2026-11-09.md`.
 
 Eight tabs in FreeShow's order, the project's media split into Media and Audio,
 a Shows list with slide counts and the live marker, honest empty states for the
-five tabs with no library, a 40/300 px drawer that drags and remembers its open
-height, Ctrl+1..8, and a 290 px clock column. Captured from the real controller
+five tabs with no library, a 40 px collapsed / 300 px default drawer whose
+maximum is the space below the measured top bar (744 px at an 800 px window),
+Ctrl+1..8, and a 290 px clock column. Captured from the real controller
 window with `GDK_BACKEND=x11` and `scripts/capture_window.sh`; the WebView
 content box was measured at 1280×800 (`window.innerHeight = 800`) and the
 screenshots are cropped to it.
@@ -497,6 +498,11 @@ missing file; clock and long-form date in the 290 px column.**
 **Collapsed — the 40 px strip; Media stays the active tab.**
 
 ![Drawer collapsed](parity/reports/evidence/ui-drawer/drawer-collapsed-1280x800.png)
+
+**Dragged to the maximum — 744 px at an 800 px content box, its bottom edge on
+the window edge, nothing clipped.**
+
+![Drawer at maximum](parity/reports/evidence/ui-drawer/drawer-max-1280x800.png)
 
 **Against FreeShow 1.6.8 at the same window size.** The differences are named
 in the report: no per-tab left sub-column, no drawer search, text labels instead
