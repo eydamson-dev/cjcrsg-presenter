@@ -11,6 +11,15 @@
         const target = event.target;
         // Never steal a key while someone is typing.
         if (target && target.closest && target.closest("input, textarea, select, [contenteditable]")) return;
+
+        // Ctrl+1..8 select drawer tabs. The page sends the chord; Rust owns the
+        // tab order and the "open to at least 300 px" behaviour.
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && /^[1-8]$/.test(event.key)) {
+            event.preventDefault();
+            dioxus.send("Ctrl+" + event.key);
+            return;
+        }
+
         if (!bindings.has(event.key)) return;
         // Space and PageDown would otherwise scroll or press a focused button.
         event.preventDefault();

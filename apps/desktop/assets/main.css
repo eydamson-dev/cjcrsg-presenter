@@ -126,6 +126,198 @@ body {
     min-height: 0;
 }
 
+/* ---------- drawer ---------- */
+
+.drawer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: var(--drawer-h, 300px);
+    min-height: 40px;
+    max-height: calc(100vh - 40px);
+    box-sizing: border-box;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 -1px 0 var(--line);
+}
+
+/* During a drag the page moves this property, so Rust is not in the pointer
+   loop and a re-render cannot snap the drawer back mid-gesture. */
+body.drawer-dragging .drawer {
+    height: var(--drawer-drag-h, 300px) !important;
+}
+
+.drawer-top {
+    position: relative;
+    flex: 0 0 40px;
+    height: 40px;
+    display: flex;
+    align-items: stretch;
+    background: #1e222b;
+    user-select: none;
+    cursor: ns-resize;
+}
+
+/* The grab bar, accent-tinted. It is decoration over the strip: pointer-events
+   none so a tab under it still receives its own click. */
+.drawer-top::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    pointer-events: none;
+}
+
+.drawer-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.drawer-tab {
+    flex: 0 0 auto;
+    appearance: none;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0 16px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.drawer-tab:hover {
+    color: var(--text);
+}
+
+.drawer-tab.active {
+    background: var(--panel-2);
+    color: var(--text);
+    border-bottom-color: var(--accent);
+}
+
+.drawer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.drawer-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 16px;
+}
+
+.drawer-info {
+    flex: 0 0 290px;
+    width: 290px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-left: 1px solid var(--line);
+}
+
+.drawer-clock {
+    width: 100%;
+    text-align: center;
+}
+
+.drawer-clock-time {
+    color: var(--accent);
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.drawer-clock-date {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.drawer .media-list {
+    max-height: none;
+    overflow: visible;
+}
+
+.show-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.show-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--line);
+}
+
+.show-row:last-child {
+    border-bottom: none;
+}
+
+.show-row .name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.show-row.current {
+    background: rgb(64 132 214 / 0.18);
+}
+
+.show-count {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.show-live {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.drawer-empty {
+    padding: 8px 2px;
+}
+
+.drawer-empty h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.drawer-empty p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.drawer-content .hint {
+    margin: 4px 0 0;
+}
+
 .resize-handle {
     width: 6px;
     cursor: col-resize;

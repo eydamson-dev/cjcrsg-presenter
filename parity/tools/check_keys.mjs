@@ -36,9 +36,9 @@ await page.evaluate(() => {
 await page.addScriptTag({ content: script });
 
 /** Dispatch a keydown on a selector and report what happened. */
-async function press(key, selector = "body") {
+async function press(key, selector = "body", modifiers = {}) {
     return page.evaluate(
-        ({ key, selector }) => {
+        ({ key, selector, modifiers }) => {
             const before = window.__sent.length;
             const target = document.querySelector(selector);
             target.focus?.();
@@ -46,16 +46,18 @@ async function press(key, selector = "body") {
                 key,
                 bubbles: true,
                 cancelable: true,
+                ...modifiers,
             });
             target.dispatchEvent(event);
             return {
                 key,
                 on: selector,
+                modifiers,
                 forwarded: window.__sent.slice(before),
                 prevented: event.defaultPrevented,
             };
         },
-        { key, selector }
+        { key, selector, modifiers }
     );
 }
 
@@ -70,8 +72,19 @@ for (const key of ["a", "ArrowUp", "Enter", "Home", "End", "Tab"]) {
 for (const key of [" ", "ArrowLeft", "Escape"]) {
     cases.push(await press(key, "#text"));
 }
+// Drawer tabs: Ctrl+1..8 forwarded, neighbours and other Ctrl bindings not.
+for (let digit = 1; digit <= 8; digit += 1) {
+    cases.push(await press(String(digit), "body", { ctrlKey: true }));
+}
+for (const key of ["0", "9", "d", "t"]) {
+    cases.push(await press(key, "body", { ctrlKey: true }));
+}
+// Typing in a field must also swallow the drawer shortcut.
+for (const key of ["1", "2"]) {
+    cases.push(await press(key, "#text", { ctrlKey: true }));
+}
 
-const expected = {
+const showBindings = {
     " ": "next",
     ArrowRight: "next",
     PageDown: "next",
@@ -80,13 +93,25 @@ const expected = {
     Escape: "clear",
 };
 
+function expectedResult(key, modifiers) {
+    if (modifiers.ctrlKey) {
+        if (!modifiers.altKey && /^[1-8]$/.test(key)) return "Ctrl+" + key;
+        return null;
+    }
+    // The page forwards the key name; Rust maps it to a command.
+    return Object.hasOwn(showBindings, key) ? key : null;
+}
+
 const checks = cases.map((result) => {
     const typing = result.on === "#text";
-    const shouldForward = !typing && Object.hasOwn(expected, result.key);
+    const expected = expectedResult(result.key, result.modifiers || {});
+    const shouldForward = !typing && expected !== null;
     const pass = shouldForward
-        ? result.forwarded.length === 1 && result.prevented
+        ? result.forwarded.length === 1 &&
+          result.forwarded[0] === expected &&
+          result.prevented
         : result.forwarded.length === 0 && !result.prevented;
-    return { ...result, shouldForward, pass };
+    return { ...result, expected, shouldForward, pass };
 });
 
 const failed = checks.filter((check) => !check.pass);

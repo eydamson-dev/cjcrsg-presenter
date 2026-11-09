@@ -1,0 +1,38 @@
+Drawer evidence measurements
+============================
+
+Capture: real controller window, GDK_BACKEND=x11, scripts/capture_window.sh.
+X11 client window: 1280x827. Native menu bar inside the window: 27 px.
+WebView content box measured by window.innerWidth x window.innerHeight: 1280x800.
+Content crops in this folder are the WebView area only: 1280x800.
+
+4 px accent-tinted grab bar: rows 500..503 at x=500, colour (145, 15, 96).
+Strip background below it: (30, 34, 43) (36 rows + the 4 px bar = 40).
+Open drawer top: y=500; content starts at y=540; default height 300, content 260.
+Collapsed drawer top: y=760; height 40; no content below it.
+
+Active tab background at (120,520): (47, 53, 66).
+Inactive tab background at (300,520): (30, 34, 43).
+Active underline rows y=538..539: (240, 0, 140) / (240, 0, 140) (2 px, accent #f0008c).
+
+Info column left border at x=990; column spans x=990..1279 = 290 px.
+Clock time glyphs: accent #f0008c, bounding box x=1064..1200, y=644..669 in the
+open-Media capture; centred in x=990..1279 (column centre 1134.5).
+
+Clock: same session, captures 1.4 s apart, 16:29:18 -> 16:29:19 (clock-tick.png).
+
+Persistence (session.json observed, CJCRSG_DATA_DIR=/tmp/opencode/ui-drawer-data):
+  drag release at 520 -> layout.drawer_height = 520
+  drag release at 79  -> collapsed to 40; remembered stayed 300 (sub-80 release is not persisted)
+  drag release at 80  -> open at 80; layout.drawer_height = 80
+  remembered 80 at launch -> drawer opened at 300 (B5 floor); session stayed 80
+  hand-edited 1201 at innerHeight 800 -> max-height clamps the rendered drawer to 760
+    (drawer-clamp-1201-1280x800.png: drawer top at CSS y=80; bottom 40 px clipped by the controller)
+
+Narrow width: the window's minimum inner size is 1024x640 (main.rs), so 400x600
+could not be reached; at 1024x640 all eight labels are visible and the strip does not wrap
+(drawer-narrow-1024x640.png).
+
+Keyboard: parity/tools/check_keys.mjs run against apps/desktop/assets/keys.js in
+headless Chromium: 29/29 cases pass (keys-report.json). Ctrl+1..8 forwarded; Ctrl+0,
+Ctrl+9, Ctrl+D, Ctrl+T not forwarded; Ctrl+1 and Ctrl+2 ignored in an input.

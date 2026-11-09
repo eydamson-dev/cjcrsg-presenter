@@ -10,7 +10,7 @@ use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
 use presenter_core::{Command, Revision, StageLayout};
 
-use crate::media_panel::MediaPanel;
+use crate::drawer::{self, Drawer, DrawerContent, DrawerTab};
 use crate::outline::{FocusView, OutlinePanel};
 use crate::output::{OutputProps, OutputRoot};
 use crate::preview_pane::PreviewPane;
@@ -37,6 +37,63 @@ pub fn App() -> Element {
     let window = use_window();
     let app: Rc<AppState> = shared.read().0.clone();
 
+    // Drawer state is local UI state: which tab, how tall, and how tall the
+    // window says it may be. The remembered height lives in the session store.
+    let mut drawer_tab = use_signal(|| DrawerTab::Shows);
+    let mut drawer_height = use_signal(|| {
+        drawer::remembered_open_height(
+            app.drawer_remembered_height(),
+            presenter_core::MAX_DRAWER_HEIGHT,
+        )
+    });
+    let mut viewport_height = use_signal(|| Option::<u32>::None);
+
+    // The page reports its inner height (the contract's `innerHeight`) and the
+    // released drag height. The drag itself stays in the page so Rust is not
+    // driven by pointer-move traffic.
+    use_hook({
+        let app = app.clone();
+        move || {
+            spawn(async move {
+                let mut eval = document::eval(drawer::DRAWER_SCRIPT);
+                while let Ok(raw) = eval.recv::<String>().await {
+                    let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) else {
+                        continue;
+                    };
+                    match value["kind"].as_str() {
+                        Some("viewport") => {
+                            if let Some(height) = value["height"].as_u64() {
+                                tracing::debug!(height, "drawer viewport");
+                                viewport_height.set(Some(height.min(u32::MAX as u64) as u32));
+                            }
+                        }
+                        Some("drawer_resize") => {
+                            let Some(height) = value["height"].as_i64() else {
+                                continue;
+                            };
+                            let max = drawer::max_height(viewport_height());
+                            let height = drawer::clamp_drag_height(height, max);
+                            if height < drawer::COLLAPSE_THRESHOLD {
+                                // A sub-80 release collapses; B5 does not use
+                                // the collapsed height as the remembered one.
+                                drawer_height.set(drawer::COLLAPSED_HEIGHT);
+                            } else {
+                                drawer_height.set(height);
+                                app.set_drawer_height(height);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        }
+    });
+
+    // A hand-edited remembered height (or a resized window) can exceed what the
+    // window can show; CSS clamps the rendered height to `100vh - 40`, and the
+    // handlers below collapse to the height that was actually visible.
+    let visible_height = move || drawer_height().min(drawer::max_height(viewport_height()));
+
     // Global keyboard shortcuts, with FreeShow's bindings. The listener lives in
     // the page rather than on a focused element: an operator must not have to
     // click the window first, and focus can sit on any button.
@@ -46,9 +103,76 @@ pub fn App() -> Element {
             spawn(async move {
                 let mut keys = document::eval(KEY_SCRIPT);
                 while let Ok(key) = keys.recv::<String>().await {
-                    if let Some(command) = Command::from_key(&key) {
+                    if let Some(tab) = DrawerTab::from_shortcut(&key) {
+                        drawer_tab.set(tab);
+                        if drawer_height() < drawer::DEFAULT_OPEN_HEIGHT {
+                            let max = drawer::max_height(viewport_height());
+                            drawer_height.set(drawer::remembered_open_height(
+                                app.drawer_remembered_height(),
+                                max,
+                            ));
+                        }
+                    } else if let Some(command) = Command::from_key(&key) {
                         app.apply(command);
                     }
+                }
+            });
+        }
+    });
+
+    // Evidence convenience: a synthetic X11 click is not delivered to an
+    // XWayland WebView, so a screenshot run can name the drawer action to take.
+    // The action is a real DOM click, through the same handlers an operator
+    // uses. Debug builds only; never part of the presentation path.
+    use_hook(|| {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+        if let Ok(action) = std::env::var("CJCRSG_DRAWER") {
+            spawn(async move {
+                tokio::time::sleep(Duration::from_millis(700)).await;
+                for step in action.split(',') {
+                    let script = match step {
+                        "tab:shows" => "document.querySelectorAll('.drawer-tab')[0]?.click()".to_string(),
+                        "tab:media" => "document.querySelectorAll('.drawer-tab')[1]?.click()".to_string(),
+                        "tab:audio" => "document.querySelectorAll('.drawer-tab')[2]?.click()".to_string(),
+                        "tab:overlays" => "document.querySelectorAll('.drawer-tab')[3]?.click()".to_string(),
+                        "tab:templates" => "document.querySelectorAll('.drawer-tab')[4]?.click()".to_string(),
+                        "tab:scripture" => "document.querySelectorAll('.drawer-tab')[5]?.click()".to_string(),
+                        "tab:calendar" => "document.querySelectorAll('.drawer-tab')[6]?.click()".to_string(),
+                        "tab:functions" => "document.querySelectorAll('.drawer-tab')[7]?.click()".to_string(),
+                        "collapse" | "open" => {
+                            "document.querySelector('.drawer-top')?.click()".to_string()
+                        }
+                        "dblclick" => "document.querySelectorAll('.drawer-tab')[1]?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }))".to_string(),
+                        step if step.starts_with("drag:") => {
+                            let target = step.trim_start_matches("drag:").parse::<u32>().unwrap_or(300);
+                            format!(
+                                "(() => {{
+                                    const strip = document.querySelector('.drawer-top');
+                                    if (!strip) return;
+                                    const startY = strip.getBoundingClientRect().top + 20;
+                                    const endY = window.innerHeight - {target};
+                                    strip.dispatchEvent(new PointerEvent('pointerdown', {{
+                                        bubbles: true, cancelable: true, button: 0,
+                                        clientX: 900, clientY: startY,
+                                    }}));
+                                    window.dispatchEvent(new PointerEvent('pointermove', {{
+                                        bubbles: true, clientX: 900, clientY: endY,
+                                    }}));
+                                    window.dispatchEvent(new PointerEvent('pointerup', {{
+                                        bubbles: true, clientX: 900, clientY: endY,
+                                    }}));
+                                }})();"
+                            )
+                        }
+                        _ => String::new(),
+                    };
+                    if script.is_empty() {
+                        continue;
+                    }
+                    let _ = document::eval(&script).await;
+                    tokio::time::sleep(Duration::from_millis(300)).await;
                 }
             });
         }
@@ -123,7 +247,55 @@ pub fn App() -> Element {
     let project_name = app.project_name();
     let slide = app.slide();
     let outline = app.outline();
-    let media = app.media();
+
+    let (drawer_media, drawer_audio) = crate::media_panel::split(app.media());
+    let drawer_content = DrawerContent {
+        shows: app.shows(),
+        live_show: app.current_show(),
+        media: drawer_media,
+        audio: drawer_audio,
+    };
+
+    let app_select = app.clone();
+    let select_tab = move |tab: DrawerTab| {
+        if drawer_height() <= drawer::COLLAPSED_HEIGHT {
+            let max = drawer::max_height(viewport_height());
+            drawer_height.set(drawer::remembered_open_height(
+                app_select.drawer_remembered_height(),
+                max,
+            ));
+        }
+        if drawer_tab() != tab {
+            drawer_tab.set(tab);
+        }
+    };
+
+    let app_toggle = app.clone();
+    let toggle_drawer = move |_| {
+        if drawer_height() <= drawer::COLLAPSED_HEIGHT {
+            let max = drawer::max_height(viewport_height());
+            drawer_height.set(drawer::remembered_open_height(
+                app_toggle.drawer_remembered_height(),
+                max,
+            ));
+        } else {
+            app_toggle.set_drawer_height(visible_height());
+            drawer_height.set(drawer::COLLAPSED_HEIGHT);
+        }
+    };
+
+    let app_collapse = app.clone();
+    let collapse_drawer = move |_tab: DrawerTab| {
+        if drawer_height() > drawer::COLLAPSED_HEIGHT {
+            app_collapse.set_drawer_height(visible_height());
+            drawer_height.set(drawer::COLLAPSED_HEIGHT);
+        }
+    };
+
+    let app_play = app.clone();
+    let play_show = move |index: usize| {
+        app_play.go_to_show(index);
+    };
 
     rsx! {
         document::Style { {crate::assets::MAIN_CSS} }
@@ -253,7 +425,6 @@ pub fn App() -> Element {
                                 position,
                                 total,
                             }
-                            MediaPanel { items: media }
                         }
                     }
 
@@ -386,6 +557,16 @@ pub fn App() -> Element {
                         }
                     }
                 }
+
+            Drawer {
+                active: drawer_tab(),
+                height: drawer_height(),
+                content: drawer_content,
+                on_select: EventHandler::new(select_tab),
+                on_toggle: EventHandler::new(toggle_drawer),
+                on_collapse: EventHandler::new(collapse_drawer),
+                on_play_show: EventHandler::new(play_show),
+            }
         }
     }
 }

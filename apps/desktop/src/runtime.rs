@@ -72,6 +72,8 @@ pub struct AppState {
     outline: Mutex<Vec<crate::outline::OutlineEntry>>,
     /// The project's media, resolved once per open.
     media: Mutex<Vec<crate::media_panel::MediaItem>>,
+    /// The project's shows in project order, for the drawer's Shows tab.
+    shows: Mutex<Vec<crate::drawer::ShowRow>>,
     /// The file this project came from, if any. Needed to write it back.
     project_path: Mutex<Option<std::path::PathBuf>>,
 }
@@ -84,6 +86,7 @@ impl AppState {
         let project = engine.project();
         let outline = crate::outline::build(&project);
         let media = crate::media_panel::build(&project, media_root_hint());
+        let shows = crate::drawer::build_shows(&project);
         Self {
             engine,
             windows: Mutex::new(HashMap::new()),
@@ -92,6 +95,7 @@ impl AppState {
             session: Mutex::new(session),
             outline: Mutex::new(outline),
             media: Mutex::new(media),
+            shows: Mutex::new(shows),
             project_path: Mutex::new(startup_project_path()),
         }
     }
@@ -121,8 +125,8 @@ impl AppState {
     /// Persist the controller's column widths. Clamped here as well as in the
     /// page, because a saved file can be edited.
     pub fn set_column_widths(&self, left: u32, right: u32) {
-        let prefs = presenter_core::LayoutPrefs::clamped(left, right);
         let mut session = self.session.lock().expect("session lock");
+        let prefs = session.layout.with_columns(left, right);
         if session.layout == prefs {
             return;
         }
@@ -132,8 +136,42 @@ impl AppState {
         }
     }
 
+    /// The remembered drawer open height, clamped for a hand-edited session.
+    pub fn drawer_remembered_height(&self) -> u32 {
+        match self.session.lock() {
+            Ok(session) => session.layout.remembered_drawer_height(),
+            Err(_) => presenter_core::DEFAULT_DRAWER_HEIGHT,
+        }
+    }
+
+    /// Persist the height a collapsed or released drawer should reopen at.
+    pub fn set_drawer_height(&self, height: u32) {
+        let mut session = match self.session.lock() {
+            Ok(session) => session,
+            Err(_) => return,
+        };
+        let clamped = height.clamp(
+            presenter_core::MIN_DRAWER_HEIGHT,
+            presenter_core::MAX_DRAWER_HEIGHT,
+        );
+        if session.layout.drawer_height == clamped {
+            return;
+        }
+        session.layout.drawer_height = clamped;
+        if let Err(error) = self.store.save(&session) {
+            tracing::warn!(%error, "could not save the drawer height");
+        }
+    }
+
     pub fn media(&self) -> Vec<crate::media_panel::MediaItem> {
         self.media.lock().expect("media lock").clone()
+    }
+
+    pub fn shows(&self) -> Vec<crate::drawer::ShowRow> {
+        match self.shows.lock() {
+            Ok(shows) => shows.clone(),
+            Err(_) => Vec::new(),
+        }
     }
 
     pub fn project_name(&self) -> String {
@@ -186,6 +224,7 @@ impl AppState {
         *self.outline.lock().expect("outline lock") = crate::outline::build(&document.project);
         *self.media.lock().expect("media lock") =
             crate::media_panel::build(&document.project, root.as_deref());
+        *self.shows.lock().expect("shows lock") = crate::drawer::build_shows(&document.project);
         self.engine.replace_project_at(document.project, root);
 
         let absolute = std::path::absolute(path)

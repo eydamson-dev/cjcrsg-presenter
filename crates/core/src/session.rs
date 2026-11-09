@@ -16,6 +16,17 @@ use serde::{Deserialize, Serialize};
 /// How many projects to remember. Enough to cover a week of services.
 pub const MAX_RECENT: usize = 10;
 
+/// The collapsed drawer is exactly its 40 px tab strip.
+pub const MIN_DRAWER_HEIGHT: u32 = 40;
+/// The tallest remembered value a hand-edited session may carry.
+pub const MAX_DRAWER_HEIGHT: u32 = 1200;
+/// The drawer's open height when nothing else has been remembered.
+pub const DEFAULT_DRAWER_HEIGHT: u32 = 300;
+
+fn default_drawer_height() -> u32 {
+    DEFAULT_DRAWER_HEIGHT
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Session {
     /// Newest first. `recent[0]` is what "restore on start" opens.
@@ -30,6 +41,11 @@ pub struct Session {
 pub struct LayoutPrefs {
     pub left_width: u32,
     pub right_width: u32,
+    /// The drawer height to reopen at. This is the remembered *open* height,
+    /// never the collapsed 40 px. `serde(default)` keeps an old session, which
+    /// did not have this field, loading with the default instead of failing.
+    #[serde(default = "default_drawer_height")]
+    pub drawer_height: u32,
 }
 
 impl Default for LayoutPrefs {
@@ -37,6 +53,7 @@ impl Default for LayoutPrefs {
         Self {
             left_width: 280,
             right_width: 360,
+            drawer_height: DEFAULT_DRAWER_HEIGHT,
         }
     }
 }
@@ -47,7 +64,26 @@ impl LayoutPrefs {
         Self {
             left_width: left.clamp(200, 480),
             right_width: right.clamp(260, 520),
+            drawer_height: DEFAULT_DRAWER_HEIGHT,
         }
+    }
+
+    /// Clamp new column widths without discarding the remembered drawer height.
+    pub fn with_columns(self, left: u32, right: u32) -> Self {
+        Self {
+            left_width: left.clamp(200, 480),
+            right_width: right.clamp(260, 520),
+            ..self
+        }
+    }
+
+    /// The remembered open height, clamped for a hand-edited session.
+    ///
+    /// The window may be shorter than this; the controller clamps again to
+    /// `innerHeight - 40` when it renders.
+    pub fn remembered_drawer_height(&self) -> u32 {
+        self.drawer_height
+            .clamp(MIN_DRAWER_HEIGHT, MAX_DRAWER_HEIGHT)
     }
 }
 
@@ -252,6 +288,7 @@ mod tests {
     fn column_widths_have_defaults_and_are_clamped() {
         let prefs = LayoutPrefs::default();
         assert_eq!((prefs.left_width, prefs.right_width), (280, 360));
+        assert_eq!(prefs.drawer_height, DEFAULT_DRAWER_HEIGHT);
 
         let wide = LayoutPrefs::clamped(9000, 1);
         assert_eq!((wide.left_width, wide.right_width), (480, 260));
@@ -265,6 +302,55 @@ mod tests {
         let json = r#"{"recent":[]}"#;
         let session: Session = serde_json::from_str(json).unwrap();
         assert_eq!(session.layout, LayoutPrefs::default());
+    }
+
+    #[test]
+    fn an_old_layout_without_a_drawer_height_reads_the_default() {
+        let json = r#"{"recent":[],"layout":{"left_width":300,"right_width":400}}"#;
+        let session: Session = serde_json::from_str(json).unwrap();
+        assert_eq!(session.layout.left_width, 300);
+        assert_eq!(session.layout.right_width, 400);
+        assert_eq!(session.layout.drawer_height, DEFAULT_DRAWER_HEIGHT);
+    }
+
+    #[test]
+    fn a_remembered_drawer_height_is_clamped_on_read() {
+        let mut prefs = LayoutPrefs {
+            drawer_height: 39,
+            ..Default::default()
+        };
+        assert_eq!(prefs.remembered_drawer_height(), MIN_DRAWER_HEIGHT);
+
+        prefs.drawer_height = 1201;
+        assert_eq!(prefs.remembered_drawer_height(), MAX_DRAWER_HEIGHT);
+
+        prefs.drawer_height = 520;
+        assert_eq!(prefs.remembered_drawer_height(), 520);
+    }
+
+    #[test]
+    fn changing_column_widths_keeps_the_remembered_drawer_height() {
+        let prefs = LayoutPrefs {
+            drawer_height: 520,
+            ..Default::default()
+        };
+        let resized = prefs.with_columns(9000, 1);
+        assert_eq!((resized.left_width, resized.right_width), (480, 260));
+        assert_eq!(resized.drawer_height, 520);
+    }
+
+    #[test]
+    fn a_remembered_drawer_height_round_trips_through_disk() {
+        let dir = scratch("drawer-height");
+        let store = SessionStore::at(dir.join("session.json"));
+
+        let mut session = Session::default();
+        session.layout.drawer_height = 520;
+        store.save(&session).unwrap();
+
+        let reloaded = store.load();
+        assert_eq!(reloaded.layout.drawer_height, 520);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

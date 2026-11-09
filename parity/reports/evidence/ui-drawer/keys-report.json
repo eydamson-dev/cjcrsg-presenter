@@ -1,0 +1,352 @@
+{
+  "script": "../../apps/desktop/assets/keys.js",
+  "passed": true,
+  "cases": [
+    {
+      "key": " ",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        " "
+      ],
+      "prevented": true,
+      "expected": " ",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "ArrowRight",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        "ArrowRight"
+      ],
+      "prevented": true,
+      "expected": "ArrowRight",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "PageDown",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        "PageDown"
+      ],
+      "prevented": true,
+      "expected": "PageDown",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "ArrowLeft",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        "ArrowLeft"
+      ],
+      "prevented": true,
+      "expected": "ArrowLeft",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "PageUp",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        "PageUp"
+      ],
+      "prevented": true,
+      "expected": "PageUp",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "Escape",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [
+        "Escape"
+      ],
+      "prevented": true,
+      "expected": "Escape",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "a",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "ArrowUp",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Enter",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Home",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "End",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Tab",
+      "on": "body",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": " ",
+      "on": "#text",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": " ",
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "ArrowLeft",
+      "on": "#text",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": "ArrowLeft",
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "Escape",
+      "on": "#text",
+      "modifiers": {},
+      "forwarded": [],
+      "prevented": false,
+      "expected": "Escape",
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "1",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+1"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+1",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "2",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+2"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+2",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "3",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+3"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+3",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "4",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+4"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+4",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "5",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+5"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+5",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "6",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+6"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+6",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "7",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+7"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+7",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "8",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [
+        "Ctrl+8"
+      ],
+      "prevented": true,
+      "expected": "Ctrl+8",
+      "shouldForward": true,
+      "pass": true
+    },
+    {
+      "key": "0",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "9",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "d",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "t",
+      "on": "body",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": null,
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "1",
+      "on": "#text",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": "Ctrl+1",
+      "shouldForward": false,
+      "pass": true
+    },
+    {
+      "key": "2",
+      "on": "#text",
+      "modifiers": {
+        "ctrlKey": true
+      },
+      "forwarded": [],
+      "prevented": false,
+      "expected": "Ctrl+2",
+      "shouldForward": false,
+      "pass": true
+    }
+  ]
+}

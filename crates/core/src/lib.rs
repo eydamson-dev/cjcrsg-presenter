@@ -30,5 +30,8 @@ pub use render::{
     RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageLayout, StageTimer,
     TransitionState,
 };
-pub use session::{LayoutPrefs, RecentProject, Session, SessionStore, MAX_RECENT};
+pub use session::{
+    LayoutPrefs, RecentProject, Session, SessionStore, DEFAULT_DRAWER_HEIGHT, MAX_DRAWER_HEIGHT,
+    MAX_RECENT, MIN_DRAWER_HEIGHT,
+};
 pub use shared::SharedEngine;

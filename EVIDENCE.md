@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 163 -->
+**As of `main`, 2026-11-09.** <!-- tests: 176 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -478,6 +478,38 @@ Compared with FreeShow 1.6.8, captured from its running window on X11:
 ![Controller comparison](parity/reports/evidence/ui-shell/comparison.png)
 
 Report: `parity/reports/ui-shell-2026-11-09.md`.
+
+## Controller drawer
+
+Eight tabs in FreeShow's order, the project's media split into Media and Audio,
+a Shows list with slide counts and the live marker, honest empty states for the
+five tabs with no library, a 40/300 px drawer that drags and remembers its open
+height, Ctrl+1..8, and a 290 px clock column. Captured from the real controller
+window with `GDK_BACKEND=x11` and `scripts/capture_window.sh`; the WebView
+content box was measured at 1280×800 (`window.innerHeight = 800`) and the
+screenshots are cropped to it.
+
+**Open on Media — non-audio assets only, with kind, origin, size, tags and a
+missing file; clock and long-form date in the 290 px column.**
+
+![Drawer open on Media](parity/reports/evidence/ui-drawer/drawer-media-1280x800.png)
+
+**Collapsed — the 40 px strip; Media stays the active tab.**
+
+![Drawer collapsed](parity/reports/evidence/ui-drawer/drawer-collapsed-1280x800.png)
+
+**Against FreeShow 1.6.8 at the same window size.** The differences are named
+in the report: no per-tab left sub-column, no drawer search, text labels instead
+of icons, and a simple show list instead of the reference's grid.
+
+![Drawer comparison](parity/reports/evidence/ui-drawer/drawer-comparison-1280x800.png)
+
+Measured from the pixels: the grab bar is 4 px, the active underline 2 px, the
+info column exactly 290 px, and the clock advances 16:29:18 → 16:29:19 between
+captures 1.4 s apart. `parity/reports/evidence/ui-drawer/measurements.txt` has
+the numbers; `keys-report.json` is 29/29 cases for the shipped key script.
+
+Report: `parity/reports/ui-drawer-2026-11-09.md`.
 
 ## Media panel
 
