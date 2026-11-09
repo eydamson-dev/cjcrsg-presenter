@@ -88,6 +88,21 @@ survives an output restart mid-playback.
 **Exit criteria:** each integration runs a documented hardware test; absent
 hardware skips cleanly rather than failing the suite.
 
+## Phase 7 — Controller UI parity
+
+Planned in `docs/ui-parity.md`; DEV-013. The outputs already target FreeShow's
+look; the controller does not.
+
+- [ ] Top bar and three resizable columns (left projects, centre show, right preview/tools)
+- [ ] Live slide preview in the centre, fed by `RenderState`
+- [ ] FreeShow palette, spacing and type, with attribution in `docs/provenance.md`
+- [ ] Column widths persisted in the session
+- [ ] Side-by-side controller screenshots as evidence
+
+**Exit criteria:** the controller has FreeShow's three-column shell, the live
+preview, resizable columns, and a screenshot comparison in `EVIDENCE.md`.
+Functionality already present keeps working; no engine changes.
+
 ## Phase 6 — Compatibility and release
 
 - Remote protocol parity, including auth and reconnection

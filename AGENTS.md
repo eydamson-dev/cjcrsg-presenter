@@ -16,6 +16,8 @@ Read in this order, and stop when you have what you need:
 7. **`docs/reference.md`** — how to run FreeShow, its ports, its file format.
 8. **`docs/windows.md`** — the Windows plan, its traps, and what CI can and
    cannot prove.
+9. **`docs/ui-parity.md`** — the controller-shell plan: why ours differs, the
+   target layout, and what moves where.
 
 For setting up a new machine (Rust, system libraries, Windows, the parity
 tooling) and the contribution rules in summary, see `CONTRIBUTING.md`.

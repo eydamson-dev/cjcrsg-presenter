@@ -60,8 +60,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 3 — data | **done for content and metadata**: single show, project with sections, whole store with categories/tags, native format, media copy-in, document import, recent/restore. No media library UI (durations, thumbnails, playlists) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
-| 7 — controller UI parity | not started. The controller is an experiment harness: one scrolling panel stack. FreeShow's shell is a top bar with resizable left / centre / right columns (projects, show, preview + tools). See DEV-013 |
 | 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. Linux: per-user tarball with desktop entry, icon and install script, built in CI. DPI/monitors/audio, Windows uninstall and AppImage/Flatpak unverified |
+| 7 — controller UI parity | **planned, not started.** The controller is a panel stack, not FreeShow's top bar + left/centre/right shell (DEV-013). The plan, target layout and milestones are in `docs/ui-parity.md` |
 
 ## Measured, with evidence
 
@@ -152,8 +152,9 @@ The **outputs** target FreeShow's look (renderer parity 0.35 % differing
 pixels). The **controller** does not: it is a panel stack built to drive the
 experiments, and it still said "Experiment 1" until this change. Porting the
 shell — top bar, left panel, show area, right preview/tools, resizable — is
-phase 7 and DEV-013. Everything the panels do now would move into it; none of
-the engine or format work depends on the layout.
+phase 7 and DEV-013, planned in `docs/ui-parity.md`. Everything the panels do
+now would move into it; none of the engine or format work depends on the
+layout.
 
 ## Known gaps and hazards
 
