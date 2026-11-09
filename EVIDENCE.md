@@ -202,6 +202,9 @@ an absolute media path that validation accepted and resolution then failed on.
 Replaced with a platform-independent check that also rejects `C:\…`, `C:foo`
 and UNC paths, with tests for each.
 
+**Re-run after the fix (`42545671999`): all four jobs green**, including
+`library (windows-latest)` in 2m35s and `desktop (windows-latest)` in 1m19s.
+
 This is the argument for running the library tests on Windows rather than only
 compiling there.
 

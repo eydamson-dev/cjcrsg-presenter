@@ -78,7 +78,8 @@ Read it before claiming parity on anything.
 
 Never *run* on Windows. But it now compiles and its library tests execute there:
 the first Windows run built the desktop binary in 3m51s and caught a real path
-bug (`Path::is_absolute` is false for `/home/...` on Windows). See
+bug (`Path::is_absolute` is false for `/home/...` on Windows); after the fix all
+four CI jobs are green. See
 `docs/windows.md`; monitors, DPI, fullscreen and audio still need a real machine.
 
 ## Tests
