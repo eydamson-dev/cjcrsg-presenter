@@ -142,17 +142,20 @@ fn convert_slide(slide: &RawSlide, id: &str, position: usize) -> Slide {
                     .as_deref()
                     .map(str::trim)
                     .filter(|s| !s.is_empty())?;
+                let kind = kind_from_path(src);
                 return Some(SlideElement {
                     id: format!("{id}-item-{index}"),
                     class_name: "media".to_string(),
                     style: item.style.clone(),
                     media: Some(MediaRef {
                         path: src.to_string(),
-                        kind: kind_from_path(src),
+                        kind,
                         // FreeShow keeps media outside any project folder.
                         origin: MediaOrigin::External,
                         looped: item.looped.unwrap_or(false),
-                        muted: item.muted.unwrap_or(true),
+                        // A video is muted by default so a WebView will autoplay
+                        // it; an audio item exists to be heard, so it is not.
+                        muted: item.muted.unwrap_or(kind != MediaKind::Audio),
                         fit: match item.fit.as_deref() {
                             Some("contain") => MediaFit::Contain,
                             _ => MediaFit::Cover,
@@ -382,6 +385,43 @@ mod tests {
 
         assert!(slide.elements[1].media.is_none(), "a text item stays text");
         assert_eq!(slide.elements[1].text, "Caption");
+    }
+
+    #[test]
+    fn an_audio_item_is_audible_by_default_and_a_video_is_not() {
+        let json = r#"["sounds", {
+            "name": "Sounds", "settings": {"activeLayout": "lay"},
+            "slides": {"s": {"group": ".", "items": [
+                {"type": "media", "src": "/srv/media/track.mp3"},
+                {"type": "media", "src": "/srv/media/clip.mp4"}
+            ]}},
+            "layouts": {"lay": {"slides": [{"id": "s"}]}}
+        }]"#;
+        let show = import_show(json).unwrap();
+        let slide = show.slides().next().unwrap().1;
+
+        let audio = slide.elements[0].media.as_ref().unwrap();
+        assert_eq!(audio.kind, MediaKind::Audio);
+        assert!(!audio.muted, "audio must be heard");
+
+        let video = slide.elements[1].media.as_ref().unwrap();
+        assert_eq!(video.kind, MediaKind::Video);
+        assert!(video.muted, "video autoplays only when muted");
+
+        // An authored flag always wins.
+        let authored = r#"["sounds", {
+            "name": "S", "settings": {"activeLayout": "lay"},
+            "slides": {"s": {"group": ".", "items": [
+                {"type": "media", "src": "/srv/media/track.mp3", "muted": true}
+            ]}},
+            "layouts": {"lay": {"slides": [{"id": "s"}]}}
+        }]"#;
+        let show = import_show(authored).unwrap();
+        let media = show.slides().next().unwrap().1.elements[0]
+            .media
+            .clone()
+            .unwrap();
+        assert!(media.muted);
     }
 
     #[test]

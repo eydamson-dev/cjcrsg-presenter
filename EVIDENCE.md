@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 156 -->
+**As of `main`, 2026-11-09.** <!-- tests: 157 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -354,6 +354,13 @@ tags=worship,background`.
 one is marked. Measured over the remote: `fx-1 → show 1 → tx-1 → show 0 → fx-1`.
 
 ![Project outline](parity/reports/evidence/outline/remote-980x780.png)
+
+**Audio plays.** Imported audio used to default to muted — silent by design.
+Now a 10 s WAV advances `currentTime` 1.693 → 9.712 s with `paused: false` and no
+error in the real app, which also answers the autoplay-policy question for
+WebKitGTK.
+
+Report: `parity/reports/audio-playback-2026-11-09.md`.
 
 **Focus view.** The controller's full-window project list: sections, large
 clickable shows, live marker and readout.

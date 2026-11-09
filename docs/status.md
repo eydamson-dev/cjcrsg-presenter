@@ -89,6 +89,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
+| Audio: imported audio is audible (was muted); WAV advances 1.69 s → 9.71 s, paused=false, no error | `parity/reports/audio-playback-2026-11-09.md` |
 | Stage message + countdown: 120 s set, pause holds 90 s, remote reports 299 994 ms running; split and live-only layouts | `parity/reports/stage-message-timer-2026-11-09.md` |
 | Output kinds: preview renders the next slide, confidence the live slide + clock | `parity/reports/output-kinds-2026-11-09.md` |
 
@@ -120,7 +121,7 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 
 ```
 crates/core     99
-crates/compat   40
+crates/compat   41
 crates/remote   14
 apps/desktop     3
 ```
@@ -154,6 +155,8 @@ apps/desktop     3
   the machine; they are not bundled, and a machine without them cannot import.
 - **The stage message is stage-only.** Routing it to an audience output is not
   implemented and would need an explicit operator choice.
+- **Audio has no routing.** It mixes into the default device; channels, fades
+  and multi-device output are Phase 5.
 - **Media has a partial coordinator.** Position, pause, restore and seek exist;
   continuous sync between outputs and audio routing do not.
 - **Media URLs are loopback HTTP.** The app serves only the project's own files;

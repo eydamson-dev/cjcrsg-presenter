@@ -78,7 +78,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                 let mut probe = document::eval(
                     r#"
                     (() => {
-                        const videos = [...document.querySelectorAll('video')];
+                        const videos = [...document.querySelectorAll('video, audio')];
                         dioxus.send(JSON.stringify({
                           linear: CSS.supports('animation-timing-function', 'linear(0, 0.5, 1)'),
                           videos: videos.map((video) => {
