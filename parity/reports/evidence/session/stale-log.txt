@@ -1,0 +1,1 @@
+2026-11-09T01:59:30.796411Z ERROR cjcrsg_presenter::runtime: could not load project; falling back to demo path=/tmp/opencode/session-demo/gone.cjcp error=No such file or directory (os error 2)

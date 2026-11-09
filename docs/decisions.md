@@ -126,3 +126,24 @@ is the opposite of porting behaviour deliberately.
 that any CI run can reproduce. Keep it installed for genuinely closed targets if
 they ever appear (a vendor SDK binary, an undocumented format); that is a
 different problem from this one.
+
+## D11 — Session state is a JSON file, not SQLite
+
+**Context.** DEV-005 originally said "no SQLite persistence", as if SQLite were
+the goal. What a service notices is remembering the last project, not the
+storage engine.
+
+**Decision.** The application's own state — recently opened projects — lives in
+one pretty-printed JSON file under the platform data directory
+(`session.json`, overridable with `CJCRSG_DATA_DIR`). Projects themselves are
+`.cjcp` JSON.
+
+**Why.** The file is a list of paths plus names: reading it is one small parse,
+writing it is an atomic rename, and a corrupt file degrades to an empty list.
+SQLite would add a dependency, a schema and a migration story for data that
+costs nothing to lose. If the store later grows into library metadata worth
+querying, that is the moment to reconsider — not before.
+
+**Consequences.** No migrations, no locks, trivially inspectable. FreeShow's own
+database import is separate work (DEV-005): we would read *its* store, not write
+our own with SQLite.

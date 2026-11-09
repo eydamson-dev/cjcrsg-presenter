@@ -11,6 +11,7 @@ use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCl
 use presenter_core::Revision;
 
 use crate::output::{OutputProps, OutputRoot};
+use crate::recent::RecentProjects;
 use crate::runtime::{AppState, OutputKind, Shared};
 
 #[component]
@@ -60,6 +61,8 @@ pub fn App() -> Element {
 
     let (slide_id, position, total) = app.cursor();
     let revision = app.revision();
+    let recent = app.recent();
+    let mut open_error = use_signal(|| Option::<String>::None);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
         .iter()
@@ -147,6 +150,25 @@ pub fn App() -> Element {
                         "Next group"
                     }
                 }
+            }
+
+            RecentProjects {
+                items: recent.clone(),
+                on_open: Some(EventHandler::new({
+                    let app = app.clone();
+                    move |path: String| {
+                        match app.open_project(std::path::Path::new(&path)) {
+                            Ok(()) => open_error.set(None),
+                            Err(error) => {
+                                tracing::error!(%error, "could not open project");
+                                open_error.set(Some(error));
+                            }
+                        }
+                    }
+                })),
+            }
+            if let Some(message) = open_error() {
+                p { class: "hint error", "{message}" }
             }
 
             section { class: "panel",

@@ -8,6 +8,7 @@ mod app;
 mod assets;
 mod cli;
 mod output;
+mod recent;
 mod render;
 mod runtime;
 mod slide;
@@ -83,6 +84,17 @@ fn render_to_file(
     requested: Option<presenter_core::Transition>,
     pause: Option<u32>,
 ) {
+    if layout == render::Layout::Recent {
+        let session = runtime::session_store().load();
+        let html = render::render_recent(&session);
+        if let Err(error) = std::fs::write(out, html) {
+            eprintln!("cannot write {}: {error}", out.display());
+            std::process::exit(1);
+        }
+        println!("rendered recent projects -> {}", out.display());
+        return;
+    }
+
     let document = match presenter_compat::cjcp::read(project) {
         Ok(document) => document,
         Err(error) => {

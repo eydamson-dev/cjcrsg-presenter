@@ -11,6 +11,7 @@ pub mod engine;
 pub mod hub;
 pub mod media;
 pub mod render;
+pub mod session;
 pub mod shared;
 
 pub use bundle::{bundle_media, BundleReport, BUNDLE_DIR};
@@ -21,4 +22,5 @@ pub use engine::{Position, ShowEngine};
 pub use hub::RenderHub;
 pub use media::{MediaAsset, MediaError, MediaKind, MediaOrigin};
 pub use render::{RenderElement, RenderSlide, RenderState, Revision, TransitionState};
+pub use session::{RecentProject, Session, SessionStore, MAX_RECENT};
 pub use shared::SharedEngine;

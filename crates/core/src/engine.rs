@@ -71,6 +71,21 @@ impl ShowEngine {
         &self.project
     }
 
+    /// Swap in a different project, as when the operator opens another one.
+    ///
+    /// Resets position and clear state, and publishes one revision with no
+    /// transition: opening a project is not a slide change, so it must not
+    /// animate. Returns whether the new project has anything to present.
+    pub fn replace_project(&mut self, project: Project) -> bool {
+        self.order = Self::build_order(&project);
+        self.project = project;
+        self.index = 0;
+        self.cleared = false;
+        self.transition = None;
+        self.revision += 1;
+        !self.order.is_empty()
+    }
+
     pub fn is_loaded(&self) -> bool {
         !self.order.is_empty()
     }
@@ -613,6 +628,40 @@ mod tests {
         assert!(state.slide.is_blank());
         assert_eq!(state.revision, 0);
         assert!(!engine.is_loaded());
+    }
+
+    #[test]
+    fn replacing_the_project_resets_position_without_animating() {
+        let mut engine = ShowEngine::new(fixture());
+        engine.next_slide();
+        engine.go_to_index(3);
+        engine.toggle_clear();
+        let before = engine.revision();
+
+        let mut other = fixture();
+        other.shows.truncate(1);
+        assert!(engine.replace_project(other));
+
+        let state = engine.state();
+        assert_eq!(engine.index(), 0);
+        assert!(!engine.is_cleared());
+        assert_eq!(state.slide_id, "a1");
+        assert!(
+            state.transition.is_none(),
+            "opening a project must not replay a transition"
+        );
+        assert_eq!(engine.revision(), before + 1, "outputs must re-render");
+        assert_eq!(engine.len(), 3, "the new project's slide count");
+    }
+
+    #[test]
+    fn replacing_with_an_empty_project_blanks_the_output() {
+        let mut engine = ShowEngine::new(fixture());
+        assert!(engine.is_loaded());
+        assert!(!engine.replace_project(Project::default()));
+        assert!(!engine.is_loaded());
+        assert_eq!(engine.revision(), 1);
+        assert!(engine.state().slide.is_blank());
     }
 
     #[test]

@@ -114,6 +114,17 @@ impl SharedEngine {
     pub fn project(&self) -> crate::domain::Project {
         self.lock().project().clone()
     }
+
+    /// Replace the loaded project and publish, even when the new one is empty:
+    /// outputs showing the old project must be blanked, not left stale.
+    pub fn replace_project(&self, project: crate::domain::Project) -> bool {
+        let mut loaded = false;
+        self.apply(|engine| {
+            loaded = engine.replace_project(project);
+            true
+        });
+        loaded
+    }
 }
 
 #[cfg(test)]
@@ -184,6 +195,15 @@ mod tests {
         let receiver = shared.subscribe();
         shared.next_slide();
         assert_eq!(receiver.borrow().revision, 1);
+    }
+
+    #[test]
+    fn replacing_a_project_publishes_even_when_the_new_one_is_empty() {
+        let shared = SharedEngine::new(engine());
+        let before = shared.revision();
+        assert!(!shared.replace_project(Project::default()));
+        assert_eq!(shared.revision(), before + 1);
+        assert!(shared.state().slide.is_blank());
     }
 
     #[test]

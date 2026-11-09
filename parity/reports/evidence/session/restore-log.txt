@@ -1,0 +1,1 @@
+2026-11-09T01:59:27.022814Z  INFO cjcrsg_presenter::runtime: project loaded path=/tmp/opencode/session-demo/wednesday.cjcp project=Wednesday Prayer slides=12

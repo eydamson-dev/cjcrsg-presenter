@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 91 -->
+**As of `main`, 2026-11-09.** <!-- tests: 101 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -206,6 +206,32 @@ Copied bytes are identical to the source (`sha256` matches for both files).
 
 Report: `parity/reports/media-copy-in-2026-11-09.md`, and
 `parity/reports/data-layer-2026-11-09.md` for the import itself.
+
+**Recent projects are remembered.** Two launches recorded two projects, newest
+first; launching with no arguments restored the newest. The panel, rendered by
+the real component at the controller's window size:
+
+![Recent projects](parity/reports/evidence/session/remote-980x780.png)
+
+```text
+$ cjcrsg-presenter recent
+session   /tmp/opencode/session-demo/state/session.json
+entries   2
+  Wednesday Prayer — /tmp/opencode/session-demo/wednesday.cjcp
+  Sunday Service — /tmp/opencode/session-demo/sunday.cjcp
+```
+
+Restore-on-start (no arguments) and the stale-entry fallback, from the captured
+logs:
+
+```text
+INFO cjcrsg_presenter::runtime: project loaded
+  path=/tmp/opencode/session-demo/wednesday.cjcp project=Wednesday Prayer slides=12
+ERROR cjcrsg_presenter::runtime: could not load project; falling back to demo
+  path=/tmp/opencode/session-demo/gone.cjcp error=No such file or directory (os error 2)
+```
+
+Raw: `evidence/session/`. Report: `parity/reports/persistence-2026-11-09.md`.
 
 ---
 

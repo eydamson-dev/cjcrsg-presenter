@@ -6,7 +6,8 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use dioxus_desktop::DesktopService;
 use presenter_core::{
-    Project, Revision, SharedEngine, Show, ShowEngine, Slide, SlideElement, SlideGroup,
+    Project, RecentProject, Revision, Session, SessionStore, SharedEngine, Show, ShowEngine, Slide,
+    SlideElement, SlideGroup,
 };
 
 /// The four outputs a service needs.
@@ -62,14 +63,58 @@ pub struct AppState {
     windows: Mutex<HashMap<OutputKind, Weak<DesktopService>>>,
     /// Last revision each output reported applying.
     applied: Mutex<HashMap<OutputKind, Revision>>,
+    /// Where recent projects are remembered. Cached in memory so a re-render
+    /// does not touch the disk every 250 ms.
+    store: SessionStore,
+    session: Mutex<Session>,
 }
 
 impl AppState {
     pub fn new() -> Self {
+        let store = session_store();
+        let session = store.load();
         Self {
             engine: shared_engine(),
             windows: Mutex::new(HashMap::new()),
             applied: Mutex::new(HashMap::new()),
+            store,
+            session: Mutex::new(session),
+        }
+    }
+
+    /// Recently opened projects, newest first.
+    pub fn recent(&self) -> Vec<RecentProject> {
+        self.session.lock().expect("session lock").recent.clone()
+    }
+
+    /// Open a `.cjcp`, making it live for every output and remembering it.
+    ///
+    /// Synchronous on purpose: reading a project is a few milliseconds, and the
+    /// controller has no busy state to show while it happens.
+    pub fn open_project(&self, path: &std::path::Path) -> Result<(), String> {
+        let document = presenter_compat::cjcp::read(path)
+            .map_err(|error| format!("cannot open {}: {error}", path.display()))?;
+
+        let name = document.project.name.clone();
+        self.engine.replace_project(document.project);
+
+        let absolute = std::path::absolute(path)
+            .unwrap_or_else(|_| path.to_path_buf())
+            .display()
+            .to_string();
+
+        match self.store.record(&absolute, &name) {
+            Ok(session) => {
+                *self.session.lock().expect("session lock") = session;
+                tracing::info!(path = %absolute, project = %name, "project opened");
+                Ok(())
+            }
+            Err(error) => {
+                // The project is open and usable; failing the open because the
+                // recent list could not be saved would be absurd.
+                tracing::warn!(%error, "could not save the recent-projects list");
+                Ok(())
+            }
         }
     }
 
@@ -172,9 +217,28 @@ pub fn shared_engine() -> Arc<SharedEngine> {
         .clone()
 }
 
-/// Load `CJCRSG_PROJECT` when the app was started with a `.cjcp` path.
+/// The session file, in the platform's application-data directory.
+///
+/// `CJCRSG_DATA_DIR` overrides it, so a test or a demonstration never reads or
+/// writes the operator's real list.
+pub fn session_store() -> SessionStore {
+    let directory = std::env::var_os("CJCRSG_DATA_DIR")
+        .map(std::path::PathBuf::from)
+        .or_else(|| dirs::data_dir().map(|base| base.join("cjcrsg-presenter")))
+        .unwrap_or_else(|| std::path::PathBuf::from(".cjcrsg-presenter"));
+
+    SessionStore::at(directory.join("session.json"))
+}
+
+/// The project to open at launch: the command-line path, else the last one
+/// opened. A stale entry falls back to the demo rather than an error screen.
 fn load_project() -> Option<Project> {
-    let path = std::env::var("CJCRSG_PROJECT").ok()?;
+    let store = session_store();
+    let explicit = std::env::var("CJCRSG_PROJECT").ok();
+    let path = explicit
+        .clone()
+        .or_else(|| store.load().last().map(|entry| entry.path.clone()))?;
+
     match presenter_compat::cjcp::read(std::path::Path::new(&path)) {
         Ok(document) => {
             tracing::info!(
@@ -183,6 +247,12 @@ fn load_project() -> Option<Project> {
                 slides = document.project.slide_count(),
                 "project loaded"
             );
+            if explicit.is_some() {
+                // Opening from the command line counts as opening it.
+                if let Err(error) = store.record(&path, &document.project.name) {
+                    tracing::warn!(%error, "could not record the project as recent");
+                }
+            }
             Some(document.project)
         }
         Err(error) => {

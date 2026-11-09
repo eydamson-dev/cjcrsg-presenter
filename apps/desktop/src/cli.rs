@@ -208,6 +208,17 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             Ok(Action::Handled)
         }
 
+        [command, ..] if command == "recent" => {
+            let store = crate::runtime::session_store();
+            let session = store.load();
+            out(format!("session   {}", store.path().display()));
+            out(format!("entries   {}", session.recent.len()));
+            for entry in &session.recent {
+                out(format!("  {} — {}", entry.name, entry.path));
+            }
+            Ok(Action::Handled)
+        }
+
         [command, rest @ ..] if command == "serve" => {
             let mut port = presenter_remote::DEFAULT_PORT;
             let mut args = rest.iter();
@@ -248,6 +259,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                         layout = match args.next().map(String::as_str) {
                             Some("stage") => crate::render::Layout::Stage,
                             Some("audience") => crate::render::Layout::Audience,
+                            Some("recent") => crate::render::Layout::Recent,
                             other => return Err(format!("unknown layout {other:?}")),
                         };
                     }
@@ -323,6 +335,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
              cjcrsg-presenter inspect <file.cjcp>\n  \
              cjcrsg-presenter import-project <projects.json> <shows-dir> <out.cjcp> [--id ID]\n  \
              cjcrsg-presenter bundle <file.cjcp>  copy external media into <dir>/media\n  \
+             cjcrsg-presenter recent             list recently opened projects\n  \
              cjcrsg-presenter serve [--port N]   headless remote server\n  \
              cjcrsg-presenter render <in.cjcp> <out.html> [--layout stage|audience] [--slide N] \\n  \
              [--transition NAME] [--duration MS] [--easing NAME]"

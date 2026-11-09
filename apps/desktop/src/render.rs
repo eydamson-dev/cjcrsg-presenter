@@ -6,14 +6,29 @@
 //! makes visual regression testing possible on a machine in use.
 
 use dioxus::prelude::*;
-use presenter_core::{SharedEngine, Transition};
+use presenter_core::{Session, SharedEngine, Transition};
 
 use crate::assets::MAIN_CSS;
+use crate::recent::RecentProjects;
 use crate::slide::{SlideView, StageView};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
     Audience,
     Stage,
+    /// The controller's recent-projects panel. The project file is not read for
+    /// this layout; it comes from the session store.
+    Recent,
+}
+
+/// Render the recent-projects panel exactly as the controller does.
+pub fn render_recent(session: &Session) -> String {
+    let body = rsx! {
+        div { class: "controller",
+            RecentProjects { items: session.recent.clone(), on_open: None }
+        }
+    };
+    wrap(&dioxus_ssr::render_element(body), None)
 }
 
 pub fn render(
@@ -44,6 +59,9 @@ pub fn render(
                 notes: state.notes.clone(),
             }
         },
+        // `main` renders this layout from the session store, because it has
+        // nothing to do with the loaded project.
+        Layout::Recent => unreachable!("recent is rendered by render_recent"),
     };
 
     wrap(&dioxus_ssr::render_element(body), pause_at_ms)

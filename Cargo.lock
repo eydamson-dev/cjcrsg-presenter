@@ -396,6 +396,7 @@ dependencies = [
  "dioxus",
  "dioxus-desktop",
  "dioxus-ssr",
+ "dirs",
  "presenter-compat",
  "presenter-core",
  "presenter-remote",

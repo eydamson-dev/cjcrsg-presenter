@@ -28,6 +28,8 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
   native `.cjcp`/`.cjcs`; unknown fields survive a read-write cycle.
 - Make media portable: `bundle` copies external files into `<root>/media` and
   rewrites them to relative paths; `inspect` reports missing and invalid ones.
+- Remember work: recent projects in a JSON session file; the last project opens
+  on start, and the controller has an Open button per entry.
 - Navigate: next, previous, first, last, next/previous **group**, goto by index,
   clear/blank (which keeps the position).
 - Four independent output windows; the stage shows live + next + operator notes
@@ -45,7 +47,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 0 — architecture validation | **done.** All three experiments measured |
 | 1 — walking skeleton | **done** except the second physical display |
 | 2 — presentation engine | mostly: outputs, clear, stage, transitions with project timing, remote, groups. Missing stage timers, output layout options, style-level transitions, `custom.direction` |
-| 3 — data | import + native format + media references + copy-in. Missing persistence, document importers |
+| 3 — data | import + native format + media references + copy-in + recent/restore. Missing document importers and FreeShow DB import |
 | 4 — media engine | not started |
 | 5 — professional AV | not started (needs hardware) |
 | 6 — release/packaging | not started |
@@ -65,6 +67,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Transitions | `parity/reports/transitions-2026-11-09.md` |
 | Transition timing: 1200 ms imported timing honoured; sine/linear ratio 0.571 vs 0.586 | `parity/reports/transition-timing-2026-11-09.md` |
 | Media copy-in: copied bytes identical, project portable after the originals are deleted | `parity/reports/media-copy-in-2026-11-09.md` |
+| Persistence: two launches recorded, restore-on-start, stale entry falls back to demo | `parity/reports/persistence-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -90,20 +93,18 @@ four CI jobs are green. See
 ## Tests
 
 ```
-crates/core     60
+crates/core     70
 crates/compat   23
 crates/remote    8
 ```
 
 ## Next, in order
 
-1. **Persistence.** Recent projects, restore-on-start. The format is settled;
-   this is UI and storage plumbing.
-2. **Second physical display.** Experiment 1's placement and focus criteria are
+1. **Second physical display.** Experiment 1's placement and focus criteria are
    the only untested part of the walking skeleton. Needs hardware.
-3. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
+2. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
    cannot talk to us. This is the compatibility risk of Phase 2.
-4. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
+3. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
    CPU inside the app, where the process tree is stable.
 
 ## Known gaps and hazards

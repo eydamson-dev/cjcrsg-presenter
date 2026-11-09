@@ -1,0 +1,4 @@
+session   /tmp/opencode/session-demo/state/session.json
+entries   2
+  Wednesday Prayer — /tmp/opencode/session-demo/wednesday.cjcp
+  Sunday Service — /tmp/opencode/session-demo/sunday.cjcp
