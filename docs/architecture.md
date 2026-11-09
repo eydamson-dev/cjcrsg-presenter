@@ -174,11 +174,19 @@ poll Rust for progress.
 ## Media
 
 `<video>` in the WebView first. It is the cheapest path to parity for ordinary
-playback.
+playback, and it is what exists: a FreeShow media item becomes an `<img>`,
+`<video>` or `<audio>` in the slide, with its path resolved to a `file://` URL
+by the engine, never by the renderer.
 
-Video is also the largest unknown: the same clip in four WebViews may be decoded
-four times. That is Experiment 3, and its result decides the media architecture,
-not the other way round.
+**What the engine owns.** Whether the slide is live, and therefore whether its
+media plays; the current position belongs here too, so a reopened output can
+resume mid-clip instead of restarting it. The renderer applies that state and
+never decides it.
+
+**What is still open.** Video is the largest unknown: the same clip in four
+WebViews may be decoded four times. Experiment 3 measured HTML surfaces, not
+decoded video, so the four-video case is still unmeasured and decides the media
+architecture, not the other way round.
 
 Escape hatches, in order:
 
