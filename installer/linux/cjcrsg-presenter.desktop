@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=CJCRSG Presenter
+GenericName=Church Presentation
+Comment=Present songs, scripture and media from FreeShow projects
+Exec=cjcrsg-presenter %f
+Icon=cjcrsg-presenter
+Terminal=false
+Categories=Office;Presentation;
+Keywords=presentation;church;worship;lyrics;slides;freeshow;
+StartupNotify=true
+StartupWMClass=CJCRSG Presenter

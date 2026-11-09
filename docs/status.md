@@ -58,7 +58,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | 3 — data | **done for content and metadata**: single show, project with sections, whole store with categories/tags, native format, media copy-in, document import, recent/restore. No media library UI (durations, thumbnails, playlists) |
 | 4 — media engine | **started.** Items render, video plays in the app (loopback media server), timeline resumes mid-clip, 1080p decodes with 0 dropped frames over 10 minutes, outputs drift < 6 ms over 10 min. No audio routing or shared start instant |
 | 5 — professional AV | not started (needs hardware) |
-| 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. DPI/monitors/audio and uninstall unverified. Linux packaging not started |
+| 6 — release/packaging | Windows: installer verified on a clean Windows 11 VM (installs, shortcut, uninstall key, app launches); fixed a missing-CRT blocker. Linux: per-user tarball with desktop entry, icon and install script, built in CI. DPI/monitors/audio, Windows uninstall and AppImage/Flatpak unverified |
 
 ## Measured, with evidence
 
@@ -89,6 +89,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | elastic/bounce sampled to 101-point `linear()`; max error 1.25 % / 0.71 %, accepted by Chromium and WebKitGTK | `parity/reports/easing-2026-11-09.md` |
 | Windows: exe 2.5 MB, installer 3.6 MB built by CI; manifest asserted in the exe | `parity/reports/windows-packaging-2026-11-09.md` |
 | Windows install+launch on a clean VM; first build died on VCRUNTIME140.dll, static CRT fixed it; app runs | `parity/reports/windows-verification-2026-11-09.md` |
+| Linux tarball: desktop file validates, installs to a scratch prefix, packaged binary runs | `parity/reports/linux-packaging-2026-11-09.md` |
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s; three live surfaces, 0 dropped over 10 min (17.9k frames each) | `parity/reports/media-four-outputs-2026-11-09.md` |
 | Audio: imported audio is audible (was muted); WAV advances 1.69 s → 9.71 s, paused=false, no error | `parity/reports/audio-playback-2026-11-09.md` |

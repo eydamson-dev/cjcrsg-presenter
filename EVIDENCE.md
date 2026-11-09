@@ -465,6 +465,15 @@ and UNC paths, with tests for each.
 This is the argument for running the library tests on Windows rather than only
 compiling there.
 
+## Linux package
+
+Per-user tarball with a desktop entry, icon and installer; `desktop-file-validate`
+passes and the packaged binary runs.
+
+![Application icon](parity/reports/evidence/linux-package/icon.png)
+
+Report: `parity/reports/linux-packaging-2026-11-09.md`.
+
 ## Windows — installed and running
 
 The first VM run installed the app and then showed

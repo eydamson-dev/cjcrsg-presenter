@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="CJCRSG Presenter">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b222a"/>
+      <stop offset="1" stop-color="#0b0d10"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="44" fill="url(#bg)"/>
+  <rect x="40" y="56" width="176" height="112" rx="10" fill="#e6e8ea"/>
+  <rect x="40" y="56" width="176" height="112" rx="10" fill="none" stroke="#2a323c" stroke-width="4"/>
+  <rect x="56" y="76" width="96" height="10" rx="5" fill="#3b4650"/>
+  <rect x="56" y="96" width="128" height="10" rx="5" fill="#3b4650"/>
+  <rect x="56" y="116" width="72" height="10" rx="5" fill="#3b4650"/>
+  <path d="M108 128 L152 148 L108 168 Z" fill="#4084d6"/>
+  <rect x="104" y="176" width="48" height="10" rx="5" fill="#4084d6"/>
+  <rect x="88" y="196" width="80" height="8" rx="4" fill="#2a323c"/>
+</svg>

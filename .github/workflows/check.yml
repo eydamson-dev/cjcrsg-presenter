@@ -72,6 +72,25 @@ jobs:
       - name: Check
         run: ./scripts/check.sh
 
+      # A per-user tarball: binary, desktop entry, icon and installer.
+      - name: Package (Linux x64)
+        run: |
+          cargo build --release -p cjcrsg-presenter
+          mkdir -p dist/linux
+          cp target/release/cjcrsg-presenter dist/linux/
+          cp installer/linux/cjcrsg-presenter.desktop dist/linux/
+          cp installer/linux/cjcrsg-presenter.svg dist/linux/
+          cp installer/linux/install.sh dist/linux/
+          cp README.md LICENSE dist/linux/ 2>/dev/null || true
+          tar -C dist/linux -czf dist/cjcrsg-presenter-linux-x64.tar.gz .
+
+      - name: Upload Linux package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjcrsg-presenter-linux-x64
+          path: dist/cjcrsg-presenter-linux-x64.tar.gz
+          if-no-files-found: error
+
   # First real Windows build of the shell. Compiling proves the crate graph and
   # the MSVC link path; it does not prove the app runs (see docs/windows.md).
   desktop-windows:

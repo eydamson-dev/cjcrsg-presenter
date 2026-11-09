@@ -1,0 +1,7 @@
+./
+./LICENSE
+./README.md
+./install.sh
+./cjcrsg-presenter.svg
+./cjcrsg-presenter.desktop
+./cjcrsg-presenter
