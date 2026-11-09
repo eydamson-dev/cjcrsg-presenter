@@ -194,6 +194,10 @@ pub struct Project {
     pub id: Id,
     pub name: String,
     pub shows: Vec<Show>,
+    /// Category id to display name, when the source store provided them.
+    /// A show's `category` refers to one of these.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub categories: BTreeMap<Id, String>,
     /// Media referenced anywhere in the project. Paths are relative for
     /// bundled assets; see `crate::media`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -209,6 +213,13 @@ pub struct Show {
     pub id: Id,
     pub name: String,
     pub groups: Vec<SlideGroup>,
+    /// FreeShow's category id for this show. The name lives in
+    /// [`Project::categories`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<Id>,
+    /// FreeShow's show-level `metadata.tags`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
     /// Media referenced by this show's slides.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub media: Vec<crate::media::MediaAsset>,

@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 144 -->
+**As of `main`, 2026-11-09.** <!-- tests: 148 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -329,6 +329,12 @@ imported 2
   Sunday Morning -> /tmp/opencode/store/out/Sunday Morning.cjcp
 failed   1
   Broken One: project "Broken One" references show "nope", which is not in the shows folder
+```
+
+Categories and show tags come with it:
+
+```text
+  show  Parity Fixture (fx-show) category=Songs tags=worship,easter
 ```
 
 Report: `parity/reports/store-import-2026-11-09.md`.

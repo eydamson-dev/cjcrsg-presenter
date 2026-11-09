@@ -46,20 +46,37 @@ Note `media 0`: this store's shows reference no media. A real store's projects
 import with external media and need `bundle` per project to become portable —
 the importer does not silently copy gigabytes.
 
+## Categories and tags
+
+Category names live in FreeShow's `settings_synced.json`; shows reference one by
+id and carry `metadata.tags`. Both now import:
+
+```text
+  show  Parity Fixture (fx-show) category=Songs tags=worship,easter
+```
+
+The name is resolved from the store's category map; a malformed or missing
+`settings_synced.json` imports everything with no categories instead of failing
+the migration.
+
+Raw: `evidence/store/inspect-metadata.txt`, `settings_synced.json`.
+
 ## Tests
 
 - every project in the file becomes its own `.cjcp`, with the right name and
   slide count;
 - a project with a missing show is reported while the others import;
 - a folder without `projects.json` fails with a message naming the folder;
+- category names come from `settings_synced.json` into the project;
+- a malformed synced-settings file does not fail the migration;
 - names are sanitised and duplicates would differ.
 
 ## What DEV-005 still is
 
-The deviation was "FreeShow's own database is not imported". This closes the
-**content** half: projects and their shows migrate. Still not mapped:
+DEV-005 is now only **media metadata**: durations, thumbnails and playlists are
+not imported. Content, categories and tags are:
 
-- **categories and tags**, which FreeShow keeps in the project metadata;
-- **media metadata** (durations, thumbnails, playlists);
-- **the media folder itself** — `bundle` copies per project, it is not part of
-  this command.
+- projects and their shows migrate;
+- category names resolve from the store's synced settings;
+- show-level tags import and round-trip;
+- the media folder itself is still copied per project by `bundle`, not here.

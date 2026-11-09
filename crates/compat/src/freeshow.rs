@@ -111,6 +111,8 @@ pub fn import_show(json: &str) -> Result<Show, ImportError> {
         id,
         name: raw.name,
         groups,
+        category: raw.category,
+        tags: raw.metadata.tags.unwrap_or_default(),
         media,
         ..Default::default()
     })
@@ -216,6 +218,11 @@ fn convert_transition(raw: Option<&Value>) -> Option<Transition> {
 struct RawShow {
     #[serde(default = "unnamed")]
     name: String,
+    /// FreeShow's category id; the name is defined in the synced settings.
+    #[serde(default)]
+    category: Option<String>,
+    #[serde(default)]
+    metadata: RawMetadata,
     #[serde(default)]
     settings: RawSettings,
     #[serde(default)]
@@ -224,6 +231,12 @@ struct RawShow {
     layouts: BTreeMap<String, RawLayout>,
     #[serde(default)]
     media: BTreeMap<String, RawMedia>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct RawMetadata {
+    #[serde(default)]
+    tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -320,6 +333,27 @@ mod tests {
             transition.extra.contains_key("custom"),
             "a direction we do not model is kept, not dropped"
         );
+    }
+
+    #[test]
+    fn a_show_keeps_its_category_and_tags() {
+        let json = r#"["tagged", {
+            "name": "Tagged", "category": "song",
+            "metadata": {"tags": ["worship", "easter"]},
+            "settings": {"activeLayout": "lay"},
+            "slides": {"s": {"group": ".", "items": []}},
+            "layouts": {"lay": {"slides": [{"id": "s"}]}}
+        }]"#;
+        let show = import_show(json).unwrap();
+        assert_eq!(show.category.as_deref(), Some("song"));
+        assert_eq!(show.tags, ["worship", "easter"]);
+    }
+
+    #[test]
+    fn a_show_without_metadata_has_no_category_or_tags() {
+        let show = import_show(FIXTURE).unwrap();
+        assert!(show.category.is_none());
+        assert!(show.tags.is_empty());
     }
 
     #[test]

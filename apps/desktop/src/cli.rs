@@ -257,7 +257,27 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 document.extensions.len()
             ));
             for show in &document.project.shows {
-                out(format!("  show  {} ({})", show.name, show.id));
+                let category = show
+                    .category
+                    .as_ref()
+                    .map(|id| {
+                        document
+                            .project
+                            .categories
+                            .get(id)
+                            .cloned()
+                            .unwrap_or_else(|| id.clone())
+                    })
+                    .unwrap_or_else(|| "none".to_string());
+                let tags = if show.tags.is_empty() {
+                    String::new()
+                } else {
+                    format!(" tags={}", show.tags.join(","))
+                };
+                out(format!(
+                    "  show  {} ({}) category={category}{tags}",
+                    show.name, show.id
+                ));
                 for group in &show.groups {
                     out(format!(
                         "    group {} — {} slide(s)",
