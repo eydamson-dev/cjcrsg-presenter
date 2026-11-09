@@ -11,7 +11,7 @@ use presenter_core::{Session, SharedEngine, Transition};
 use crate::assets::MAIN_CSS;
 use crate::media_panel::MediaPanel;
 use crate::outline::{FocusView, OutlinePanel};
-use crate::recent::RecentProjects;
+use crate::projects::ProjectsPanel;
 use crate::slide::{SlideView, StageView};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,22 +22,40 @@ pub enum Layout {
     Preview,
     /// The speaker's view: live slide plus a clock.
     Confidence,
-    /// The project outline panel, as the controller renders it.
+    /// The project outline, sections included. The controller now renders it in
+    /// the drawer's Shows tab; this layout keeps a standalone evidence render.
     Outline,
     /// The full-screen focus view.
     Focus,
     /// The project's media list.
     Media,
-    /// The controller's recent-projects panel. The project file is not read for
+    /// The controller's left project browser. The project file is not read for
     /// this layout; it comes from the session store.
     Recent,
 }
 
-/// Render the recent-projects panel exactly as the controller does.
+/// Render the project browser exactly as the controller does, from the session
+/// store. The open project is not known here (the CLI has not read one), so the
+/// panel shows the recent rows alone.
 pub fn render_recent(session: &Session) -> String {
+    let rows = crate::projects::build(None, &session.recent);
     let body = rsx! {
         div { class: "controller",
-            RecentProjects { items: session.recent.clone(), on_open: None }
+            div {
+                class: "workspace-grid",
+                style: "--left-w: 280px; --right-w: 0px;",
+                aside { class: "column left",
+                    ProjectsPanel {
+                        rows,
+                        on_open: None,
+                        on_forget: None,
+                        project_path: None,
+                        on_bundle: None,
+                        bundle_status: String::new(),
+                        error: None,
+                    }
+                }
+            }
         }
     };
     wrap(&dioxus_ssr::render_element(body), None)
@@ -109,9 +127,6 @@ pub fn render(
                     items: crate::outline::build(&engine.project()),
                     current: engine.current_show(),
                     on_play: None,
-                    project_path: project_path.map(|path| path.display().to_string()),
-                    on_bundle: None,
-                    bundle_status: String::new(),
                 }
             }
         },

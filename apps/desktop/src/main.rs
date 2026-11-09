@@ -13,7 +13,7 @@ mod media_server;
 mod outline;
 mod output;
 mod preview_pane;
-mod recent;
+mod projects;
 mod render;
 mod runtime;
 mod slide;

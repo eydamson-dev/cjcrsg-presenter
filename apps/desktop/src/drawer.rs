@@ -6,9 +6,10 @@
 //! is live.
 
 use dioxus::prelude::*;
-use presenter_core::{Project, DEFAULT_DRAWER_HEIGHT, MAX_DRAWER_HEIGHT};
+use presenter_core::{DEFAULT_DRAWER_HEIGHT, MAX_DRAWER_HEIGHT};
 
 use crate::media_panel::{MediaItem, MediaList};
+use crate::outline::OutlineEntry;
 
 /// The strip is the whole drawer when collapsed.
 pub const COLLAPSED_HEIGHT: u32 = presenter_core::MIN_DRAWER_HEIGHT;
@@ -98,32 +99,14 @@ impl DrawerTab {
     }
 }
 
-/// One show in the Shows tab; the live marker is applied at render time.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ShowRow {
-    pub index: usize,
-    pub name: String,
-    pub slide_count: usize,
-}
-
-pub fn build_shows(project: &Project) -> Vec<ShowRow> {
-    project
-        .shows
-        .iter()
-        .enumerate()
-        .map(|(index, show)| ShowRow {
-            index,
-            name: show.name.clone(),
-            slide_count: show.slide_count(),
-        })
-        .collect()
-}
-
 /// Everything the active tab can draw. Grouped so the component keeps a
 /// readable prop list as more tabs gain content.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DrawerContent {
-    pub shows: Vec<ShowRow>,
+    /// The project outline for the Shows tab: sections and shows in project
+    /// entry order (P6). Built by [`crate::outline::build`]; the drawer is a
+    /// consumer of that model, not a second show list.
+    pub outline: Vec<OutlineEntry>,
     pub live_show: Option<usize>,
     pub media: Vec<MediaItem>,
     pub audio: Vec<MediaItem>,
@@ -214,7 +197,11 @@ pub fn Drawer(
                 div { class: "drawer-content",
                     match active {
                         DrawerTab::Shows => rsx! {
-                            ShowList { shows: content.shows, live_show: content.live_show, on_play_show }
+                            OutlineList {
+                                items: content.outline,
+                                current: content.live_show,
+                                on_play_show,
+                            }
                         },
                         DrawerTab::Media => rsx! {
                             if content.media.is_empty() {
@@ -245,30 +232,41 @@ pub fn Drawer(
 }
 
 #[component]
-fn ShowList(
-    shows: Vec<ShowRow>,
-    live_show: Option<usize>,
+fn OutlineList(
+    items: Vec<OutlineEntry>,
+    current: Option<usize>,
     on_play_show: EventHandler<usize>,
 ) -> Element {
     rsx! {
-        if shows.is_empty() {
+        if items.is_empty() {
             p { class: "hint", "No shows in this project." }
         } else {
-            div { class: "show-list",
-                for show in shows.iter().cloned() {
-                    div {
-                        key: "show-{show.index}",
-                        class: if live_show == Some(show.index) { "show-row current" } else { "show-row" },
-                        span { class: "name", "{show.name}" }
-                        span { class: "show-count", "{show.slide_count} slides" }
-                        if live_show == Some(show.index) {
-                            span { class: "show-live", "live" }
-                        }
-                        button {
-                            class: "btn small",
-                            onclick: move |_| on_play_show.call(show.index),
-                            "Play"
-                        }
+            div { class: "outline drawer-outline",
+                for (position, item) in items.iter().cloned().enumerate() {
+                    match item {
+                        OutlineEntry::Section { name } => rsx! {
+                            // A heading, not a row: a section is a marker in the
+                            // project's item list, not something Play can start.
+                            h3 { key: "section-{position}", class: "outline-section", "{name}" }
+                        },
+                        OutlineEntry::Show { name, index } => rsx! {
+                            div {
+                                key: "show-{index}",
+                                class: if current == Some(index) { "outline-show current" } else { "outline-show" },
+                                span { class: "name", "{name}" }
+                                if current == Some(index) {
+                                    span { class: "outline-badge", "live" }
+                                }
+                                button {
+                                    class: "btn small",
+                                    onclick: move |_| on_play_show.call(index),
+                                    "Play"
+                                }
+                            }
+                        },
+                        OutlineEntry::Other { label } => rsx! {
+                            div { key: "other-{position}", class: "outline-other", "{label}" }
+                        },
                     }
                 }
             }
@@ -419,7 +417,6 @@ pub const DRAWER_SCRIPT: &str = r#"
 #[cfg(test)]
 mod tests {
     use super::*;
-    use presenter_core::{Show, Slide, SlideGroup};
 
     #[test]
     fn tabs_are_in_freeshow_order_with_their_labels() {
@@ -548,47 +545,5 @@ mod tests {
             let top = inner - height;
             assert_eq!(pointer_y - top, 20, "grab offset at pointer y={pointer_y}");
         }
-    }
-
-    #[test]
-    fn shows_carry_project_order_and_slide_counts() {
-        fn show(id: &str, name: &str, slides: usize) -> Show {
-            Show {
-                id: id.into(),
-                name: name.into(),
-                groups: vec![SlideGroup {
-                    id: format!("{id}-group"),
-                    name: "Group".into(),
-                    slides: (0..slides)
-                        .map(|index| Slide {
-                            id: format!("{id}-{index}"),
-                            ..Default::default()
-                        })
-                        .collect(),
-                    ..Default::default()
-                }],
-                ..Default::default()
-            }
-        }
-
-        let project = Project {
-            shows: vec![
-                show("w", "Worship", 3),
-                show("a", "Announcements", 2),
-                show("c", "Communion", 4),
-            ],
-            ..Default::default()
-        };
-
-        let rows = build_shows(&project);
-        let summary: Vec<(&str, usize)> = rows
-            .iter()
-            .map(|row| (row.name.as_str(), row.slide_count))
-            .collect();
-        assert_eq!(
-            summary,
-            [("Worship", 3), ("Announcements", 2), ("Communion", 4)]
-        );
-        assert_eq!(rows[1].index, 1);
     }
 }

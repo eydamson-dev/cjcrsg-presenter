@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 177 -->
+**As of `main`, 2026-11-09.** <!-- tests: 184 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -523,6 +523,63 @@ their `session-*.json` files beside the images.
 `keys-report.json` is 29/29 cases for the shipped key script.
 
 Report: `parity/reports/ui-drawer-2026-11-09.md`.
+
+## Controller project browser
+
+The left column is **Projects**: the open file-backed project first, marked
+`current` with a 4 px accent left border, then the session's recent projects
+newest first, deduplicated, each with its path. A file that is absent or cannot
+be read says `missing` and its open action is disabled; the check runs when the
+panel renders, so a restored file becomes openable without a restart. Every row
+except the open project has a small **Forget** that removes it from the session
+and never touches the file. **Make portable** and its status moved to the
+panel's foot. The project outline moved into the drawer's **Shows** tab:
+sections are headings and shows keep the project's entry order, live marker and
+Play.
+
+**Three recent projects, one current, one missing — and the drawer's Shows tab
+with sections.** Captured from the real window with `GDK_BACKEND=x11` and
+`scripts/capture_window.sh`, cropped to the WebView content box measured at
+1280×800 (`innerHeight = 800`; `run-log-projects.txt`).
+
+![Project browser](parity/reports/evidence/ui-project-browser/browser-projects-1280x800.png)
+
+**The Shows tab after Play on Worship** — the live marker moved, the entry order
+did not; the controller published `worship-1`, 3 / 7.
+
+![Shows tab with sections](parity/reports/evidence/ui-project-browser/browser-shows-1280x800.png)
+
+**The empty state** — the contract's exact sentence, no rows, and the no-file
+foot. The built-in demo is not a row.
+
+![Empty project browser](parity/reports/evidence/ui-project-browser/browser-empty-1280x800.png)
+
+**Make portable in the foot** — the scratch project has no external media, so
+the status is the existing `copied 0`.
+
+![Make portable](parity/reports/evidence/ui-project-browser/browser-portable-1280x800.png)
+
+**Against FreeShow 1.6.8's project column at the same window size.** The
+differences are named in the report: no folder header or tree, no add/import
+button, no project or provider icons, and rows carry a path, `current`,
+`missing` and Forget where the reference shows a name only. The 4 px accent left
+border on the active row follows the reference's active-tab marking.
+
+![Project column comparison](parity/reports/evidence/ui-project-browser/browser-comparison-1280x800.png)
+
+Runtime checks in the same session, from the session file and the window:
+opening Browser Second refreshed it to the front (`session-open-second.json`);
+Forget removed exactly that entry and left `browser-second.cjcp` on disk
+(`session-forget-second.json`); clicking the missing row left the session
+untouched (`session-missing-click-unchanged.json`); a readable file with a newer
+`format_version` showed its refusal inline under the list with the project
+unchanged (`session-open-failed.json`); creating the missing file while the app
+ran cleared `missing` without an interaction
+(`browser-missing-before-1280x800.png` → `browser-missing-restored-1280x800.png`),
+and Make portable reported `copied 0`. `ssr-empty-state.html` is the headless
+render of the panel with no session, carrying the same empty sentence.
+
+Report: `parity/reports/ui-project-browser-2026-11-09.md`.
 
 ## Media panel
 

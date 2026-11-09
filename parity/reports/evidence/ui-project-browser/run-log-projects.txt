@@ -1,0 +1,6 @@
+2026-11-09T10:54:49.190819Z  INFO cjcrsg_presenter::runtime: project loaded path=/tmp/opencode/project-browser-evidence/projects/browser-main.cjcp project=Browser Main slides=7
+2026-11-09T10:54:49.234099Z DEBUG cjcrsg_presenter::app: drawer viewport height=793 top_bar=156
+2026-11-09T10:54:49.368481Z DEBUG cjcrsg_presenter::app: drawer viewport height=793 top_bar=56
+2026-11-09T10:54:49.370079Z DEBUG cjcrsg_presenter::app: drawer viewport height=793 top_bar=56
+2026-11-09T10:54:49.734071Z DEBUG cjcrsg_presenter::app: drawer viewport height=793 top_bar=56
+2026-11-09T10:54:51.971762Z DEBUG cjcrsg_presenter::app: drawer viewport height=800 top_bar=56

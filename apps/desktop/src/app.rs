@@ -11,10 +11,10 @@ use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCl
 use presenter_core::{Command, Revision, StageLayout};
 
 use crate::drawer::{self, Drawer, DrawerContent, DrawerTab};
-use crate::outline::{FocusView, OutlinePanel};
+use crate::outline::FocusView;
 use crate::output::{OutputProps, OutputRoot};
 use crate::preview_pane::PreviewPane;
-use crate::recent::RecentProjects;
+use crate::projects::{self, ProjectsPanel};
 use crate::runtime::{AppState, OutputKind, Shared};
 
 #[component]
@@ -36,6 +36,11 @@ pub fn App() -> Element {
 
     let window = use_window();
     let app: Rc<AppState> = shared.read().0.clone();
+    // Subscribe the controller to its own 250 ms tick. Engine revisions, the
+    // outputs' applied revisions and the project-browser file checks are not
+    // Dioxus signals, so without this read they would only refresh on an
+    // interaction.
+    let _tick = tick();
 
     // Drawer state is local UI state: which tab, how tall, and how tall the
     // window says it may be. The remembered height lives in the session store.
@@ -135,9 +140,10 @@ pub fn App() -> Element {
     });
 
     // Evidence convenience: a synthetic X11 click is not delivered to an
-    // XWayland WebView, so a screenshot run can name the drawer action to take.
-    // The action is a real DOM click, through the same handlers an operator
-    // uses. Debug builds only; never part of the presentation path.
+    // XWayland WebView, so a screenshot run can name the drawer or
+    // project-browser action to take. The action is a real DOM click, through
+    // the same handlers an operator uses. Debug builds only; never part of the
+    // presentation path.
     use_hook(|| {
         if !cfg!(debug_assertions) {
             return;
@@ -165,6 +171,38 @@ pub fn App() -> Element {
                             "document.querySelector('.drawer-top')?.click()".to_string()
                         }
                         "dblclick" => "document.querySelectorAll('.drawer-tab')[1]?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }))".to_string(),
+                        step if step.starts_with("open:") => {
+                            let name = js_string(step.trim_start_matches("open:"));
+                            format!(
+                                "(() => {{
+                                    const row = [...document.querySelectorAll('.project-row')]
+                                        .find((r) => r.querySelector('.name')?.textContent === {name});
+                                    row?.querySelector('.project-open')?.click();
+                                }})();"
+                            )
+                        }
+                        step if step.starts_with("forget:") => {
+                            let name = js_string(step.trim_start_matches("forget:"));
+                            format!(
+                                "(() => {{
+                                    const row = [...document.querySelectorAll('.project-row')]
+                                        .find((r) => r.querySelector('.name')?.textContent === {name});
+                                    row?.querySelector('.project-forget')?.click();
+                                }})();"
+                            )
+                        }
+                        step if step.starts_with("play:") => {
+                            let name = js_string(step.trim_start_matches("play:"));
+                            format!(
+                                "(() => {{
+                                    const row = [...document.querySelectorAll('.drawer-content .outline-show')]
+                                        .find((r) => r.querySelector('.name')?.textContent === {name});
+                                    row?.querySelector('button')?.click();
+                                }})();"
+                            )
+                        }
+                        "portable" => "document.querySelector('.projects-foot .btn')?.click()".to_string(),
+                        "top" => "document.querySelectorAll('.column, .drawer-content').forEach((el) => { el.scrollTop = 0; })".to_string(),
                         step if step.starts_with("drag:") => {
                             let target = step.trim_start_matches("drag:").parse::<u32>().unwrap_or(300);
                             format!(
@@ -236,6 +274,9 @@ pub fn App() -> Element {
     let revision = app.revision();
     let recent = app.recent();
     let mut open_error = use_signal(|| Option::<String>::None);
+    // Session and engine state are not Dioxus signals. Bumping this after an
+    // open or a forget is what tells the panel to re-read them.
+    let mut projects_revision = use_signal(|| 0u64);
     let mut message_text = use_signal(String::new);
     let mut timer_minutes = use_signal(|| 5u64);
     // Test-only: start in focus mode so the layout can be screenshotted.
@@ -277,9 +318,21 @@ pub fn App() -> Element {
     let slide = app.slide();
     let outline = app.outline();
 
+    // Re-read the session list whenever an open or forget has changed it; the
+    // read is also what subscribes this scope to the signal.
+    let _generation = projects_revision();
+    let open_path = app.project_path();
+    let project_rows = projects::build(
+        open_path
+            .as_deref()
+            .map(|path| (path, project_name.as_str())),
+        &recent,
+    );
+    let project_path_text = open_path.as_ref().map(|path| path.display().to_string());
+
     let (drawer_media, drawer_audio) = crate::media_panel::split(app.media());
     let drawer_content = DrawerContent {
-        shows: app.shows(),
+        outline: outline.clone(),
         live_show: app.current_show(),
         media: drawer_media,
         audio: drawer_audio,
@@ -324,6 +377,34 @@ pub fn App() -> Element {
     let app_play = app.clone();
     let play_show = move |index: usize| {
         app_play.go_to_show(index);
+    };
+
+    // The browser's open uses the same path as the CLI/open button. A failed
+    // open keeps the list and shows the error inline under it.
+    let app_open_row = app.clone();
+    let open_row = move |path: String| match app_open_row.open_project(std::path::Path::new(&path))
+    {
+        Ok(()) => {
+            open_error.set(None);
+            projects_revision += 1;
+        }
+        Err(error) => {
+            tracing::error!(%error, "could not open project");
+            open_error.set(Some(error));
+        }
+    };
+
+    let app_forget_row = app.clone();
+    let forget_row = move |path: String| {
+        if app_forget_row.forget_recent(&path) {
+            projects_revision += 1;
+        }
+    };
+
+    let app_bundle = app.clone();
+    let make_portable = move |_| match app_bundle.bundle_media() {
+        Ok(summary) => bundle_status.set(summary),
+        Err(error) => bundle_status.set(error),
     };
 
     rsx! {
@@ -393,42 +474,14 @@ pub fn App() -> Element {
 
                 div { class: "workspace-grid",
                     aside { class: "column left",
-                        OutlinePanel {
-                            items: outline.clone(),
-                            current: app.current_show(),
-                            on_play: Some(EventHandler::new({
-                                let app = app.clone();
-                                move |index: usize| { app.go_to_show(index); }
-                            })),
-                            project_path: app.project_path().map(|path| path.display().to_string()),
-                            on_bundle: Some(EventHandler::new({
-                                let app = app.clone();
-                                move |_| match app.bundle_media() {
-                                    Ok(summary) => bundle_status.set(summary),
-                                    Err(error) => bundle_status.set(error),
-                                }
-                            })),
+                        ProjectsPanel {
+                            rows: project_rows,
+                            on_open: Some(EventHandler::new(open_row)),
+                            on_forget: Some(EventHandler::new(forget_row)),
+                            project_path: project_path_text,
+                            on_bundle: Some(EventHandler::new(make_portable)),
                             bundle_status: bundle_status(),
-                        }
-
-                        RecentProjects {
-                            items: recent.clone(),
-                            on_open: Some(EventHandler::new({
-                                let app = app.clone();
-                                move |path: String| {
-                                    match app.open_project(std::path::Path::new(&path)) {
-                                        Ok(()) => open_error.set(None),
-                                        Err(error) => {
-                                            tracing::error!(%error, "could not open project");
-                                            open_error.set(Some(error));
-                                        }
-                                    }
-                                }
-                            })),
-                        }
-
-                        if let Some(message) = open_error() {
-                            p { class: "hint error", "{message}" }
+                            error: open_error(),
                         }
                     }
 
@@ -637,6 +690,26 @@ pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: Outpu
             }
         }
     });
+}
+
+/// Quote a value as a JavaScript string literal for the evidence hook.
+///
+/// The hook only receives operator-supplied names, never markup, but escaping
+/// the quote and the backslash keeps a name from becoming code.
+fn js_string(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('\'');
+    for character in value.chars() {
+        match character {
+            '\\' => out.push_str("\\\\"),
+            '\'' => out.push_str("\\'"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            _ => out.push(character),
+        }
+    }
+    out.push('\'');
+    out
 }
 
 /// Drag the two handles between the columns and report the widths to Rust.
