@@ -43,6 +43,7 @@ fn main() {
             transition,
             pause,
             resume_at,
+            stage_layout,
             message,
             timer,
         }) => {
@@ -55,6 +56,7 @@ fn main() {
                     transition,
                     pause,
                     resume_at,
+                    stage_layout,
                     message,
                     timer,
                 },
@@ -99,6 +101,7 @@ struct RenderRequest {
     transition: Option<presenter_core::Transition>,
     pause: Option<u32>,
     resume_at: Option<u64>,
+    stage_layout: Option<presenter_core::StageLayout>,
     message: Option<String>,
     timer: Option<u64>,
 }
@@ -111,6 +114,7 @@ fn render_to_file(project: &std::path::Path, out: &std::path::Path, request: &Re
         transition: requested,
         pause,
         resume_at,
+        stage_layout,
         message,
         timer,
     } = request;
@@ -148,6 +152,9 @@ fn render_to_file(project: &std::path::Path, out: &std::path::Path, request: &Re
     }
     if let Some(message) = message.as_deref() {
         engine.set_message(Some(message));
+    }
+    if let Some(layout) = stage_layout {
+        engine.set_stage_layout(*layout);
     }
     if let Some(seconds) = *timer {
         engine.set_timer(seconds);

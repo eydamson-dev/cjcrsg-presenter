@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 129 -->
+**As of `main`, 2026-11-09.** <!-- tests: 131 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -87,6 +87,10 @@ Report: `parity/reports/output-kinds-2026-11-09.md`.
 countdown ticks in the page and corrects on every publication.
 
 ![Stage with message and timer](parity/reports/evidence/stage/remote-1920x1080.png)
+
+Split and live-only stage layouts, both rendered at 1920×1080:
+
+![Stage layouts](parity/reports/evidence/stage/layouts.png)
 
 Report: `parity/reports/stage-message-timer-2026-11-09.md`.
 

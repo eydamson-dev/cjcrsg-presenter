@@ -12,7 +12,8 @@ use crate::clock::{Clock, SystemClock};
 use crate::domain::{MediaRef, Project, Show, Slide, SlideGroup, Transition};
 use crate::input::Command;
 use crate::render::{
-    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageTimer, TransitionState,
+    RenderElement, RenderMedia, RenderSlide, RenderState, Revision, StageLayout, StageTimer,
+    TransitionState,
 };
 
 /// A slide's address inside the project.
@@ -128,6 +129,7 @@ pub struct ShowEngine {
     /// in the room now.
     message: Option<String>,
     timer: Option<Countdown>,
+    stage_layout: StageLayout,
     clock: Arc<dyn Clock>,
 }
 
@@ -151,6 +153,7 @@ impl ShowEngine {
             },
             message: None,
             timer: None,
+            stage_layout: StageLayout::default(),
             clock: Arc::new(SystemClock::new()),
         }
     }
@@ -193,6 +196,16 @@ impl ShowEngine {
 
     pub fn message(&self) -> Option<&str> {
         self.message.as_deref()
+    }
+
+    /// Change how stage displays arrange their panes.
+    pub fn set_stage_layout(&mut self, layout: StageLayout) -> bool {
+        if self.stage_layout == layout {
+            return false;
+        }
+        self.stage_layout = layout;
+        self.revision += 1;
+        true
     }
 
     /// Set the countdown to `seconds`, paused at the start.
@@ -563,6 +576,7 @@ impl ShowEngine {
                 slide: RenderSlide::default(),
                 message: self.message.clone(),
                 timer,
+                stage_layout: self.stage_layout,
                 next,
                 transition: self.transition.clone(),
             };
@@ -576,6 +590,7 @@ impl ShowEngine {
             notes: slide.notes.clone(),
             message: self.message.clone(),
             timer,
+            stage_layout: self.stage_layout,
             next,
             transition: self.transition.clone(),
         }
@@ -1017,6 +1032,20 @@ mod tests {
             });
         }
         project
+    }
+
+    #[test]
+    fn the_stage_layout_publishes_and_ignores_a_repeat() {
+        let mut engine = ShowEngine::new(fixture());
+        assert_eq!(engine.state().stage_layout, StageLayout::Split);
+
+        let before = engine.revision();
+        assert!(engine.set_stage_layout(StageLayout::LiveOnly));
+        assert_eq!(engine.state().stage_layout, StageLayout::LiveOnly);
+        assert_eq!(engine.revision(), before + 1);
+
+        assert!(!engine.set_stage_layout(StageLayout::LiveOnly));
+        assert_eq!(engine.revision(), before + 1);
     }
 
     #[test]

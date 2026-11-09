@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour};
-use presenter_core::{Command, Revision};
+use presenter_core::{Command, Revision, StageLayout};
 
 use crate::output::{OutputProps, OutputRoot};
 use crate::recent::RecentProjects;
@@ -254,6 +254,26 @@ pub fn App() -> Element {
                             move |_| { app.clear_timer(); }
                         },
                         "Clear"
+                    }
+                }
+
+                div { class: "controls",
+                    label { class: "control-label", "Layout" }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.set_stage_layout(StageLayout::Split); }
+                        },
+                        "Split"
+                    }
+                    button {
+                        class: "btn small",
+                        onclick: {
+                            let app = app.clone();
+                            move |_| { app.set_stage_layout(StageLayout::LiveOnly); }
+                        },
+                        "Live only"
                     }
                 }
             }

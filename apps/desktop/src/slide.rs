@@ -4,7 +4,9 @@
 //! Real renderer parity is Experiment 2.
 
 use dioxus::prelude::*;
-use presenter_core::{easing_css, MediaKind, RenderMedia, RenderSlide, StageTimer, Transition};
+use presenter_core::{
+    easing_css, MediaKind, RenderMedia, RenderSlide, StageLayout, StageTimer, Transition,
+};
 
 #[component]
 pub fn SlideView(
@@ -90,6 +92,7 @@ pub fn StageView(
     notes: String,
     message: Option<String>,
     timer: Option<StageTimer>,
+    layout: StageLayout,
 ) -> Element {
     let timer_text = timer.map(|timer| {
         let seconds = timer.remaining_ms.div_ceil(1000);
@@ -136,20 +139,22 @@ pub fn StageView(
                     }
                 }
 
-                div { class: "pane",
-                    div { class: "pane-label", "Next" }
-                    div { class: "pane-body",
-                        if let Some(upcoming) = next {
-                            SlideView {
-                                slide: upcoming,
-                                output: String::new(),
-                                animate: false,
-                                revision: 0,
-                                transition: Transition::none(),
-                                play_media: false,
+                if layout == StageLayout::Split {
+                    div { class: "pane",
+                        div { class: "pane-label", "Next" }
+                        div { class: "pane-body",
+                            if let Some(upcoming) = next {
+                                SlideView {
+                                    slide: upcoming,
+                                    output: String::new(),
+                                    animate: false,
+                                    revision: 0,
+                                    transition: Transition::none(),
+                                    play_media: false,
+                                }
+                            } else {
+                                p { class: "blank", "End of show" }
                             }
-                        } else {
-                            p { class: "blank", "End of show" }
                         }
                     }
                 }

@@ -1,7 +1,7 @@
-# Stage message and countdown — 2026-11-09
+# Stage: message, countdown and layout — 2026-11-09
 
-DEV-007 listed "no timers, message, or layout options" on the stage. Two of the
-three now exist.
+DEV-007 listed "no timers, message, or layout options" on the stage. All three
+now exist, so the deviation is closed.
 
 ## What changed
 
@@ -12,7 +12,8 @@ three now exist.
 | Stage | A timer bar above the panes and a message banner below them; the countdown ticks in the page and corrects on every publication |
 | Controller | A "Stage" panel: message input with Send/Clear, countdown minutes with Set/Start/Pause/Clear |
 | Remote | `POST /api/message`, `/api/message/clear`, `/api/timer` `{seconds}`, `/api/timer/{start,pause,clear}`; the phone page has the controls and shows the remaining time |
-| Render CLI | `--message TEXT` and `--timer SECONDS` for reproducible stage evidence |
+| Render CLI | `--message TEXT`, `--timer SECONDS` and `--stage-layout split\|live-only` for reproducible stage evidence |
+| Layout | `StageLayout` in the published state: `split` (live + next) or `live-only` (full-width live) |
 
 Message and timer are **never rendered on an audience output**. An operator note
 to the team is not a slide, and a countdown on the congregation's screen would be
@@ -21,6 +22,20 @@ a mistake.
 The countdown ticks locally at 250 ms inside the stage page, using the published
 remaining time as its correction point. A per-second state publish would wake
 every output for a label, which the architecture forbids.
+
+## Layouts
+
+FreeShow's stage can be rearranged by dragging panes. We offer two presets,
+chosen from the controller or `POST /api/stage-layout`:
+
+- **split** (default): live and next side by side.
+- **live-only**: the live slide full width. Useful on a small stage screen or a
+  projector used as a confidence monitor.
+
+![Stage layouts: split and live-only](evidence/stage/layouts.png)
+
+The layout is in the published state, so every stage window agrees and a
+reopened one reconstructs correctly.
 
 ## Measured
 
@@ -54,8 +69,8 @@ and `-1280x720.png`.
 
 ## Not done
 
-- **No stage layout options.** The panes are still a fixed 50/50 split. FreeShow
-  can rearrange them, which is the rest of DEV-007.
+- **Two presets, not free arrangement.** FreeShow can drag pane sizes; ours is a
+  choice between two fixed arrangements.
 - **The message is stage-only.** FreeShow can route a message to an audience
   output; that is a deliberate omission here, not an oversight.
 - **No expiry behaviour.** When the countdown reaches zero nothing flashes,

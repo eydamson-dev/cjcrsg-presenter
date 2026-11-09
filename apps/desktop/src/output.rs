@@ -172,6 +172,7 @@ pub fn OutputRoot(props: OutputProps) -> Element {
                     notes: state.notes.clone(),
                     message: state.message.clone(),
                     timer: state.timer,
+                    layout: state.stage_layout,
                 }
             },
             // The operator's look-ahead: the slide after the live one, never

@@ -83,6 +83,10 @@ impl SharedEngine {
         self.apply_engine(|engine| engine.set_message(message.as_deref()))
     }
 
+    pub fn set_stage_layout(&self, layout: crate::render::StageLayout) -> bool {
+        self.apply_engine(|engine| engine.set_stage_layout(layout))
+    }
+
     pub fn set_timer(&self, seconds: u64) -> bool {
         self.apply_engine(|engine| engine.set_timer(seconds))
     }

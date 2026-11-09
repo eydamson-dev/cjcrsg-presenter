@@ -22,6 +22,8 @@ pub enum Action {
         pause: Option<u32>,
         /// Render as if the output reopened mid-clip.
         resume_at: Option<u64>,
+        /// Stage pane layout.
+        stage_layout: Option<presenter_core::StageLayout>,
         /// Stage message, for evidence renders.
         message: Option<String>,
         /// Stage countdown in seconds, started.
@@ -249,7 +251,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 return Err("usage: cjcrsg-presenter render <file.cjcp> <out.html> \
                      [--layout stage|audience] [--slide N] [--transition NAME] \
                      [--duration MS] [--easing NAME] [--resume-at MS] \
-                     [--message TEXT] [--timer SECONDS]"
+                     [--message TEXT] [--timer SECONDS] [--stage-layout split|live-only]"
                     .into());
             }
             let project = PathBuf::from(&rest[0]);
@@ -260,6 +262,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
             let mut pause = None;
             let mut resume_at = None;
             let mut message = None;
+            let mut stage_layout = None;
             let mut timer = None;
 
             let mut args = rest[2..].iter();
@@ -314,6 +317,15 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                                 .map_err(|_| format!("not a number: {value:?}"))?,
                         );
                     }
+                    "--stage-layout" => {
+                        stage_layout = Some(match args.next().map(String::as_str) {
+                            Some("split") => presenter_core::StageLayout::Split,
+                            Some("live-only") | Some("live") => {
+                                presenter_core::StageLayout::LiveOnly
+                            }
+                            other => return Err(format!("unknown stage layout {other:?}")),
+                        });
+                    }
                     "--message" => {
                         message = Some(args.next().ok_or("--message needs text")?.to_string());
                     }
@@ -353,6 +365,7 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                 transition,
                 pause,
                 resume_at,
+                stage_layout,
                 message,
                 timer,
             })

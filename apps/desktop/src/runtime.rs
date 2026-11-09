@@ -139,6 +139,10 @@ impl AppState {
         self.engine.set_message(message)
     }
 
+    pub fn set_stage_layout(&self, layout: presenter_core::StageLayout) -> bool {
+        self.engine.set_stage_layout(layout)
+    }
+
     pub fn set_timer(&self, seconds: u64) -> bool {
         self.engine.set_timer(seconds)
     }

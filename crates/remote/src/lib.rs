@@ -37,6 +37,7 @@ pub fn router(engine: Arc<SharedEngine>) -> Router {
         .route("/api/timer/start", post(timer_start))
         .route("/api/timer/pause", post(timer_pause))
         .route("/api/timer/clear", post(timer_clear))
+        .route("/api/stage-layout", post(stage_layout))
         .route("/api/next-group", post(next_group))
         .route("/api/goto", post(goto))
         .route("/api/previous-group", post(previous_group))
@@ -145,6 +146,18 @@ async fn timer(
     Json(body): Json<TimerBody>,
 ) -> impl IntoResponse {
     command(engine.set_timer(body.seconds))
+}
+
+#[derive(Debug, Deserialize)]
+struct StageLayoutBody {
+    layout: presenter_core::StageLayout,
+}
+
+async fn stage_layout(
+    State(engine): State<Arc<SharedEngine>>,
+    Json(body): Json<StageLayoutBody>,
+) -> impl IntoResponse {
+    command(engine.set_stage_layout(body.layout))
 }
 
 async fn timer_start(State(engine): State<Arc<SharedEngine>>) -> impl IntoResponse {
@@ -569,6 +582,39 @@ mod tests {
             .unwrap();
         assert_eq!(cleared.status(), StatusCode::OK);
         assert!(shared.snapshot().timer.is_none());
+    }
+
+    #[tokio::test]
+    async fn the_stage_layout_can_be_changed() {
+        let shared = engine();
+        let app = router(shared.clone());
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/stage-layout")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"layout":"live-only"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            shared.snapshot().stage_layout,
+            presenter_core::StageLayout::LiveOnly
+        );
+
+        let repeated = app
+            .oneshot(
+                Request::post("/api/stage-layout")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"layout":"live-only"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(repeated.status(), StatusCode::CONFLICT, "no change");
     }
 
     #[tokio::test]

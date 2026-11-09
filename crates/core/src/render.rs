@@ -35,12 +35,27 @@ pub struct RenderState {
     /// The stage countdown, if one is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timer: Option<StageTimer>,
+    /// How a stage display should arrange its panes.
+    #[serde(default)]
+    pub stage_layout: StageLayout,
     /// Describes the change that produced `revision`, if any.
     ///
     /// A renderer animates only when it already knows a *previous* revision. On
     /// first mount it renders directly, so reopening a window never replays a
     /// transition the congregation already saw.
     pub transition: Option<TransitionState>,
+}
+
+/// How a stage display arranges its panes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum StageLayout {
+    /// Live and next side by side. The default.
+    #[default]
+    Split,
+    /// Live only, full width: a small stage screen or a projector used as a
+    /// confidence monitor.
+    LiveOnly,
 }
 
 /// The stage countdown, as of the moment this state was produced.

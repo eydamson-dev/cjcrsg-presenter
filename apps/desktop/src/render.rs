@@ -64,6 +64,7 @@ pub fn render(
                 notes: state.notes.clone(),
                 message: state.message.clone(),
                 timer: state.timer,
+                layout: state.stage_layout,
             }
         },
         Layout::Preview => rsx! {
