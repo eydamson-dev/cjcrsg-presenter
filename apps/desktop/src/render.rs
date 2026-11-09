@@ -16,6 +16,10 @@ use crate::slide::{SlideView, StageView};
 pub enum Layout {
     Audience,
     Stage,
+    /// The operator's look-ahead.
+    Preview,
+    /// The speaker's view: live slide plus a clock.
+    Confidence,
     /// The controller's recent-projects panel. The project file is not read for
     /// this layout; it comes from the session store.
     Recent,
@@ -62,6 +66,33 @@ pub fn render(
                 timer: state.timer,
             }
         },
+        Layout::Preview => rsx! {
+            if let Some(next) = state.next.clone() {
+                SlideView {
+                    slide: next,
+                    output: "Preview".to_string(),
+                    animate: false,
+                    revision: 0,
+                    transition: Transition::none(),
+                    play_media: false,
+                }
+            } else {
+                div { class: "slide", p { class: "blank", "End of show" } }
+            }
+        },
+        Layout::Confidence => rsx! {
+            div { class: "confidence",
+                SlideView {
+                    slide: state.slide.clone(),
+                    output: String::new(),
+                    animate,
+                    revision: 0,
+                    transition,
+                    play_media: true,
+                }
+                span { class: "confidence-clock", id: "confidence-clock", "--:--" }
+            }
+        },
         // `main` renders this layout from the session store, because it has
         // nothing to do with the loaded project.
         Layout::Recent => unreachable!("recent is rendered by render_recent"),
@@ -96,6 +127,15 @@ fn wrap(body: &str, pause_at_ms: Option<u32>) -> String {
     "--slide-scale", String(window.innerWidth / 1920));
   fit();
   addEventListener("resize", fit);
+  // A confidence clock, if this page has one.
+  const clock = document.getElementById("confidence-clock");
+  if (clock) {{
+    const paint = () => {{
+      clock.textContent = new Date().toLocaleTimeString([], {{ hour: "2-digit", minute: "2-digit" }});
+    }};
+    paint();
+    setInterval(paint, 1000);
+  }}
 </script>
 </body></html>
 "#

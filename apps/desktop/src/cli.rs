@@ -270,6 +270,8 @@ pub fn run(args: &[String]) -> Result<Action, String> {
                             Some("stage") => crate::render::Layout::Stage,
                             Some("audience") => crate::render::Layout::Audience,
                             Some("recent") => crate::render::Layout::Recent,
+                            Some("preview") => crate::render::Layout::Preview,
+                            Some("confidence") => crate::render::Layout::Confidence,
                             other => return Err(format!("unknown layout {other:?}")),
                         };
                     }

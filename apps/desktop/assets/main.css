@@ -188,6 +188,26 @@ header h1 {
     white-space: pre-wrap;
 }
 
+.confidence {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+}
+
+.confidence-clock {
+    position: absolute;
+    right: 3%;
+    top: 3%;
+    z-index: 4;
+    font-variant-numeric: tabular-nums;
+    font-size: 120px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow: 0 2px 18px rgb(0 0 0 / 0.65);
+}
+
 .keys {
     margin: 0 0 6px;
     color: var(--muted);

@@ -36,8 +36,9 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
   `PageDown`, `Esc` to blank); any navigation restores a blanked output.
 - Navigate: next, previous, first, last, next/previous **group**, goto by index,
   clear/blank (which keeps the position).
-- Four independent output windows; the stage shows live + next + operator notes
-  + a clock slot.
+- Four output windows with distinct roles: audience (live), stage (live + next +
+  notes + message + countdown), preview (the next slide), confidence (live +
+  clock).
 - All eight of FreeShow's transitions, with each slide's own duration and easing
   from the project; the project default is FreeShow's fade/500 ms/sine.
 - An HTTP remote that drives all of the above, returning 409 for a no-op.
@@ -77,6 +78,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Media: VP9 advances 2.04 s over a 2 s wait, 54,205/921,600 pixels differ; reopening 2.5 s in resumes at 3.468 s | `parity/reports/media-playback-2026-11-09.md` |
 | Four outputs, 1080p VP9: 841–843 frames each, 0 dropped over 30 s | `parity/reports/media-four-outputs-2026-11-09.md` |
 | Stage message + countdown: 120 s set, pause holds 90 s, remote reports 299 994 ms running | `parity/reports/stage-message-timer-2026-11-09.md` |
+| Output kinds: preview renders the next slide, confidence the live slide + clock | `parity/reports/output-kinds-2026-11-09.md` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 

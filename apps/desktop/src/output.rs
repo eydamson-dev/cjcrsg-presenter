@@ -163,24 +163,59 @@ pub fn OutputRoot(props: OutputProps) -> Element {
         document::Style { {crate::assets::MAIN_CSS} }
         document::Title { "CJCRSG — {kind.label()}" }
 
-        if kind == OutputKind::Stage {
-            StageView {
-                current: state.slide.clone(),
-                next: state.next.clone(),
-                output: kind.label().to_string(),
-                notes: state.notes.clone(),
-                message: state.message.clone(),
-                timer: state.timer,
-            }
-        } else {
-            SlideView {
-                slide: state.slide.clone(),
-                output: kind.label().to_string(),
-                animate,
-                revision: state.revision,
-                transition,
-                play_media: true,
-            }
+        match kind {
+            OutputKind::Stage => rsx! {
+                StageView {
+                    current: state.slide.clone(),
+                    next: state.next.clone(),
+                    output: kind.label().to_string(),
+                    notes: state.notes.clone(),
+                    message: state.message.clone(),
+                    timer: state.timer,
+                }
+            },
+            // The operator's look-ahead: the slide after the live one, never
+            // the live slide itself.
+            OutputKind::Preview => rsx! {
+                if let Some(next) = state.next.clone() {
+                    SlideView {
+                        slide: next,
+                        output: kind.label().to_string(),
+                        animate: false,
+                        revision: 0,
+                        transition: presenter_core::Transition::none(),
+                        play_media: false,
+                    }
+                } else {
+                    div { class: "slide",
+                        p { class: "blank", "End of show" }
+                    }
+                }
+            },
+            // The speaker's view: the live slide plus a clock they can read.
+            OutputKind::Confidence => rsx! {
+                div { class: "confidence",
+                    SlideView {
+                        slide: state.slide.clone(),
+                        output: String::new(),
+                        animate,
+                        revision: state.revision,
+                        transition,
+                        play_media: true,
+                    }
+                    span { class: "confidence-clock", id: "confidence-clock", "--:--" }
+                }
+            },
+            OutputKind::Audience => rsx! {
+                SlideView {
+                    slide: state.slide.clone(),
+                    output: kind.label().to_string(),
+                    animate,
+                    revision: state.revision,
+                    transition,
+                    play_media: true,
+                }
+            },
         }
     }
 }

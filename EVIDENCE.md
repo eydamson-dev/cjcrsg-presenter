@@ -76,6 +76,13 @@ window, no display server, no desktop involvement.
 
 ![Stage with notes](parity/reports/evidence/render/stage-notes-1920x1080.png)
 
+**Four outputs, four meanings.** Preview shows the next slide while a video is
+live; confidence shows the live slide with a clock.
+
+![Preview and confidence](parity/reports/evidence/output-kinds/montage.png)
+
+Report: `parity/reports/output-kinds-2026-11-09.md`.
+
 **Stage with an operator message and a countdown** — both stage-only; the
 countdown ticks in the page and corrects on every publication.
 
