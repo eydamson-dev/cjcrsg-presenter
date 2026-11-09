@@ -1,0 +1,1356 @@
+# Controller project browser — parity scenarios (DEV-013 milestone 7)
+#
+# Contract: docs/contracts/ui-project-browser.md, behaviours P1–P8.
+# Reference evidence: parity/features/controller-layout.yaml (`ui.projects.*`)
+#   and parity/reports/reader/controller-layout-2026-11-09.md §2.
+# Reference commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3 (1.6.8-beta.3).
+#
+# ## Harness status — read this first
+#
+# There is still no controller adapter. The controller is a **native WebView
+# window**, and `parity/adapters/` cannot drive it (`docs/parity-workflow.md`
+# §3.3, D13). No scenario in this file can be executed by `parity run` today.
+#
+# They are written so that:
+#
+#   1. an operator can run them by hand against the real controller
+#      (`GDK_BACKEND=x11 cargo run -p cjcrsg-presenter`, copies of the fixtures
+#      from `parity/fixtures/`), and
+#   2. a future Electron/Playwright adapter — or a DOM harness over a web build
+#      of the controller — can execute them unchanged.
+#
+# Steps that need a capability the current harness lacks are marked
+# `# CAPABILITY:` inline. They are **not passes**: an adapter that cannot
+# perform a step must fail loudly, never skip it (§3.2).
+#
+# ## Conventions
+#
+# - Actions are operator intent, never selectors or coordinates. The adapter
+#   maps them to the UI.
+# - `viewports` are the WebView **content box** (`innerWidth` × `innerHeight`).
+#   `1280x800` means `innerHeight == 800`; the same size as the drawer
+#   scenarios and the acceptance capture.
+# - `project` is the **file-backed** project the browser treats as open; `null`
+#   while the app is on its built-in demo. The demo has no path and is not a
+#   project-browser row (see the notes on P5).
+# - `left_column.projects` is `{row_count, empty, empty_text, rows}`.
+#   `rows` is the displayed order. A row is `{name, path_suffix, current,
+#   current_badge, missing, missing_text, open_disabled, forget,
+#   accent_border_px, path_muted, fields, extra_fields}`. `forget` is whether
+#   the Forget control exists; `open_disabled` is whether the row's open action
+#   is disabled.
+# - `left_column.foot` is the project browser's foot:
+#   `{panel, path_suffix, portable, text, status}`. `panel` is the panel it
+#   belongs to, `portable` is whether Make portable exists, `text` is the
+#   no-file message, and `status` is Make portable's result text.
+#   `status_contains` and `status_contains_path` are substring checks on that
+#   text when the wording around a path or OS error is not fixed.
+# - `left_column.outline_present` is whether the old project outline is still
+#   rendered in the left column (P6 says it is not).
+# - `left_column.width`, `width_min`, `width_max` and `resizable` are the
+#   rendered left column and its drag limits.
+# - `session.recent` is the session's stored recent list, newest first, by
+#   project name. `session.left_width` is the persisted left column width.
+# - `drawer`, `content` and `play_show` keep the meaning and shape given in
+#   `controller-drawer.yaml`. `content.items` is an ordered list of
+#   `{kind: section|show, name, live}` and is where the project outline now
+#   lives (P6); `content.row_count` counts show rows, `content.play_controls`
+#   counts Play controls, and `content.sections_are_headings` is the structural
+#   claim that sections render as headings.
+# - `focus_view` is `{present, placement, items, live_show, readout,
+#   exit_control}` for focus mode. `placement` is `centre`; `readout` is
+#   `{slide_id, position, total}`. `top_bar.present`, `right_column.present`
+#   and `preview_present` record what stays and what is replaced.
+# - `render_state` is the published state after an open:
+#   `{project, show, slide_id, position, total}`. `render_state_unchanged: true`
+#   compares the published render state (active project, live show, slide
+#   content, outputs) with the previous expect, ignoring revision numbers.
+# - `unchanged_since: <snapshot>` compares the project browser, session, foot,
+#   project and live show with a named snapshot, ignoring the clock.
+# - `error` is the inline open error:
+#   `{present, inline, position, text_nonempty}`; `position: below_list` means
+#   it is rendered under the list, not inside a row.
+# - `files` reports whether a fixture's file exists on disk:
+#   `{present: true|false}`. `confirmation_shown` reports any confirmation
+#   dialog.
+# - `start_session: fresh` means launch with an empty session directory
+#   (`CJCRSG_DATA_DIR`): no recents, no remembered width.
+# - `set_session_value` names a semantic session field; `recent` takes an
+#   ordered list of project names, newest first, and is written before the next
+#   launch. The adapter resolves each name to its fixture's absolute path; the
+#   session stores absolute paths and orders by list position (`opened_at` is
+#   informational only).
+# - Every run works on **copies** of the fixtures under a scratch root.
+#   `delete_project_file`, `restore_project_file`, `make_read_only` and
+#   `restore_write_permission` act on those copies, never on the repository.
+# - `wait_for_render` yields until the controller has rendered again; a manual
+#   run waits a moment. It is not a substitute for a user action and must not
+#   switch tabs to force a render.
+# - `open_project <name>` ensures that project is open (a launch when the app
+#   is not running, a CLI open when it is) and records it as recent. It is
+#   setup, never the UI action under test; opening from the browser uses
+#   `click_project_row`.
+#
+# ## Semantic actions used here
+#
+#   click_project_row <name>   activate a project row's open action
+#   forget_project <name>      activate that row's Forget control
+#   drag_column {side, to_width, grab}   press, move to the width, hold
+#     grab: handle | column_edge (defaults to handle)
+#   release_drag               release a held column drag
+#   make_portable              activate the foot's Make portable control
+#   enter_focus / exit_focus   the top bar's Focus control
+#   select_tab <id>            single click on a drawer tab
+#   play_show <name>           activate the Play control on an outline row
+#
+#   Environment setup (all CAPABILITY: the harness has no session, lifecycle or
+#   filesystem control today):
+#   start_session: fresh · quit_app · launch_app · restart_app
+#   set_session_value {name, value} · delete_project_file · restore_project_file
+#   make_read_only · restore_write_permission · wait_for_render
+#
+# ---------------------------------------------------------------------------
+
+# P1 composition: the open project first, then the other recents newest first,
+# the open project exactly once, and the panel shows all ten entries the
+# session keeps. An eleventh open tests the MAX_RECENT cap from the panel side:
+# the oldest entry is dropped and the panel still shows ten.
+#
+# Lower boundaries (one row, zero rows) are in `controller-project-browser-empty`
+# and `-forget-last`; an empty list is not reachable here by construction.
+
+```yaml
+id: controller-project-browser-list
+feature: [ui.projects.recent, ui.projects.tree]
+contract: [ui-project-browser/P1]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: set_session_value        # CAPABILITY: session seed
+    name: recent
+    value:
+      - Browser G
+      - Browser F
+      - Browser E
+      - Browser D
+      - Browser C
+      - Browser B
+      - Browser A
+      - Browser Third
+      - Browser Second
+      - Browser Main
+  - action: launch_app               # CAPABILITY: lifecycle control
+  - expect:
+      app: { running: true }
+      project: Browser G             # the newest recent is restored
+      left_column:
+        heading: "Projects"
+        panels: ["Projects"]
+        projects:
+          row_count: 10              # the panel shows every kept entry
+          empty: false
+          rows:
+            - { name: "Browser G", current: true, missing: false }
+            - { name: "Browser F", current: false, missing: false }
+            - { name: "Browser E", current: false, missing: false }
+            - { name: "Browser D", current: false, missing: false }
+            - { name: "Browser C", current: false, missing: false }
+            - { name: "Browser B", current: false, missing: false }
+            - { name: "Browser A", current: false, missing: false }
+            - { name: "Browser Third", current: false, missing: false }
+            - { name: "Browser Second", current: false, missing: false }
+            - { name: "Browser Main", current: false, missing: false }
+      session:
+        recent:
+          - Browser G
+          - Browser F
+          - Browser E
+          - Browser D
+          - Browser C
+          - Browser B
+          - Browser A
+          - Browser Third
+          - Browser Second
+          - Browser Main
+  - snapshot: browser-list-seeded
+  - action: click_project_row
+    project: Browser D             # opening an older entry refreshes it to front
+  - expect:
+      project: Browser D
+      left_column:
+        projects:
+          row_count: 10
+          rows:
+            - { name: "Browser D", current: true, missing: false }
+            - { name: "Browser G", current: false, missing: false }
+            - { name: "Browser F", current: false, missing: false }
+            - { name: "Browser E", current: false, missing: false }
+            - { name: "Browser C", current: false, missing: false }
+            - { name: "Browser B", current: false, missing: false }
+            - { name: "Browser A", current: false, missing: false }
+            - { name: "Browser Third", current: false, missing: false }
+            - { name: "Browser Second", current: false, missing: false }
+            - { name: "Browser Main", current: false, missing: false }
+      session:
+        recent:
+          - Browser D
+          - Browser G
+          - Browser F
+          - Browser E
+          - Browser C
+          - Browser B
+          - Browser A
+          - Browser Third
+          - Browser Second
+          - Browser Main
+  - action: click_project_row
+    project: Browser G             # reversal: the first entry opens again
+  - expect:
+      project: Browser G
+      left_column:
+        projects:
+          row_count: 10
+          rows:
+            - { name: "Browser G", current: true, missing: false }
+            - { name: "Browser D", current: false, missing: false }
+            - { name: "Browser F", current: false, missing: false }
+            - { name: "Browser E", current: false, missing: false }
+            - { name: "Browser C", current: false, missing: false }
+            - { name: "Browser B", current: false, missing: false }
+            - { name: "Browser A", current: false, missing: false }
+            - { name: "Browser Third", current: false, missing: false }
+            - { name: "Browser Second", current: false, missing: false }
+            - { name: "Browser Main", current: false, missing: false }
+      session:
+        recent:
+          - Browser G
+          - Browser D
+          - Browser F
+          - Browser E
+          - Browser C
+          - Browser B
+          - Browser A
+          - Browser Third
+          - Browser Second
+          - Browser Main
+  - action: quit_app                 # CAPABILITY: lifecycle control
+  - open_project: Browser H          # an eleventh project records and truncates
+  - expect:
+      project: Browser H
+      left_column:
+        projects:
+          row_count: 10              # MAX_RECENT, not eleven
+          rows:
+            - { name: "Browser H", current: true, missing: false }
+            - { name: "Browser G", current: false, missing: false }
+            - { name: "Browser D", current: false, missing: false }
+            - { name: "Browser F", current: false, missing: false }
+            - { name: "Browser E", current: false, missing: false }
+            - { name: "Browser C", current: false, missing: false }
+            - { name: "Browser B", current: false, missing: false }
+            - { name: "Browser A", current: false, missing: false }
+            - { name: "Browser Third", current: false, missing: false }
+            - { name: "Browser Second", current: false, missing: false }
+      session:
+        recent:
+          - Browser H
+          - Browser G
+          - Browser D
+          - Browser F
+          - Browser E
+          - Browser C
+          - Browser B
+          - Browser A
+          - Browser Third
+          - Browser Second
+      # Browser Main was the oldest and is gone.
+  - snapshot: browser-list-cap
+```
+
+# P2 row anatomy: name, muted path, the `current` badge, the 4 px accent left
+# border, the `missing` flag with a disabled open action, Forget only on the
+# non-open rows, and no other metadata. Clicking a missing row's disabled open
+# action does nothing.
+#
+# The path is asserted by suffix, not as an absolute literal: the session stores
+# absolute paths, which differ per machine.
+
+```yaml
+id: controller-project-browser-row
+feature: [ui.projects.row]
+contract: [ui-project-browser/P2, ui-project-browser/P4]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: delete_project_file       # CAPABILITY: filesystem control
+    project: Browser C
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser Main, Browser Second, Browser C]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      app: { running: true }
+      project: Browser Main
+      left_column:
+        heading: "Projects"
+        panels: ["Projects"]
+        projects:
+          row_count: 3
+          empty: false
+          rows:
+            - name: Browser Main
+              path_suffix: controller-project-browser-main.cjcp
+              path_muted: true          # CAPABILITY: computed style
+              current: true
+              current_badge: "current"
+              accent_border_px: 4       # CAPABILITY: computed style (reference: 4 px)
+              missing: false
+              missing_text: null
+              open_disabled: false
+              forget: false             # P4: the open project has no Forget
+              fields: [name, path]      # CAPABILITY: DOM structural
+              extra_fields: []          # no dates, sizes or slide counts
+            - name: Browser Second
+              path_suffix: controller-project-browser-second.cjcp
+              path_muted: true
+              current: false
+              current_badge: null
+              accent_border_px: 0
+              missing: false
+              missing_text: null
+              open_disabled: false
+              forget: true
+              fields: [name, path]
+              extra_fields: []
+            - name: Browser C
+              path_suffix: controller-project-browser-c.cjcp
+              path_muted: true
+              current: false
+              current_badge: null
+              accent_border_px: 0
+              missing: true
+              missing_text: "missing"
+              open_disabled: true       # P2: a missing row cannot be opened
+              forget: true
+              fields: [name, path]
+              extra_fields: []
+        foot:
+          path_suffix: controller-project-browser-main.cjcp
+          portable: true
+      session:
+        recent: [Browser Main, Browser Second, Browser C]
+  - snapshot: browser-rows
+  - action: click_project_row
+    project: Browser C              # disabled: a click must be a no-op
+  - expect:
+      unchanged_since: browser-rows
+      error: { present: false }
+```
+
+# P2 render-time missing detection, in both directions. A file deleted before
+# launch is flagged; restoring it makes the row openable again without a
+# restart; deleting a file while the app runs flags that row; restoring it
+# again clears the flag. The open action works after each restoration.
+#
+# `wait_for_render` is the step that lets the panel render again. It is not a
+# restart: the contract's promise is that the check runs at render time.
+
+```yaml
+id: controller-project-browser-missing-recover
+feature: [ui.projects.row]
+contract: [ui-project-browser/P2]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: delete_project_file       # CAPABILITY: filesystem control
+    project: Browser Second
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser Main, Browser Second]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          row_count: 2
+          rows:
+            - { name: "Browser Main", current: true, missing: false, open_disabled: false }
+            - { name: "Browser Second", current: false, missing: true, open_disabled: true, forget: true }
+  - action: restore_project_file      # CAPABILITY: filesystem control
+    project: Browser Second
+  - action: wait_for_render           # CAPABILITY: render tick
+  - expect:
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Main", current: true, missing: false, open_disabled: false }
+            - { name: "Browser Second", current: false, missing: false, open_disabled: false, forget: true }
+  - action: click_project_row
+    project: Browser Second           # restored without a restart: it opens
+  - expect:
+      project: Browser Second
+      left_column:
+        projects:
+          row_count: 2
+          rows:
+            - { name: "Browser Second", current: true, missing: false, open_disabled: false, forget: false }
+            - { name: "Browser Main", current: false, missing: false, open_disabled: false, forget: true }
+      session:
+        recent: [Browser Second, Browser Main]
+  - action: delete_project_file       # reverse direction: a file removed at runtime
+    project: Browser Main
+  - action: wait_for_render           # CAPABILITY: render tick
+  - expect:
+      project: Browser Second
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Second", current: true, missing: false, open_disabled: false }
+            - { name: "Browser Main", current: false, missing: true, open_disabled: true, forget: true }
+  - action: restore_project_file      # reversal: the flag clears again
+    project: Browser Main
+  - action: wait_for_render           # CAPABILITY: render tick
+  - expect:
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Second", current: true, missing: false, open_disabled: false }
+            - { name: "Browser Main", current: false, missing: false, open_disabled: false, forget: true }
+  - snapshot: browser-missing-recovered
+```
+
+# P3 opening. A non-current row opens through the existing open path: project,
+# engine cursor, outline and session all follow it. Clicking the open row is a
+# no-op. A failed open shows the error inline under the list and changes
+# neither the open project nor the rows.
+#
+# The failed-open fixture is a readable `.cjcp` whose `format_version` is newer
+# than this build supports. It exists, so the row is not `missing`; the open
+# itself is refused. See the notes if "cannot be read" is intended to include a
+# file that cannot be parsed.
+
+```yaml
+id: controller-project-browser-open
+feature: [ui.projects.recent, ui.projects.row]
+contract: [ui-project-browser/P3, ui-project-browser/P8]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser Main, Browser Second, Browser Broken]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Main", current: true, missing: false, forget: false }
+            - { name: "Browser Second", current: false, missing: false, forget: true }
+            - { name: "Browser Broken", current: false, missing: false, forget: true }
+  - action: select_tab
+    tab: shows                        # normalise the drawer for the content check
+  - expect:
+      drawer: { active_tab: shows }
+      render_state_unchanged: true
+  - snapshot: browser-open-before
+  - action: click_project_row
+    project: Browser Second
+  - expect:
+      project: Browser Second
+      left_column:
+        projects:
+          row_count: 3
+          rows:
+            - { name: "Browser Second", current: true, missing: false, forget: false }
+            - { name: "Browser Main", current: false, missing: false, forget: true }
+            - { name: "Browser Broken", current: false, missing: false, forget: true }
+      session:
+        recent: [Browser Second, Browser Main, Browser Broken]
+      live_show: Second Show
+      drawer:
+        active_tab: shows
+        content:
+          tab: shows
+          items:
+            - { kind: show, name: "Second Show", live: true }
+          row_count: 1
+      render_state:
+        project: Browser Second
+        show: Second Show
+        slide_id: second-1
+        position: 1
+        total: 2
+  - action: select_tab
+    tab: media                        # the media list follows the open project too
+  - expect:
+      drawer:
+        active_tab: media
+        content:
+          tab: media
+          rows:
+            - { name: "second-bg.jpg", kind: image, origin: bundled, missing: false }
+      render_state_unchanged: true
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { active_tab: shows }
+  - snapshot: browser-open-second
+  - action: click_project_row
+    project: Browser Second           # the open row: no-op
+  - expect:
+      unchanged_since: browser-open-second
+  - action: click_project_row
+    project: Browser Main             # reversal
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Main", current: true, missing: false, forget: false }
+            - { name: "Browser Second", current: false, missing: false, forget: true }
+            - { name: "Browser Broken", current: false, missing: false, forget: true }
+      session:
+        recent: [Browser Main, Browser Second, Browser Broken]
+  - action: click_project_row
+    project: Browser Broken           # failed open
+  - expect:
+      project: Browser Main           # the open project did not change
+      error:
+        present: true
+        inline: true
+        position: below_list          # CAPABILITY: DOM structural
+        text_nonempty: true           # wording is today's, not fixed by P3
+      left_column:
+        projects:
+          row_count: 3                # the row is not removed
+          rows:
+            - { name: "Browser Main", current: true, missing: false, forget: false }
+            - { name: "Browser Second", current: false, missing: false, forget: true }
+            - { name: "Browser Broken", current: false, missing: false, forget: true }
+      session:
+        recent: [Browser Main, Browser Second, Browser Broken]
+      render_state_unchanged: true
+  - snapshot: browser-open-failed
+  - action: click_project_row
+    project: Browser Second           # an open after a failure still works
+  - expect:
+      project: Browser Second
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Second", current: true, missing: false, forget: false }
+            - { name: "Browser Main", current: false, missing: false, forget: true }
+            - { name: "Browser Broken", current: false, missing: false, forget: true }
+      session:
+        recent: [Browser Second, Browser Main, Browser Broken]
+      # The contract does not say whether the previous error is cleared by a
+      # later successful open, so the error is not asserted here.
+```
+
+# P4 forgetting. Forget removes exactly one entry from the session and the
+# panel, never touches the file, never offers itself on the open project's row,
+# and shows no confirmation. Re-opening the project restores the entry. With
+# one open project and no others the panel shows just the open project (P5),
+# not the empty state.
+
+```yaml
+id: controller-project-browser-forget
+feature: [ui.projects.actions, ui.projects.recent]
+contract: [ui-project-browser/P4, ui-project-browser/P5]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser Main, Browser Second, Browser Third]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          row_count: 3
+          rows:
+            - { name: "Browser Main", current: true, forget: false }
+            - { name: "Browser Second", current: false, forget: true }
+            - { name: "Browser Third", current: false, forget: true }
+      session:
+        recent: [Browser Main, Browser Second, Browser Third]
+  - snapshot: browser-forget-before
+  - action: forget_project
+    project: Browser Second
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          row_count: 2
+          rows:
+            - { name: "Browser Main", current: true, forget: false }
+            - { name: "Browser Third", current: false, forget: true }
+      session:
+        recent: [Browser Main, Browser Third]
+      files:
+        Browser Second: present       # P4: the file on disk is untouched
+      confirmation_shown: false       # CAPABILITY: DOM structural
+      render_state_unchanged: true
+  - action: forget_project
+    project: Browser Third
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          row_count: 1
+          empty: false                # P5: just the open project, not the empty state
+          rows:
+            - { name: "Browser Main", current: true, forget: false }
+      session:
+        recent: [Browser Main]
+      files:
+        Browser Third: present
+  - snapshot: browser-forgotten
+  - action: click_project_row
+    project: Browser Main             # the open row still works and is a no-op
+  - expect:
+      unchanged_since: browser-forgotten
+  - action: quit_app                  # CAPABILITY: lifecycle control
+  - open_project: Browser Second      # re-opening restores the forgotten entry
+  - expect:
+      project: Browser Second
+      left_column:
+        projects:
+          row_count: 2
+          rows:
+            - { name: "Browser Second", current: true, forget: false }
+            - { name: "Browser Main", current: false, forget: true }
+      session:
+        recent: [Browser Second, Browser Main]
+```
+
+# P4's "forgetting the last entry leaves the empty state" is only reachable
+# when no file-backed project is open: the open project's row is never
+# forgettable, and P5 says an open project with no others shows just itself.
+# Here the session's newest entry is missing, so startup falls back to the demo
+# (no open project) and both stale rows are forgettable. The empty state
+# arrives after the second Forget; restoring the file and relaunching brings a
+# row back.
+
+```yaml
+id: controller-project-browser-forget-last
+feature: [ui.projects.actions, ui.projects.recent]
+contract: [ui-project-browser/P4, ui-project-browser/P5]
+fixture: fixtures/controller-project-browser-a.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: delete_project_file       # CAPABILITY: filesystem control
+    project: Browser A
+  - action: delete_project_file       # CAPABILITY: filesystem control
+    project: Browser B
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser A, Browser B]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      project: null                   # the newest recent cannot be read: demo fallback
+      left_column:
+        projects:
+          row_count: 2
+          empty: false
+          rows:
+            - { name: "Browser A", current: false, missing: true, open_disabled: true, forget: true }
+            - { name: "Browser B", current: false, missing: true, open_disabled: true, forget: true }
+      session:
+        recent: [Browser A, Browser B]
+  - action: forget_project
+    project: Browser A
+  - expect:
+      left_column:
+        projects:
+          row_count: 1
+          rows:
+            - { name: "Browser B", current: false, missing: true, open_disabled: true, forget: true }
+      session:
+        recent: [Browser B]
+  - action: forget_project
+    project: Browser B
+  - expect:
+      project: null
+      left_column:
+        heading: "Projects"
+        projects:
+          row_count: 0
+          empty: true
+          empty_text: "No recent projects. Open a .cjcp from the command line and it appears here."
+          rows: []
+      session:
+        recent: []
+  - snapshot: browser-forget-last-empty
+  - action: restore_project_file      # reversal: a row can come back
+    project: Browser A
+  - action: quit_app                  # CAPABILITY: lifecycle control
+  - open_project: Browser A
+  - expect:
+      project: Browser A
+      left_column:
+        projects:
+          row_count: 1
+          empty: false
+          rows:
+            - { name: "Browser A", current: true, missing: false, forget: false }
+      session:
+        recent: [Browser A]
+```
+
+# P5 empty states. No recents at all: the panel is one panel headed Projects,
+# with the contract's sentence and no rows. One open project and no others:
+# the panel shows just that project.
+
+```yaml
+id: controller-project-browser-empty
+feature: [ui.projects.recent, ui.projects.tree]
+contract: [ui-project-browser/P5, ui-project-browser/P1]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - expect:
+      project: null                  # the built-in demo has no file and is not a row
+      left_column:
+        heading: "Projects"
+        panels: ["Projects"]
+        outline_present: false
+        projects:
+          row_count: 0
+          empty: true
+          empty_text: "No recent projects. Open a .cjcp from the command line and it appears here."
+          rows: []
+      session:
+        recent: []
+  - action: quit_app                 # CAPABILITY: lifecycle control
+  - open_project: Browser Main
+  - expect:
+      project: Browser Main
+      left_column:
+        projects:
+          row_count: 1               # P5: just the open project
+          empty: false
+          rows:
+            - { name: "Browser Main", current: true, current_badge: "current", missing: false, forget: false }
+      session:
+        recent: [Browser Main]
+  - snapshot: browser-empty-open-only
+```
+
+# P6 the outline moves into the drawer's Shows tab. Sections are headings, the
+# shows are rows with the live marker and a Play control, and the order is the
+# project's entry order — the same order today's outline used. The left column
+# renders the Projects panel only.
+#
+# The fixture's entries are: Section Opening, Welcome, Worship, Section Sermon,
+# Communion. The initial live show after an open is deliberately not asserted;
+# the marker is checked after explicit Play actions.
+
+```yaml
+id: controller-project-browser-outline
+feature: [ui.drawer.content.columns, ui.projects.tree]
+contract: [ui-project-browser/P6]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Browser Main
+  - expect:
+      project: Browser Main
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { active_tab: shows }
+      render_state_unchanged: true
+      left_column:
+        heading: "Projects"
+        panels: ["Projects"]
+        outline_present: false        # CAPABILITY: DOM structural
+        projects:
+          row_count: 1
+          rows:
+            - { name: "Browser Main", current: true }
+  - action: play_show
+    show: Worship
+  - expect:
+      live_show: Worship
+      drawer:
+        active_tab: shows
+        content:
+          tab: shows
+          sections_are_headings: true   # CAPABILITY: DOM structural
+          play_controls: 3
+          row_count: 3
+          items:
+            - { kind: section, name: "Opening" }
+            - { kind: show, name: "Welcome", live: false }
+            - { kind: show, name: "Worship", live: true }
+            - { kind: section, name: "Sermon" }
+            - { kind: show, name: "Communion", live: false }
+      left_column:
+        outline_present: false
+  - snapshot: browser-outline-worship
+  - action: play_show
+    show: Communion                  # the marker moves, the order does not
+  - expect:
+      live_show: Communion
+      drawer:
+        content:
+          items:
+            - { kind: section, name: "Opening" }
+            - { kind: show, name: "Welcome", live: false }
+            - { kind: show, name: "Worship", live: false }
+            - { kind: section, name: "Sermon" }
+            - { kind: show, name: "Communion", live: true }
+  - action: play_show
+    show: Worship                    # reversal
+  - expect:
+      live_show: Worship
+      drawer:
+        content:
+          items:
+            - { kind: section, name: "Opening" }
+            - { kind: show, name: "Welcome", live: false }
+            - { kind: show, name: "Worship", live: true }
+            - { kind: section, name: "Sermon" }
+            - { kind: show, name: "Communion", live: false }
+  - action: play_show
+    show: Worship                    # repeated: no reorder, one live marker
+  - expect:
+      live_show: Worship
+      drawer:
+        content:
+          items:
+            - { kind: section, name: "Opening" }
+            - { kind: show, name: "Welcome", live: false }
+            - { kind: show, name: "Worship", live: true }
+            - { kind: section, name: "Sermon" }
+            - { kind: show, name: "Communion", live: false }
+  - snapshot: browser-outline-shows
+```
+
+# P6 focus mode is unchanged. The full outline list is in the centre column
+# with the same sections, order, live marker and readout; the top bar and the
+# left and right columns stay (today's measured behaviour, `ui-shell` report).
+# Play still works, and exiting returns the preview without changing the
+# browser or the live show.
+
+```yaml
+id: controller-project-browser-focus
+feature: [ui.projects.tree, ui.drawer.content.columns]
+contract: [ui-project-browser/P6]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Browser Main
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { active_tab: shows }
+  - action: play_show
+    show: Worship
+  - expect:
+      live_show: Worship
+      drawer: { active_tab: shows }
+  - snapshot: browser-before-focus
+  - action: enter_focus
+  - expect:
+      focus_view:
+        present: true
+        placement: centre             # CAPABILITY: layout measurement
+        live_show: Worship
+        readout: { slide_id: worship-1, position: 1, total: 3 }
+        exit_control: true
+        items:
+          - { kind: section, name: "Opening" }
+          - { kind: show, name: "Welcome", live: false }
+          - { kind: show, name: "Worship", live: true }
+          - { kind: section, name: "Sermon" }
+          - { kind: show, name: "Communion", live: false }
+      left_column:
+        panels: ["Projects"]
+        projects:
+          rows:
+            - { name: "Browser Main", current: true }
+      top_bar: { present: true }      # unchanged: the measured controller keeps it
+      right_column: { present: true }
+      preview_present: false
+      render_state_unchanged: true
+  - action: play_show
+    show: Communion                   # play works from the focus list
+  - expect:
+      live_show: Communion
+      focus_view:
+        live_show: Communion
+        readout: { slide_id: communion-1, position: 1, total: 2 }
+        items:
+          - { kind: section, name: "Opening" }
+          - { kind: show, name: "Welcome", live: false }
+          - { kind: show, name: "Worship", live: false }
+          - { kind: section, name: "Sermon" }
+          - { kind: show, name: "Communion", live: true }
+      left_column:
+        projects:
+          rows:
+            - { name: "Browser Main", current: true }
+  - action: exit_focus                # reversal: back to the preview
+  - expect:
+      focus_view: { present: false }
+      preview_present: true
+      live_show: Communion
+      drawer: { active_tab: shows }
+      left_column:
+        panels: ["Projects"]
+        projects:
+          rows:
+            - { name: "Browser Main", current: true }
+      render_state_unchanged: true
+  - action: enter_focus               # repeated entry and exit
+  - expect:
+      focus_view: { present: true, live_show: Communion }
+  - action: exit_focus
+  - expect:
+      focus_view: { present: false }
+      preview_present: true
+  - snapshot: browser-focus-returned
+```
+
+# P7 Make portable in the project browser's foot. With no open project saved to
+# a file the foot says so, as the outline foot did: "Not saved to a file yet."
+# With one, the foot carries the path and the control. A successful run reports
+# today's text ("copied N", plus ", missing N" / ", failed N"); an unwritable
+# file reports today's "cannot write <path>" text. Repeating the action reports
+# "copied 0" and still reports the missing source.
+#
+# The success path runs before the error path so the failed write cannot leave
+# a partial copy in `media/` that would change the next run's file name and
+# count. The fixture has one external file that exists and one external file
+# that is gone, so the success text is deterministic.
+
+```yaml
+id: controller-project-browser-portable
+feature: [ui.projects.actions]
+contract: [ui-project-browser/P7]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - expect:
+      project: null
+      left_column:
+        foot:
+          path_suffix: null
+          text: "Not saved to a file yet."   # today's outline foot, moved
+          portable: false
+  - action: quit_app                   # CAPABILITY: lifecycle control
+  - open_project: Browser Main
+  - expect:
+      project: Browser Main
+      left_column:
+        panels: ["Projects"]
+        foot:
+          panel: "Projects"            # CAPABILITY: DOM structural
+          path_suffix: controller-project-browser-main.cjcp
+          portable: true
+          status: ""
+  - action: make_portable
+  - expect:
+      project: Browser Main
+      left_column:
+        foot:
+          status: "copied 1, missing 1"     # one copied, one source gone
+      files:
+        Browser Main: present
+  - action: select_tab
+    tab: media
+  - expect:
+      drawer:
+        active_tab: media
+        content:
+          tab: media
+          rows:
+            - { name: "sunrise.jpg", kind: image, origin: bundled, missing: false }
+            - { name: "clip.mp4", kind: video, origin: bundled, missing: false }
+            - { name: "gone.mp4", kind: video, origin: external, missing: true }
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer: { active_tab: shows }
+  - action: make_portable              # repeated: already-copied assets are skipped
+  - expect:
+      project: Browser Main
+      left_column:
+        foot:
+          status: "copied 0, missing 1"
+  - snapshot: browser-portable-bundled
+  - action: make_read_only             # CAPABILITY: filesystem control
+    project: Browser Main
+  - action: make_portable
+  - expect:
+      project: Browser Main
+      left_column:
+        foot:
+          portable: true
+          status_contains: "cannot write"   # today's error text
+          status_contains_path: true        # CAPABILITY: text content
+  - action: restore_write_permission   # CAPABILITY: filesystem control
+    project: Browser Main
+  - action: make_portable              # recovery: the write succeeds again
+  - expect:
+      project: Browser Main
+      left_column:
+        foot:
+          status: "copied 0, missing 1"
+  - snapshot: browser-portable
+```
+
+# P1 width persistence, unchanged from today: the left column is resizable,
+# clamped to 200..=480, and the width is persisted on pointer release, not
+# during the drag. A restart reopens at the persisted width.
+#
+# The fresh-session default 280 is today's `LayoutPrefs` default. The 200/480
+# range is today's documented clamp (`docs/ui-parity.md`, milestone 4).
+
+```yaml
+id: controller-project-browser-width
+feature: [ui.projects.tree]
+contract: [ui-project-browser/P1]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - open_project: Browser Main
+  - expect:
+      project: Browser Main
+      left_column:
+        width: 280                    # today's default
+        width_min: 200
+        width_max: 480
+        resizable: true
+      session:
+        left_width: 280
+  - snapshot: browser-width-initial
+  - action: drag_column
+    side: left
+    to_width: 400
+    grab: handle
+  - expect:
+      left_column:
+        width: 400
+      session:
+        left_width: 280               # persisted only on release, as today
+  - action: release_drag
+  - expect:
+      left_column:
+        width: 400
+      session:
+        left_width: 400
+  - action: drag_column
+    side: left
+    to_width: 2000
+  - expect:
+      left_column:
+        width: 480                    # upper boundary
+  - action: release_drag
+  - expect:
+      session:
+        left_width: 480
+  - action: drag_column
+    side: left
+    to_width: 0
+  - expect:
+      left_column:
+        width: 200                    # lower boundary
+  - action: release_drag
+  - expect:
+      session:
+        left_width: 200
+  - action: drag_column
+    side: left
+    to_width: 400                    # reversal back into the range
+  - expect:
+      left_column:
+        width: 400
+      session:
+        left_width: 200               # still persisted only on release
+  - action: release_drag
+  - expect:
+      left_column:
+        width: 400
+      session:
+        left_width: 400
+  - action: restart_app               # CAPABILITY: lifecycle control
+  - expect:
+      app: { running: true }
+  - open_project: Browser Main        # no-op if the app restores it
+  - expect:
+      project: Browser Main
+      left_column:
+        width: 400                    # persisted through a restart
+      session:
+        left_width: 400
+  - snapshot: browser-width-restarted
+```
+
+# P8, the part a controller scenario can check: browser actions are consumers
+# and do not touch the published state; opening a recent project publishes the
+# new project's first show and slide through the same path the CLI Open uses.
+# The published state after the open is the new project, not stale state from
+# the old one; after that, further browser actions leave it alone.
+#
+# "No engine or output change" is a code/architecture claim (see the notes).
+# The HTTP remote and the media allowlist are not observable from a controller
+# WebView run; they stay with their existing tests and scenarios. The drawer's
+# Media tab is used here as the visible consequence of the media list following
+# the open path.
+
+```yaml
+id: controller-project-browser-consumer
+feature: [ui.projects.recent, ui.projects.row]
+contract: [ui-project-browser/P8, ui-project-browser/P3]
+fixture: fixtures/controller-project-browser-main.cjcp
+viewports: ["1280x800"]
+steps:
+  - start_session: fresh
+  - action: set_session_value         # CAPABILITY: session seed
+    name: recent
+    value: [Browser Main, Browser Second]
+  - action: launch_app                # CAPABILITY: lifecycle control
+  - expect:
+      project: Browser Main
+      render_state:
+        project: Browser Main
+        show: Welcome
+        slide_id: welcome-1
+        position: 1
+        total: 7                      # Welcome 2 + Worship 3 + Communion 2
+  - snapshot: browser-consumer-main
+  - action: select_tab
+    tab: media                        # a browse action, not an open
+  - expect:
+      render_state_unchanged: true
+  - action: drag_column
+    side: left
+    to_width: 360
+  - expect:
+      render_state_unchanged: true
+  - action: release_drag
+  - expect:
+      render_state_unchanged: true
+      session:
+        left_width: 360
+  - action: wait_for_render           # CAPABILITY: render tick
+  - expect:
+      render_state_unchanged: true
+  - action: click_project_row
+    project: Browser Second           # the open path publishes the new project
+  - expect:
+      project: Browser Second
+      session:
+        recent: [Browser Second, Browser Main]
+      render_state:
+        project: Browser Second
+        show: Second Show
+        slide_id: second-1
+        position: 1
+        total: 2
+  - snapshot: browser-consumer-second
+  - action: click_project_row
+    project: Browser Second           # after the open, browsing does not touch it
+  - expect:
+      render_state_unchanged: true
+      unchanged_since: browser-consumer-second
+  - action: select_tab
+    tab: shows
+  - expect:
+      drawer:
+        active_tab: shows
+        content:
+          tab: shows
+          items:
+            - { kind: show, name: "Second Show", live: true }
+      render_state_unchanged: true
+```
+
+## Coverage map
+
+| Contract | Scenarios |
+| --- | --- |
+| P1 panel, row order, open once, ten-entry cap | `controller-project-browser-list`, `controller-project-browser-empty` |
+| P1 width unchanged and persisted | `controller-project-browser-width` |
+| P2 row fields, `current` badge, 4 px border, missing and disabled | `controller-project-browser-row` |
+| P2 render-time missing detection and recovery | `controller-project-browser-missing-recover` |
+| P3 open a non-current row, current-row no-op, failed open | `controller-project-browser-open` |
+| P4 forget one, never the open, file untouched, no dialog, re-open restores | `controller-project-browser-forget` |
+| P4 last entry leaves the empty state | `controller-project-browser-forget-last` |
+| P5 the two empty states | `controller-project-browser-empty`, `controller-project-browser-forget`, `controller-project-browser-forget-last` |
+| P6 outline in the drawer's Shows tab, left column without it | `controller-project-browser-outline` |
+| P6 focus mode unchanged | `controller-project-browser-focus` |
+| P7 Make portable in the foot, success/error text, no-file message | `controller-project-browser-portable` |
+| P8 consumer, published state after an open | `controller-project-browser-consumer`, `render_state_unchanged` in `controller-project-browser-open` |
+
+## Notes and unresolved clauses
+
+- **No controller adapter.** Every scenario here is manual until a harness can
+  drive the controller WebView. The environment and computed-style steps are
+  marked `# CAPABILITY:` and must fail loudly, not skip.
+- **P5 and the built-in demo.** The app always has a project loaded: with an
+  empty session it is the built-in demo, which has no file. The contract does
+  not say whether that demo counts as "an open project" for P1/P5. If it did,
+  the "no recent projects" sentence could never appear, because the demo is
+  always present. These scenarios therefore treat "the open project" as a
+  **file-backed** project: the demo is not a row and does not suppress the
+  empty state. The contract needs a sentence either way; if the demo is meant
+  to be a row, `controller-project-browser-empty` and `-forget-last` need
+  rewriting.
+- **P4's last entry.** With an open project, the open row has no Forget control,
+  so the panel cannot be emptied from that state; P5 says it shows just the
+  open project. The only reachable "last entry" path is a session whose newest
+  entry cannot be read, so startup falls back to the demo and every remaining
+  row is forgettable. `controller-project-browser-forget-last` uses that path.
+  This is a consequence of P4 + P5, not an extra rule, but it is worth a
+  contract sentence.
+- **P3 failed-open trigger.** The scenario uses a readable `.cjcp` whose
+  `format_version` is newer than the build supports: the row is not `missing`,
+  the open is refused, and the inline error appears. If "cannot be read" in P2
+  is intended to include a file that is present but cannot be parsed, that row
+  would be `missing` and disabled, and P3's failed-open path would need a
+  different deterministic trigger (for example a file deleted between render
+  and click). A present but permission-denied file is not separately tested;
+  the same ambiguity applies. The contract should say which check decides
+  `missing`.
+- **P1 `open_project` and the session.** In normal use the open project is also
+  the session's newest entry, so "open first" and "newest first" agree; the
+  scenario checks the part that can diverge — the open project appears once,
+  never twice. Normal operation cannot produce an open project lower than first
+  in the session: startup restores the first entry, and opening records at the
+  front. A state where the open project is not in the session at all (for
+  example, a session write that failed) is not exercised and would need its own
+  scenario.
+- **P1 ten-entry cap.** The session truncates at `MAX_RECENT` (10) when an
+  eleventh project is opened. `controller-project-browser-list` checks the
+  panel side; the session-side unit test (`the_list_is_capped`) and acceptance
+  criterion 2 cover the storage rule. The seeded ten entries use distinct paths
+  and the display names in the fixtures table below.
+- **Width has no empty state.** The left column always has a width; the lower
+  boundary is 200 px and the fresh default is 280 px. The width scenario covers
+  normal use, both clamps, persistence on release and a restart; there is no
+  zero or empty case to test.
+- **P6 and drawer contract B7.** `docs/contracts/ui-drawer.md` B7 describes the
+  Shows tab as one row per show with the name and slide count. P6 replaces that
+  content with the project outline (sections as headings, shows with the live
+  marker and Play). Slide counts are therefore not asserted in either
+  direction; B7 should be marked superseded by P6.
+- **P4 "small" Forget control.** The contract calls the control small but gives
+  no size or target. Only its presence or absence on a row is asserted; no
+  computed size is checked.
+- **P3 media allowlist.** The open path also updates the media allowlist, which
+  is not observable from the controller UI. The open scenario checks the outline,
+  media list and session; the allowlist itself stays with the media-server tests
+  and the existing open path.
+- **P6 "full-window list in the centre".** The measured controller puts the
+  focus list in the centre column and keeps the top bar, left column and right
+  column (`parity/reports/ui-shell-2026-11-09.md`). P6 says focus mode is
+  unchanged, so `controller-project-browser-focus` asserts that measured
+  behaviour. If "full-window" means the list covers the whole window, that is a
+  change, not "unchanged", and the contract should say so.
+- **P7 error text.** P7 says "the same success and error text as today". The
+  success text is today's `copied N[, missing N][, failed N]`; the error text is
+  today's `cannot read <path>` / `cannot write <path>` (plus the OS message),
+  and the no-file foot text is today's `Not saved to a file yet.`. The exact OS
+  suffix is not asserted. If P7 meant a different string, name it in the
+  contract.
+- **P7 no-file case.** The foot has no Make portable control when the project
+  has no file, so only the message is asserted. The separate action error
+  `This project has not been saved to a file yet.` is unreachable through the
+  visible control and is not exercised.
+- **P8 remote and media allowlist.** Neither is observable from the controller
+  WebView. The remote, media serving and output recovery stay with their
+  existing scenarios and tests; this file checks the published state and the
+  drawer's media list. "No engine or output change" is a code and architecture
+  claim, verified by review and the engine tests, not by a UI scenario.
+- **P8 render state wording.** The contract says "no change to render state".
+  The browser itself changes the render state only by opening a project, and
+  that must publish the new project's first show and slide through the existing
+  open path. The scenario asserts exactly that, then asserts that further
+  browsing leaves the published state alone. If "no change" was meant to cover
+  the open itself, it conflicts with P3, which says the engine follows the new
+  project.
+- **P8 measured behaviours.** Recovery, transitions and media playback are
+  measured by their own reports and scenarios; opening a project through the
+  browser uses the same open path as the CLI Open, so this file does not repeat
+  those runs. Acceptance criteria 2 and 6 and the existing evidence cover them.
+- **Row metadata and visual claims.** The muted path, the 4 px accent border,
+  the badge text, the error's position under the list, section headings, and
+  the foot living in the Projects panel are computed-style or DOM-structural
+  checks, marked `# CAPABILITY:` inline. A capture at 1280×800 (acceptance
+  criterion 3) is the visual evidence, not a substitute for these state checks.
+- **Reference recent-list rules not asserted.** FreeShow shows its recent list
+  only when at least two unarchived projects were used in five days, newest
+  first, under a "Recently used" heading (`ui.projects.recent`). The contract
+  deliberately replaces that with the open project plus the session's list, so
+  the five-day rule, the "Recently used" heading, the folder tree, archived
+  projects and provider icons are out of scope and are not asserted.
+- **Reference open gestures not asserted.** FreeShow opens a project and its
+  first item on click, Alt-click opens without the first item, and Ctrl-click
+  is ignored (`ui.projects.row`). P3 names only the plain open; the modifier
+  gestures are not in this milestone and are not tested.
+- **Feature-inventory gap.** The inventory has entries for the project tree,
+  row, actions and recent list, but not for this milestone's Projects panel,
+  its foot, the outline-in-Shows content or focus mode. These scenarios link to
+  the nearest entries; the inventory should gain entries for the new surfaces.
+- **Fixture dependency.** Row names, section names and media rows are tied to
+  the proposed fixtures below. A different fixture changes those literals, not
+  the contract.
+
+## Proposed fixtures (not created by this stage)
+
+All under `parity/fixtures/`. Every run copies them to a scratch root before
+`delete_project_file`, `restore_project_file`, `make_read_only` or
+`restore_write_permission` runs.
+
+`controller-project-browser-main.cjcp` — project name `Browser Main`, entry
+order:
+
+1. Section `Opening`
+2. Show `Welcome` — slides `welcome-1`, `welcome-2`
+3. Show `Worship` — slides `worship-1`, `worship-2`, `worship-3`
+4. Section `Sermon`
+5. Show `Communion` — slides `communion-1`, `communion-2`
+
+Media:
+
+- `sunrise.jpg` — image, bundled, present (`media/sunrise.jpg`);
+- `clip.mp4` — video, external, present (`outside/clip.mp4` beside the fixture);
+- `gone.mp4` — video, external, absent (`outside/gone.mp4` named, not created).
+
+The two external entries are what make `Make portable` report
+`copied 1, missing 1` and then `copied 0, missing 1`.
+
+`controller-project-browser-second.cjcp` — project name `Browser Second`; one
+show `Second Show` with slides `second-1`, `second-2`; media `second-bg.jpg`
+(image, bundled, present). It is the other valid recent in the open, forget and
+consumer scenarios.
+
+`controller-project-browser-third.cjcp` — project name `Browser Third`; one
+show with one slide; no external media. Used by the forget scenario.
+
+`controller-project-browser-broken.cjcp` — project name `Browser Broken`; a
+valid envelope with `"format": "cjcp"` and `"format_version": 2`, so the file
+is readable but the build refuses it. This is the failed-open row.
+
+`controller-project-browser-a.cjcp` … `controller-project-browser-h.cjcp` —
+eight minimal projects named `Browser A` … `Browser H`, each with one show and
+one slide, used to fill the ten-entry list and to test the eleventh-entry cap.
+`Browser H` is the eleventh open in `controller-project-browser-list`; `Browser
+Main` is the entry it drops.
