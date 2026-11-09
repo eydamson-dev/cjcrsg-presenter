@@ -12,6 +12,8 @@ Read in this order, and stop when you have what you need:
 3. **`docs/architecture.md`** — the design and the invariants behind it.
 4. **`EVIDENCE.md`** — proof per milestone, with pictures and raw artefacts.
 5. **`docs/plan.md`** — phases and exit criteria.
+6. **`docs/deviations.md`** — what we knowingly do not match, with IDs.
+7. **`docs/reference.md`** — how to run FreeShow, its ports, its file format.
 
 `docs/status.md` is the only place that describes current state. Do not restate
 it here: this file drifted once already by carrying a "current phase" that was
@@ -53,10 +55,54 @@ weeks out of date.
    in the same commit. `scripts/check.sh` fails if the page's declared test
    count disagrees with the workspace, so a stale page breaks the build.
 
+## How to verify what you changed
+
+Match the check to the layer. A diff is not a screenshot, and a passing build is
+not a working feature.
+
+| Changed | Verify with |
+| --- | --- |
+| `crates/core`, `compat`, `remote` | `cargo test` — no display server, no window |
+| the renderer, CSS, transitions | `render` → `capture_page.mjs` → **open the image and look at it** |
+| window lifecycle, recovery | `CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter` |
+| the remote | `serve`, then `curl` the endpoints |
+| anything visual | also update `EVIDENCE.md` (invariant 9) |
+
+Never say a UI is correct because the DOM or a metric looks right. Capture it,
+look at it, and say what you saw.
+
+## Working agreement
+
+- **One milestone per commit.** The message says what changed *and what was
+  measured*. Evidence and its `EVIDENCE.md` update go in the same commit.
+- **Two failed attempts at the same technique means change technique**, not end
+  the task. This project has been stopped twice by a tooling dead end that a
+  different method solved in minutes.
+- **Do not report success without having run it in this session.** "It compiles"
+  is not "it works"; say which one you did.
+- **Do not stop at a milestone boundary.** If the user has asked for the plan to
+  be finished, finishing one item is the cue to start the next, not to hand back.
+- **Unverified is a state you can report.** Say "not measured" plainly rather
+  than implying a pass.
+- **Do not quietly change a decision.** If D1–D9 needs revising, record why in
+  `docs/decisions.md` in the same change.
+
+## What not to build
+
+- **No Tauri, no Blitz, no second UI framework.** Dioxus on a WebView is the
+  decision (D1); it keeps HTML/CSS, which is where the fidelity comes from.
+- **No porting Svelte components wholesale.** Port behaviour and the CSS
+  contract, not the file structure.
+- **No new crate for a few functions.** Extract one when a boundary hurts.
+- **No format version bump without a migration and a test.** Unknown fields must
+  keep round-tripping (invariant 7).
+- **No absolute paths for bundled media.** Relative, forward slashes, inside the
+  project root.
+
 ## Build and test
 
 ```bash
-scripts/check.sh                                          # fmt + clippy + tests + evidence check
+scripts/check.sh                                          # fmt + clippy + tests + evidence count
 cargo test -p presenter-core                              # headless, no display needed
 cargo run -p cjcrsg-presenter                             # desktop app
 cargo run -p cjcrsg-presenter -- render <f.cjcp> out.html # real components to HTML

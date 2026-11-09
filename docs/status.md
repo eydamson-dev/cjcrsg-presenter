@@ -63,6 +63,11 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
+## Known deviations
+
+`docs/deviations.md` — ten entries, each with an impact and a way to close it.
+Read it before claiming parity on anything.
+
 ## Tests
 
 ```
