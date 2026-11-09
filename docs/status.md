@@ -41,7 +41,9 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 - Drive it from the keyboard with FreeShow's bindings (`Space`/arrows/`PageUp`/
   `PageDown`, `Esc` to blank); any navigation restores a blanked output.
 - Navigate: next, previous, first, last, next/previous **group**, goto by index,
-  clear/blank (which keeps the position).
+  clear/blank (which keeps the position). At a show's end, next follows FreeShow's
+  two-step move: the first press selects the next show, the second plays it; the
+  **At end: advance / stop** control is in the top bar and survives a restart.
 - Four output windows with distinct roles: audience (live), stage (live + next +
   notes + message + countdown), preview (the next slide), confidence (live +
   clock).
@@ -107,6 +109,7 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Output kinds: preview renders the next slide, confidence the live slide + clock | `parity/reports/output-kinds-2026-11-09.md` |
 | Controller drawer: 8 tabs, 40/300/744 px geometry, 79/80 px drag threshold, remembered height across restart, 17 images and 9 session files | `parity/reports/ui-drawer-2026-11-09.md` |
 | Project browser: open project first, recents newest first, missing-file flag, Forget, and the outline in the Shows tab | `parity/reports/ui-project-browser-2026-11-09.md` |
+| Next at a show end: press 1 selects (output unchanged, rev 1), press 2 plays (rev 2); setting off stays rev 0; choice survives restart | `parity/reports/evidence/dev-015/README.md` |
 
 | FreeShow reference: 225 features, 60 pages, 1,630 code citations, 30 screenshots | `docs/freeshow-reference/` |
 
@@ -127,9 +130,8 @@ memory.
   architecture (IPC, servers, settings, persistence, API, stores, media, i18n,
   security, build).
 - Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`.
-  Nothing is `observed` yet: the reference was run only to capture screenshots, so
-  no page is a runtime-verified contract. `USING-THIS.md` says what each label
-  permits.
+  The end-of-show move is `observed` from a 2026-11-09 run; the rest is
+  `code`/`doc`/`unknown`. `USING-THIS.md` says what each label permits.
 - 30 screenshots of the running reference are in `screenshots/`, with the state and
   viewport of each in its README.
 - `scripts/check_freeshow_refs.py` verifies every `src/...:line` citation against
@@ -137,10 +139,9 @@ memory.
   reports inventory IDs no page mentions.
 
 `audit.md` records contradictions found while writing it. The first is still open:
-`parity/reports/navigation-end-behaviour-2026-11-09.md` says next-at-end has no
-configuration branch, but `OutputHelper.ts:131` checks
-`special.nextItemOnLastSlide`, and its default is on. The report needs correcting
-before that behaviour becomes a contract.
+`parity/reports/navigation-end-behaviour-2026-11-09.md` was corrected: the report
+now records the `special.nextItemOnLastSlide` branch and the observed two-step
+move. The run is `parity/reports/reader/next-at-end-2026-11-09.md`.
 
 ## Not using Craft Anything
 
@@ -167,17 +168,18 @@ Developer setup on Windows is in `CONTRIBUTING.md` under "Windows".
 ## Tests
 
 ```
-crates/core    105
+crates/core    115
 crates/compat   41
 crates/remote   14
-apps/desktop    24
+apps/desktop    25
 ```
 
 ## Next, in order
 
-Before the list: close the reference audit items. A-001 is the first — the
-navigation report's "no configuration branch" claim is wrong, and
-`special.nextItemOnLastSlide` belongs in the contract and its scenarios.
+Claim-level follow-ups from DEV-015, none blocking the feature: T-001 an empty
+show between two shows, T-002 setting off at the project end, T-003 selection
+after `next_section`/`next_group`. A differential selection harness is still
+absent; the feature's acceptance used unit tests plus the observed reference run.
 
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is
@@ -199,7 +201,8 @@ navigation report's "no configuration branch" claim is wrong, and
 The **outputs** target FreeShow's look (renderer parity 0.35 % differing
 pixels). The **controller** now has FreeShow's shell, bottom drawer and left
 project browser: top bar, three columns, live preview, palette, resizable
-columns, focus-in-centre, eight drawer tabs, the clock, and a Projects column
+columns, focus-in-centre, eight drawer tabs, the clock, the **At end: advance /
+stop** control, and a Projects column
 with the open project marked, recent projects and Forget. Compared side-by-side
 with FreeShow 1.6.8 in `parity/reports/ui-shell-2026-11-09.md`,
 `parity/reports/ui-drawer-2026-11-09.md` and

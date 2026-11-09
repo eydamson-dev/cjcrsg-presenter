@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 184 -->
+**As of `main`, 2026-11-09.** <!-- tests: 195 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -580,6 +580,54 @@ and Make portable reported `copied 0`. `ssr-empty-state.html` is the headless
 render of the panel with no session, carrying the same empty sentence.
 
 Report: `parity/reports/ui-project-browser-2026-11-09.md`.
+
+## Next at the end of a show
+
+FreeShow moves to the next project item in two presses: the first selects it
+while the output stays on the old show, the second plays it. The setting
+`special.nextItemOnLastSlide` (on by default) stops the move, and at the end of
+the project Next does nothing. The engine now keeps a selected show apart from
+the live slide, applies FreeShow's rule inside `next_slide`, and exposes the
+setting. The controller's top bar carries **At end: advance** / **At end: stop**
+next to **Focus**, with the behaviour and current state in its tooltip and
+`aria-label`. The session remembers the choice, so a restart reopens with it.
+The drawer's Shows tab, the outline panel and focus view mark the live show
+`LIVE` and the selected show `SELECTED`; when they are the same show only `LIVE`
+is shown. A selection-only press bumps the revision and publishes no
+transition, so the audience output does not change.
+
+**The control on** — default from a fresh session (`session-on.json`):
+
+![At end: advance](parity/reports/evidence/dev-015/controller-at-end-on-1280x820.png)
+
+**After one press at the show's end** — `rev 1`, the preview and output still on
+Welcome (`1 / 2`), Welcome marked `LIVE`, Parity Fixture marked `SELECTED`:
+
+![Outline after the first press](parity/reports/evidence/dev-015/outline-after-first-press-1280x820.png)
+
+**After the second press** — Parity Fixture is live (`2 / 2`), the selection and
+the live badge agree:
+
+![Outline after the second press](parity/reports/evidence/dev-015/outline-after-second-press-1280x820.png)
+
+**The setting off, reached by clicking the real control** (`session-off.json`):
+
+![At end: stop](parity/reports/evidence/dev-015/controller-at-end-off-1280x820.png)
+
+Two Next presses with the setting off left `rev 0`, `welcome-1`, `1 / 2`
+(`outline-setting-off-next-noop-1280x820.png`), and a restart reopened with
+**At end: stop** and the same no-op (`controller-at-end-off-after-restart-1280x820.png`).
+The focus view uses the same markers (`focus-after-first-press-1280x820.png`).
+The off state was reached through the debug-only `CJCRSG_DRAWER=at-end`
+evidence hook, which dispatches a DOM click on the control's real handler; the
+restart state is the ordinary startup path reading the session file.
+
+Captures are the real window under `GDK_BACKEND=x11`, 1280×820 outer
+(1280×800 WebView content), via `scripts/capture_window.sh`. The two-show
+fixture is `parity/reports/evidence/dev-015/next-at-end.cjcp`; test output is
+`parity/reports/evidence/dev-015/test-output.txt`.
+
+Report: `parity/reports/evidence/dev-015/README.md`.
 
 ## Media panel
 

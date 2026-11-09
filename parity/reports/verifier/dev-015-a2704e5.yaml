@@ -1,0 +1,407 @@
+milestone: DEV-015
+feature: nav.bounds.next-at-end
+feature_title: Next at the end of a show selects the next project item, then plays it
+contract: docs/contracts/nav-next-at-end.md
+contract_status: approved 2026-11-09
+candidate_commit: a2704e5ce5cfbfc3a4802e71cc27b34e799a3343
+short_sha: a2704e5
+candidate_parent: f7371d15e3192e2a3f741814d8c343deb3288361
+worktree: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015
+verifier: DeepSeek V4.1 Flash
+date: 2026-11-09
+third_failed_verdict: false
+verdict: blocked
+
+verdict_reason: |
+  The implementation matches B1-B7 on static review, and the implementer's
+  screenshots and /api/state read-back show the required two-press behaviour,
+  the setting, persistence and the live/selected markers. However, this verifier
+  session could not execute anything: the `shell` tool is permission-denied for
+  every command and directory. Therefore `scripts/check.sh` was not run by me,
+  the six unit tests were not run by me, and no differential/normalised-state
+  comparison was performed. The check exit code and test count below are the
+  implementer's captured values, not independent evidence. A `pass` verdict
+  requires an independently executed check and test run; none was possible. This
+  is an environment/tooling block, not a candidate defect. It goes to the
+  orchestrator: re-run `./scripts/check.sh` in a session with shell access (or
+  explicitly accept the static review plus the implementer's test-output as the
+  policy for this milestone).
+
+startup_checks:
+  - id: head_matches_candidate
+    status: pass
+    method: read .git/worktrees/verify-015/HEAD
+    evidence: "HEAD is detached at a2704e5ce5cfbfc3a4802e71cc27b34e799a3343."
+  - id: worktree_clean
+    status: not_verified
+    method: git status
+    reason: "`shell` is permission-denied; git could not be run. No obvious stray files were seen in the tree, but cleanliness was not confirmed."
+
+execution:
+  check_sh:
+    command: ./scripts/check.sh
+    bare: true
+    exit_code: null
+    status: blocked
+    reason: "`shell` tool permission denied (`permission.rejected`) for every command, including a bare `echo`; the check could not be started."
+    fmt: not_run
+    clippy: not_run
+    tests: not_run
+  test_count:
+    recorded: 195
+    recorded_source: parity/reports/evidence/dev-015/test-output.txt
+    recorded_breakdown:
+      cjcrsg-presenter: 25
+      presenter-compat: 41
+      presenter-core: 115
+      remote: 14
+    evidence_declared: 195
+    evidence_declared_source: "EVIDENCE.md line 6: `<!-- tests: 195 -->`"
+    independently_verified: false
+    note: "25 + 41 + 115 + 14 = 195, consistent with the EVIDENCE.md marker; this is the implementer's capture."
+  scenarios:
+    - id: nav-next-edge-cases
+      file: parity/scenarios/nav-next-basic.yaml
+      adapters: [reference, rust]
+      result: blocked
+      reason: |
+        The only scenario carrying this feature is marked partial: its first
+        `next` expectation is a `recorded:` placeholder with the comment
+        "Deliberately unresolved: the reference behaviour is unverified." No
+        adapter/runner/normalizer implementation exists in the candidate
+        (`parity/adapters`, `parity/runner`, `parity/normalizers` are absent), so
+        it could not be run against either adapter even with shell access.
+        The contract explicitly takes unit tests plus the reference report as the
+        acceptance evidence and puts a differential harness for selection out of
+        scope; per the hand-off this is not a candidate defect.
+    - id: next_at_show_end_selects_then_plays
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed and asserts the expected two-step sequence, output, selection and transition."
+    - id: next_at_show_end_setting_off_is_no_op
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed."
+    - id: next_at_project_end_is_no_op
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed."
+    - id: next_within_show_is_unchanged
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed."
+    - id: selection_follows_go_to_and_first_last
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed."
+    - id: replace_project_resets_selection
+      kind: unit_test
+      adapter: rust-engine
+      result: blocked
+      static_review: pass
+      reason: "Not executed in this session; test source reviewed."
+    - id: reference-end-of-show-observed-2026-11-09
+      kind: reference_run
+      adapter: freeshow-1.6.8-beta.3
+      result: pass
+      evidence: parity/reports/reader/next-at-end-2026-11-09.md and its captures
+      note: "I opened the reference captures: on-after-1-main/out show the header and selection moving to Parity Fixture while the output still shows Welcome; on-after-2-out shows Parity Fixture output; off-after-1-main shows no move. This supports the contract's B3/B4 tables."
+  normalised_state_comparison:
+    result: not_run
+    reason: "No runnable harness in the candidate and no shell access in this session. The implementer's `/api/state` read-back was reviewed, not re-executed."
+    mismatches: []
+
+b_clauses:
+  - id: B1
+    requirement: two state positions; both start on the first show with a slide; explicit navigation sets selected to the landed show; selection-only change bumps the revision, leaves the output slide and starts no transition.
+    result: pass
+    basis: static_review
+    evidence:
+      - "crates/core/src/engine.rs:117 `selected_show` field; :151 constructor seeds it from `order.first()`; :369 replace_project resets it the same way."
+      - "crates/core/src/engine.rs:610-624 go_to_index retargets the selection even when the index is already live, via select_show; go_to, go_to_show, first_slide, last_slide, next_section and next_group all land through go_to_index."
+      - "crates/core/src/engine.rs:479-487 select_show sets `transition = None` and increments the revision without touching `index`."
+      - "crates/core/src/engine.rs:690-711 bump() sets selected from the landed position for real slide moves."
+      - "parity/reports/evidence/dev-015/outline-after-first-press-1280x820.png: rev 1, preview still welcome-1, Welcome LIVE, Parity Fixture SELECTED."
+    notes: "The first press publishes revision 1 with transition None (test next_at_show_end_selects_then_plays asserts both)."
+  - id: B2
+    requirement: next inside a show advances in one press; selected follows to the same show.
+    result: pass
+    basis: static_review
+    evidence:
+      - "crates/core/src/engine.rs:455-459 `next.show == current.show` -> index += 1 and bump; bump sets selected to the landed show."
+      - "crates/core/src/engine.rs:1022-1038 next_within_show_is_unchanged asserts one press and selected == Some(0)."
+    notes: "Crossing an empty group is covered by the same test (a2 -> b1)."
+  - id: B3
+    requirement: at the end of a show with the setting on, press 1 selects the next presentable show with output unchanged and revision bump; press 2 outputs its first slide with a transition; no next show means no change; next_show skips shows without slides and does not wrap.
+    result: pass
+    basis: static_review
+    evidence:
+      - "crates/core/src/engine.rs:461-473: setting check, `selected_show == next.show` -> go_to_index(index + 1) (play), otherwise select_show(next.show) (select)."
+      - "crates/core/src/engine.rs:327-337 build_order emits only positions that have a slide, so an empty show is not a next_show target."
+      - "crates/core/src/engine.rs:959-990 next_at_show_end_selects_then_plays asserts output unchanged, selected moved, revision +1, no transition; then output moved, revision +2, transition Some."
+      - "crates/core/src/engine.rs:1009-1020 next_at_project_end_is_no_op asserts no change and no wrap."
+      - "parity/reports/evidence/dev-015/outline-after-first-press-1280x820.png and outline-after-second-press-1280x820.png."
+      - "parity/reports/reader/next-at-end-2026-11-09.md plus on-after-1-main/out and on-after-2-out captures."
+    notes: "Skip-empty-show is statically true through build_order but is not exercised by a unit test with an empty show between two non-empty shows; see test_gaps."
+  - id: B4
+    requirement: setting off makes next at a show end a no-op (no selection, no output, false), including at the project end.
+    result: pass
+    basis: static_review
+    evidence:
+      - "crates/core/src/engine.rs:461-464 returns false before any selection change when the setting is off."
+      - "crates/core/src/engine.rs:992-1007 next_at_show_end_setting_off_is_no_op asserts output, selection and revision unchanged."
+      - "parity/reports/evidence/dev-015/outline-setting-off-next-noop-1280x820.png: rev 0, welcome-1, 1/2 after two Next presses."
+    notes: "The project-end + setting-off combination shares the same early return; not separately asserted."
+  - id: B5
+    requirement: setting named next_item_on_last_slide, default true, persisted in the session, changing it does not move output or selection, engine exposes getter and setter returning whether changed without bumping the revision.
+    result: pass
+    basis: static_review
+    evidence:
+      - "crates/core/src/engine.rs:421-436 getter/setter; setter returns false when unchanged and does not touch index, selected_show or revision."
+      - "crates/core/src/session.rs:38-48 serde default true and manual Default true; :376-401 old-session-default and round-trip tests."
+      - "apps/desktop/src/runtime.rs:80-100 AppState::new applies the session value to the engine before the controller is built; :165-192 set_next_item_on_last_slide applies the engine and saves the same SessionStore."
+      - "apps/desktop/src/runtime.rs:278 open_project uses replace_project_at, which does not reset the setting."
+      - "parity/reports/evidence/dev-015/session-on.json and session-off.json show the field serialized true/false."
+      - "parity/reports/evidence/dev-015/controller-at-end-off-after-restart-1280x820.png: At end: stop after a restart."
+    notes: "The setter intentionally does not publish a RenderState revision; the controller repaints from its own signal, which is what the contract specifies."
+  - id: B6
+    requirement: "top-bar control next to Focus; labels At end: advance / At end: stop; clicking toggles; reflects persisted value after restart; applies immediately and saves; title/aria-label states the behaviour and current state."
+    result: pass
+    basis: static_review
+    evidence:
+      - "apps/desktop/src/app.rs:467-488 control is in topbar-actions immediately before Focus; class btn at-end on/off; title and aria_label from at_end_title; onclick toggles the local signal then calls AppState::set_next_item_on_last_slide."
+      - "apps/desktop/src/app.rs:679-696 exact labels and title text; :814-824 unit test asserts both labels and the title phrase/current state."
+      - "apps/desktop/src/app.rs:286-288 the signal is seeded from the engine, which AppState::new seeded from the session."
+      - "parity/reports/evidence/dev-015/controller-at-end-on-1280x820.png (At end: advance) and controller-at-end-off-1280x820.png / controller-at-end-off-after-restart-1280x820.png (At end: stop)."
+    notes: "The control keeps a local signal for immediate feedback; the evidence's off state was reached through the debug-only CJCRSG_DRAWER=at-end hook, which dispatches a real DOM click on `.btn.at-end` (app.rs:205), not by editing the session."
+  - id: B7
+    requirement: project outline marks the live show as current/live and the selected show distinctly as selected; when both are the same, live only.
+    result: pass
+    basis: static_review
+    evidence:
+      - "apps/desktop/src/drawer.rs:257-269 Live => outline-show current + badge `live`; else selected => outline-show selected + badge `selected`; `chosen = !live && selected == Some(index)`."
+      - "apps/desktop/src/outline.rs:83-94 same logic in the standalone OutlinePanel; :163-180 same logic in FocusView with focus-show classes."
+      - "apps/desktop/src/app.rs:339-345 passes live_show and selected_show into the drawer content; :513-515 into FocusView."
+      - "parity/reports/evidence/dev-015/outline-after-first-press-1280x820.png: Welcome LIVE, Parity Fixture SELECTED, preview welcome-1."
+      - "parity/reports/evidence/dev-015/outline-after-second-press-1280x820.png: Parity Fixture LIVE only, Welcome has no badge."
+      - "parity/reports/evidence/dev-015/focus-after-first-press-1280x820.png: same markers in focus view."
+    notes: "The contract's `outline-show current` / `outline-show selected` markup is present in the drawer's Shows tab, which is the controller's project outline."
+
+claims:
+  observed:
+    - claim: "At a show's last slide, the first advance selects the next project item and leaves the output unchanged; the second advance outputs it (setting on)."
+      label: observed
+      source: "docs/freeshow-reference/show/presenting.md § End of show — observed; parity/reports/reader/next-at-end-2026-11-09.md"
+      exercised_by: [next_at_show_end_selects_then_plays, reference-end-of-show-observed-2026-11-09]
+      result: pass_static
+    - claim: "With special.nextItemOnLastSlide off, neither the selection nor the output moves; at the end of the project nothing moves."
+      label: observed
+      source: "presenting.md § End of show — observed; § Spacebar item 5; reader report off run"
+      exercised_by: [next_at_show_end_setting_off_is_no_op, next_at_project_end_is_no_op]
+      result: pass_static
+    - claim: "The setting is on in the default profile and can be switched off explicitly."
+      label: observed
+      source: "reader report profiles on/off; presenting.md § Settings (default claim itself is code)"
+      exercised_by: [session-on.json, session-off.json, controller-at-end-on/off captures]
+      result: pass_static
+    - claim: "The reference's main-window header/selection moves to the next show on press 1 while the output window still shows the previous slide."
+      label: observed
+      source: "presenting.md § End of show — observed; reader captures"
+      exercised_by: [outline-after-first-press-1280x820.png, reference on-after-1-main/out captures]
+      result: pass_static
+  code:
+    - claim: "special.nextItemOnLastSlide is read at OutputHelper.ts:131; openProjectItem only sets activeShow; only playNext paths play the item directly (OutputHelper.ts:130-194, project.ts:35-64)."
+      label: code
+      status: recorded
+      disposition: "Explains the observed two-step result; not a requirement on our engine. Not judged."
+    - claim: "getNextSlide resolves the first outputtable entry and the disabled/binding skip rule (OutputHelper.ts:338-371, 414-425)."
+      label: code
+      status: not yet exercised
+      disposition: |
+        Our build_order includes disabled slides, so a show whose only slide is
+        disabled would still be selected/played at a show end. The contract's B3
+        only says "shows without slides", and disabled-slide navigation is a
+        separate feature (show.slides.disabled), so this is not a DEV-015
+        defect. A scenario that would test it: end of show A with show B whose
+        only slide is disabled, then Next twice; the reference skips B, our
+        engine currently would not.
+    - claim: "The default is set at General.svelte:55 and only an explicit false disables it."
+      label: code
+      status: exercised_statically
+      disposition: "Session default true, setter false check; old-session test. The observed on/off runs confirm the effect."
+    - claim: "Next at a show end requires a next project item; there is no wrap (OutputHelper.ts:136-139, 255-264)."
+      label: code
+      status: exercised_statically
+      disposition: "build_order + next_at_project_end_is_no_op. The 'skip shows without slides' part is statically true but not exercised by a dedicated test; see test_gaps."
+  doc:
+    - claim: "The online docs say space at the end 'will go to the next show'; the page's Doc vs code records that the docs do not mention the two-press behaviour."
+      label: doc
+      status: recorded_not_judged
+      disposition: "Our implementation follows the observed two-step, not the doc."
+  unknown:
+    - claim: "Does the two-step rule generalise to a project with three or more shows?"
+      label: unknown
+      status: open_question
+      disposition: "The contract fixes the generalisation (next show with at least one slide, no wrap). The reader report's open question remains open; the mechanism is in changeProjectItem, but no 3-show run was made."
+    - claim: "What does the operator see in the output between press 1 and press 2?"
+      label: unknown
+      status: open_question
+      disposition: "The reader captures show the output stays on the previous show. The contract adopts that; our evidence's /api/state and preview stay on welcome-1."
+    - claim: "Does the setting affect the active selection or only the output?"
+      label: unknown
+      status: open_question
+      disposition: "The reader off run shows neither moves; the contract adopts that (B4)."
+
+defects:
+  - id: V-001
+    severity: blocker
+    type: environment
+    description: |
+      The `shell` tool is permission-denied in this verifier session for every
+      command and directory. Consequently ./scripts/check.sh was not run, its
+      exit code is unknown, and the six unit tests plus fmt/clippy were not
+      independently executed. This is not a candidate defect; it prevents a
+      pass verdict under the independent-verification rule.
+    owner: orchestrator
+    action: "Re-run ./scripts/check.sh in a shell-capable verifier session, or explicitly accept the static review plus parity/reports/evidence/dev-015/test-output.txt as this milestone's execution evidence."
+    blocks_acceptance: true
+
+test_gaps:
+  - id: T-001
+    severity: low
+    description: "No unit test places an empty show between two non-empty shows and asserts that the first Next selects the next show with a slide (the contract's 'skips shows without slides'). build_order makes it statically true."
+    test_that_would_exercise: next_at_show_end_skips_a_show_without_slides
+    blocks_acceptance_of_claim_only: true
+  - id: T-002
+    severity: low
+    description: "Setting off at the project's last slide is not separately asserted; the existing project-end test runs with the setting on. The code returns false from the no-next-position check before the setting branch, so the behaviour is statically the same."
+    test_that_would_exercise: next_at_project_end_setting_off_is_no_op
+    blocks_acceptance_of_claim_only: true
+  - id: T-003
+    severity: low
+    description: "B1 lists next_section and next_group among the navigations that must set the selected show; the existing selection test covers go_to_show, first, last and go_to, but not next_section/next_group."
+    test_that_would_exercise: selection_follows_next_section_and_group
+    blocks_acceptance_of_claim_only: true
+
+reference_findings:
+  - id: R-001
+    severity: low
+    type: inventory
+    description: |
+      The contract and the feature registry use `nav.bounds.next-at-end`, but
+      that ID does not exist in docs/freeshow-reference/feature-inventory.md.
+      The detail page is show/presenting.md under the IDs show.present and
+      show.present.active. The reader should add the inventory row/alias or the
+      contract should cite the reference ID. The understanding note cites the
+      right page sections, so the implementation is not affected.
+    owner: reader
+    affects_implementer: false
+  - id: R-002
+    severity: low
+    type: stale-page-header
+    description: |
+      show/presenting.md line 7 still says "Confidence: `code` (nothing was
+      run)" while the page now contains [observed, 2026-11-09] claims in the
+      End of show / Spacebar sections and the changelog records the move from
+      code to observed. The header contradicts the page body. It does not
+      affect this candidate, but a reader could mislabel the page.
+    owner: reader
+    affects_implementer: false
+  - id: R-003
+    severity: info
+    type: documented-deviation
+    description: |
+      The reader run shows press 3 at the end of the last show selecting the
+      following section (output unchanged), and press 4 doing nothing. The
+      contract explicitly puts "sections as selectable project items" out of
+      scope (DEV-009), and B3 says "no next_show -> no change". Our engine
+      therefore does nothing after the last show's last slide, while FreeShow
+      selects the section. This is a contract-approved deviation, not a defect
+      for DEV-015; a future project-item model must revisit it.
+    owner: orchestrator
+    affects_implementer: false
+
+process_notes:
+  - id: P-001
+    description: |
+      The candidate worktree does not contain docs/contracts/nav-next-at-end.md,
+      docs/freeshow-reference/show/presenting.md, or the reader report; they
+      exist in the main checkout but are not part of the candidate commit (the
+      candidate is a child of f7371d15, which is main's HEAD, and those docs are
+      uncommitted in main). Per the hand-off this was expected and the verifier
+      read them from main. The orchestrator should commit the contract and
+      reference before recording acceptance, so the candidate's
+      understanding.md does not cite files absent from its own tree.
+  - id: P-002
+    description: |
+      No parity/adapters, parity/runner or parity/normalizers implementation
+      exists in the candidate, so the scenario file nav-next-edge-cases has no
+      executable harness on either adapter. The contract's acceptance evidence
+      is unit tests plus the reference report, and the hand-off explicitly
+      excludes a differential selection harness; recorded here so the missing
+      harness is not mistaken for a passed scenario.
+  - id: P-003
+    description: |
+      The report file was written to the main checkout at
+      parity/reports/verifier/dev-015-a2704e5.yaml, not inside the verifier
+      worktree, because the write permission applies only inside the main
+      workspace; writing to the worktree path was permission-denied. The
+      content is the same and the relative path is the one the task asked for.
+
+artefacts:
+  contract: /home/eydamson/projects/cjcrsg-presenter/docs/contracts/nav-next-at-end.md
+  reference_page: /home/eydamson/projects/cjcrsg-presenter/docs/freeshow-reference/show/presenting.md
+  reference_labels: /home/eydamson/projects/cjcrsg-presenter/docs/freeshow-reference/USING-THIS.md
+  reader_report: /home/eydamson/projects/cjcrsg-presenter/parity/reports/reader/next-at-end-2026-11-09.md
+  reader_captures: /home/eydamson/projects/cjcrsg-presenter/parity/reports/reader/next-at-end-2026-11-09/
+  understanding_note: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/understanding.md
+  evidence_readme: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/README.md
+  test_output: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/test-output.txt
+  evidence_page: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/EVIDENCE.md
+  screenshots:
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/controller-at-end-on-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/outline-after-first-press-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/outline-after-second-press-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/controller-at-end-off-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/outline-setting-off-next-noop-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/controller-at-end-off-after-restart-1280x820.png
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/focus-after-first-press-1280x820.png
+  sessions:
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/session-on.json
+    - /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/session-off.json
+  fixture: /home/eydamson/.local/share/opencode/worktree/04e32b/verify-015/parity/reports/evidence/dev-015/next-at-end.cjcp
+
+visual_evidence_judgement:
+  method: "Opened each PNG and read the rendered state; did not judge by filename or size."
+  findings:
+    - "controller-at-end-on: top bar shows 'At end: advance' before Focus; rev 0, welcome-1, 1/2; Welcome LIVE; Parity Fixture has no badge."
+    - "outline-after-first-press: rev 1, preview still welcome-1, 1/2; Welcome LIVE; Parity Fixture SELECTED."
+    - "outline-after-second-press: rev 2, preview fixture-1, 2/2; Parity Fixture LIVE; Welcome has no badge."
+    - "controller-at-end-off: 'At end: stop'; rev 0, welcome-1; Welcome LIVE; no selection."
+    - "outline-setting-off-next-noop: same visible state after two Next presses; rev 0."
+    - "controller-at-end-off-after-restart: 'At end: stop'; rev 0; Welcome LIVE; no selection, after the restart run."
+    - "focus-after-first-press: focus view with Welcome LIVE and Parity Fixture SELECTED; rev 1."
+  conclusion: "The images show exactly the states the contract and the evidence README claim. No visual contradiction found."
+
+understanding_note_check:
+  exists: true
+  result: pass
+  citations:
+    - "presenting.md § End of show — observed (B1, B3, B4, B5, B7)"
+    - "presenting.md § Arrow keys/Page/Home/End (B1 item 7, B2 item 5, B3 item 7)"
+    - "presenting.md § Spacebar (B3)"
+    - "presenting.md § Settings and § State and persistence (B4, B5)"
+    - "presenting.md § Doc vs code and § Open questions (B5, B6)"
+    - "getting-started/project-playlist.md § Settings and § Open questions (B5, B6)"
+  labels: "Correctly labels the two-step move, the off behaviour and the press-1 output stay as observed; default/mechanism/persistence as code; no required behaviour is left as doc or unknown."
+  caveat: "The note lists contract clauses B1-B7 rather than the reference page's feature IDs show.present/show.present.active; the page sections it cites are correct. Minor documentation gap, not a defect."

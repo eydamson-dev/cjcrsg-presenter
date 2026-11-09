@@ -108,6 +108,9 @@ pub struct DrawerContent {
     /// consumer of that model, not a second show list.
     pub outline: Vec<OutlineEntry>,
     pub live_show: Option<usize>,
+    /// The show a next-at-the-end press has selected but not outputted yet.
+    /// Distinct from `live_show` so the first press is visible in the outline.
+    pub selected_show: Option<usize>,
     pub media: Vec<MediaItem>,
     pub audio: Vec<MediaItem>,
 }
@@ -200,6 +203,7 @@ pub fn Drawer(
                             OutlineList {
                                 items: content.outline,
                                 current: content.live_show,
+                                selected: content.selected_show,
                                 on_play_show,
                             }
                         },
@@ -235,6 +239,7 @@ pub fn Drawer(
 fn OutlineList(
     items: Vec<OutlineEntry>,
     current: Option<usize>,
+    selected: Option<usize>,
     on_play_show: EventHandler<usize>,
 ) -> Element {
     rsx! {
@@ -249,18 +254,24 @@ fn OutlineList(
                             // project's item list, not something Play can start.
                             h3 { key: "section-{position}", class: "outline-section", "{name}" }
                         },
-                        OutlineEntry::Show { name, index } => rsx! {
-                            div {
-                                key: "show-{index}",
-                                class: if current == Some(index) { "outline-show current" } else { "outline-show" },
-                                span { class: "name", "{name}" }
-                                if current == Some(index) {
-                                    span { class: "outline-badge", "live" }
-                                }
-                                button {
-                                    class: "btn small",
-                                    onclick: move |_| on_play_show.call(index),
-                                    "Play"
+                        OutlineEntry::Show { name, index } => {
+                            let live = current == Some(index);
+                            let chosen = !live && selected == Some(index);
+                            rsx! {
+                                div {
+                                    key: "show-{index}",
+                                    class: if live { "outline-show current" } else if chosen { "outline-show selected" } else { "outline-show" },
+                                    span { class: "name", "{name}" }
+                                    if live {
+                                        span { class: "outline-badge", "live" }
+                                    } else if chosen {
+                                        span { class: "outline-badge selected", "selected" }
+                                    }
+                                    button {
+                                        class: "btn small",
+                                        onclick: move |_| on_play_show.call(index),
+                                        "Play"
+                                    }
                                 }
                             }
                         },

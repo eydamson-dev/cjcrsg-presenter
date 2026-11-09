@@ -60,6 +60,9 @@ pub fn build(project: &Project) -> Vec<OutlineEntry> {
 pub fn OutlinePanel(
     items: Vec<OutlineEntry>,
     current: Option<usize>,
+    /// The show the operator has selected; it can differ from the live show
+    /// between the two presses of a next-at-the-end move.
+    selected: Option<usize>,
     /// Optional so the panel can be rendered headlessly for evidence.
     on_play: Option<EventHandler<usize>>,
 ) -> Element {
@@ -76,22 +79,28 @@ pub fn OutlinePanel(
                             OutlineEntry::Section { name } => rsx! {
                                 div { key: "section-{position}", class: "outline-section", "{name}" }
                             },
-                            OutlineEntry::Show { name, index } => rsx! {
-                                div {
-                                    key: "show-{index}",
-                                    class: if current == Some(index) { "outline-show current" } else { "outline-show" },
-                                    span { class: "name", "{name}" }
-                                    if current == Some(index) {
-                                        span { class: "outline-badge", "live" }
-                                    }
-                                    button {
-                                        class: "btn small",
-                                        onclick: move |_| {
-                                            if let Some(on_play) = on_play {
-                                                on_play.call(index);
-                                            }
-                                        },
-                                        "Play"
+                            OutlineEntry::Show { name, index } => {
+                                let live = current == Some(index);
+                                let chosen = !live && selected == Some(index);
+                                rsx! {
+                                    div {
+                                        key: "show-{index}",
+                                        class: if live { "outline-show current" } else if chosen { "outline-show selected" } else { "outline-show" },
+                                        span { class: "name", "{name}" }
+                                        if live {
+                                            span { class: "outline-badge", "live" }
+                                        } else if chosen {
+                                            span { class: "outline-badge selected", "selected" }
+                                        }
+                                        button {
+                                            class: "btn small",
+                                            onclick: move |_| {
+                                                if let Some(on_play) = on_play {
+                                                    on_play.call(index);
+                                                }
+                                            },
+                                            "Play"
+                                        }
                                     }
                                 }
                             },
@@ -115,6 +124,9 @@ pub fn OutlinePanel(
 pub fn FocusView(
     items: Vec<OutlineEntry>,
     current: Option<usize>,
+    /// The show the operator has selected, marked distinctly from the live one
+    /// between the two presses of a next-at-the-end move.
+    selected: Option<usize>,
     on_play: Option<EventHandler<usize>>,
     on_exit: Option<EventHandler<()>>,
     slide: String,
@@ -148,18 +160,24 @@ pub fn FocusView(
                             OutlineEntry::Section { name } => rsx! {
                                 div { key: "focus-section-{position}", class: "focus-section", "{name}" }
                             },
-                            OutlineEntry::Show { name, index } => rsx! {
-                                button {
-                                    key: "focus-show-{index}",
-                                    class: if current == Some(index) { "focus-show current" } else { "focus-show" },
-                                    onclick: move |_| {
-                                        if let Some(on_play) = on_play {
-                                            on_play.call(index);
+                            OutlineEntry::Show { name, index } => {
+                                let live = current == Some(index);
+                                let chosen = !live && selected == Some(index);
+                                rsx! {
+                                    button {
+                                        key: "focus-show-{index}",
+                                        class: if live { "focus-show current" } else if chosen { "focus-show selected" } else { "focus-show" },
+                                        onclick: move |_| {
+                                            if let Some(on_play) = on_play {
+                                                on_play.call(index);
+                                            }
+                                        },
+                                        span { class: "focus-name", "{name}" }
+                                        if live {
+                                            span { class: "focus-badge", "live" }
+                                        } else if chosen {
+                                            span { class: "focus-badge selected", "selected" }
                                         }
-                                    },
-                                    span { class: "focus-name", "{name}" }
-                                    if current == Some(index) {
-                                        span { class: "focus-badge", "live" }
                                     }
                                 }
                             },

@@ -74,8 +74,8 @@ reference:
   read_by: reader
   confidence: high
 scenarios: [nav-next-edge-cases]
-status: known-deviation
-deviations: [DEV-015]
+status: parity
+deviations: []
 notes: >
   Observed on 2026-11-09 with two shows in one project. With the default
   special.nextItemOnLastSlide: the first Next selects the next project item and
@@ -84,8 +84,10 @@ notes: >
   setting is read at OutputHelper.ts:131; openProjectItem only sets activeShow,
   and only the playNext paths play directly (OutputHelper.ts:183-193).
   Evidence and captures: parity/reports/reader/next-at-end-2026-11-09.md.
-  Our engine advances to the next show in one press and does not model the
-  setting (DEV-015).
+  Implemented at a2704e5: the engine keeps selected_show and
+  next_item_on_last_slide apart from the live index, and the controller exposes
+  the setting. FreeShow also selects the following section at the project end;
+  sections are DEV-009 and out of this feature's scope.
 ```
 
 ## Deviations

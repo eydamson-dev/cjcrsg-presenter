@@ -140,8 +140,8 @@ pub fn App() -> Element {
     });
 
     // Evidence convenience: a synthetic X11 click is not delivered to an
-    // XWayland WebView, so a screenshot run can name the drawer or
-    // project-browser action to take. The action is a real DOM click, through
+    // XWayland WebView, so a screenshot run can name the drawer, project-browser
+    // or end-of-show action to take. The action is a real DOM click, through
     // the same handlers an operator uses. Debug builds only; never part of the
     // presentation path.
     use_hook(|| {
@@ -202,6 +202,7 @@ pub fn App() -> Element {
                             )
                         }
                         "portable" => "document.querySelector('.projects-foot .btn')?.click()".to_string(),
+                        "at-end" => "document.querySelector('.btn.at-end')?.click()".to_string(),
                         "top" => "document.querySelectorAll('.column, .drawer-content').forEach((el) => { el.scrollTop = 0; })".to_string(),
                         step if step.starts_with("drag:") => {
                             let target = step.trim_start_matches("drag:").parse::<u32>().unwrap_or(300);
@@ -281,6 +282,10 @@ pub fn App() -> Element {
     let mut timer_minutes = use_signal(|| 5u64);
     // Test-only: start in focus mode so the layout can be screenshotted.
     let mut focus = use_signal(|| std::env::var("CJCRSG_FOCUS").is_ok());
+    // The end-of-show setting is an engine preference, not a signal, so the
+    // control keeps its own copy for immediate feedback; `AppState::new` seeds
+    // it from the session before the first render.
+    let mut at_end_advance = use_signal(|| app.next_item_on_last_slide());
     let mut bundle_status = use_signal(String::new);
 
     let rows: Vec<(OutputKind, bool, Option<Revision>)> = OutputKind::ALL
@@ -334,6 +339,7 @@ pub fn App() -> Element {
     let drawer_content = DrawerContent {
         outline: outline.clone(),
         live_show: app.current_show(),
+        selected_show: app.selected_show(),
         media: drawer_media,
         audio: drawer_audio,
     };
@@ -461,6 +467,20 @@ pub fn App() -> Element {
                 div { class: "topbar-actions",
                     span { class: "readout-inline", "rev {revision} · {position} / {total}" }
                     button {
+                        class: if at_end_advance() { "btn at-end on" } else { "btn at-end off" },
+                        title: at_end_title(at_end_advance()),
+                        aria_label: at_end_title(at_end_advance()),
+                        onclick: {
+                            let app = app.clone();
+                            move |_| {
+                                let enabled = !at_end_advance();
+                                at_end_advance.set(enabled);
+                                app.set_next_item_on_last_slide(enabled);
+                            }
+                        },
+                        "{at_end_label(at_end_advance())}"
+                    }
+                    button {
                         class: "btn",
                         onclick: move |_| focus.toggle(),
                         if focus() { "Exit focus" } else { "Focus" }
@@ -492,6 +512,7 @@ pub fn App() -> Element {
                             FocusView {
                                 items: outline.clone(),
                                 current: app.current_show(),
+                                selected: app.selected_show(),
                                 on_play: Some(EventHandler::new({
                                     let app = app.clone();
                                     move |index: usize| { app.go_to_show(index); }
@@ -655,6 +676,25 @@ pub fn App() -> Element {
     }
 }
 
+/// The visible control label is a state, not a question (contract B6).
+fn at_end_label(enabled: bool) -> &'static str {
+    if enabled {
+        "At end: advance"
+    } else {
+        "At end: stop"
+    }
+}
+
+/// What the control does, and what it is doing now, for a tooltip and a screen
+/// reader. The wording is the contract's, with the current state appended.
+fn at_end_title(enabled: bool) -> &'static str {
+    if enabled {
+        "Advance to the next show at the end of a show (currently: advance)"
+    } else {
+        "Advance to the next show at the end of a show (currently: stop)"
+    }
+}
+
 /// Spawn an output window backed by its own `VirtualDom`.
 pub(crate) fn open_output(window: DesktopContext, app: Rc<AppState>, kind: OutputKind) {
     let props = OutputProps {
@@ -764,3 +804,23 @@ const RESIZE_SCRIPT: &str = r#"
 /// the window having focus ownership. The script is a separate file so the
 /// browser-level test runs exactly what ships.
 const KEY_SCRIPT: &str = include_str!("../assets/keys.js");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_end_of_show_control_is_a_state_not_a_question() {
+        assert_eq!(at_end_label(true), "At end: advance");
+        assert_eq!(at_end_label(false), "At end: stop");
+
+        for enabled in [true, false] {
+            assert!(
+                at_end_title(enabled).contains("Advance to the next show at the end of a show"),
+                "the tooltip states the behaviour"
+            );
+        }
+        assert!(at_end_title(true).contains("currently: advance"));
+        assert!(at_end_title(false).contains("currently: stop"));
+    }
+}
