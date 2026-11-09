@@ -1,43 +1,69 @@
-# Status
+# Status — the handover
 
-What exists, what does not, and what to do next. Update this at the end of every
-working session; it is the handover.
+What exists, what does not, and what to do next. **Update this at the end of
+every session.** It is the only place that describes current state; if it is
+wrong, the next session starts wrong.
 
 Last updated: 2026-11-09.
 
-## Where the project stands
+## Verify the workspace in one command
 
-**Phase 0 — architecture validation.** Experiment 1 passed. Experiment 2 has a
-first measurement (glyph metrics exact; a true 16:9 reference is still needed).
-Experiment 3 ran: four surfaces, zero dropped frames; CPU cost still unmeasured in-app.
+```bash
+scripts/check.sh
+```
 
-**Phase 1 — walking skeleton.** Except the second physical display, done:
-a project loads, a show advances, outputs render, a remote can drive it, and a
-closed output recovers. The remote protocol is ours (JSON over HTTP), not
-FreeShow's Socket.IO.
+Runs rustfmt, clippy (`-D warnings`), the test suite, and a check that
+`EVIDENCE.md` declares the correct test count. CI runs the same script on
+`ubuntu-24.04` and is green.
 
-**Phase 2 — presentation engine.** Partly done: output manager with four
-independent windows, clear/blank, stage display with the next slide, fade
-transition, remote commands. Missing: layout options, transition parity with
-FreeShow, group semantics beyond linear order.
+## What works end to end
 
-**Phase 3 — data.** Import and native format done; persistence, media and
-document importers are not started.
+```bash
+cargo run -p cjcrsg-presenter -- <file.cjcp>        # open a project
+cargo run -p cjcrsg-presenter -- serve --port 5521  # headless remote
+cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
+```
 
-**Phases 4–6.** Not started. Media, professional AV, release.
+- Import a FreeShow `.show`, a whole project (`projects.json` + `shows/`), or a
+  native `.cjcp`/`.cjcs`; unknown fields survive a read-write cycle.
+- Navigate: next, previous, first, last, next/previous **group**, goto by index,
+  clear/blank (which keeps the position).
+- Four independent output windows; the stage shows live + next + operator notes
+  + a clock slot.
+- All eight of FreeShow's transitions.
+- An HTTP remote that drives all of the above, returning 409 for a no-op.
+- Close any output, keep presenting, reopen it and it returns to the live slide
+  in ~180 ms.
 
-## Verified, with evidence
+## Phases
 
-| Claim | Evidence |
+| Phase | State |
 | --- | --- |
-| Four output windows share one publisher and recover in 205 ms | `parity/reports/experiment-1-2026-11-09.md` |
-| Chromium renders the same slide bit-identically across runs | `parity/reports/calibration-2026-11-09.md` |
-| FreeShow's web clients can be driven; navigation is on 5512 | `parity/reports/preflight-2026-11-09.md` |
-| FreeShow `.show` imports; `.cjcp` preserves unknown fields | `parity/reports/data-layer-2026-11-09.md` |
-| The remote drives the engine and reports no-ops as 409 | `parity/reports/remote-2026-11-09.md` |
-| Stage state carries the next slide | `parity/reports/stage-2026-11-09.md` (no screenshot) |
+| 0 — architecture validation | **done.** All three experiments measured |
+| 1 — walking skeleton | **done** except the second physical display |
+| 2 — presentation engine | mostly: outputs, clear, stage, transitions, remote, groups. Missing per-transition duration/easing, stage timers, output layout options |
+| 3 — data | import + native format + media references. Missing persistence, media copy-in, document importers |
+| 4 — media engine | not started |
+| 5 — professional AV | not started (needs hardware) |
+| 6 — release/packaging | not started |
 
-## Test counts
+## Measured, with evidence
+
+| Claim | Where |
+| --- | --- |
+| Four outputs, one engine, 184 ms recovery | `parity/reports/experiment-1-2026-11-09.md` |
+| Renderer parity: 0.35 % differing pixels, boxes within 0.15 px | `parity/reports/experiment-2-2026-11-09.md` |
+| Four surfaces, 1080p30, zero dropped frames | `parity/reports/experiment-3-2026-11-09.md` |
+| Same slide twice: 0 differing channels | `parity/reports/calibration-2026-11-09.md` |
+| FreeShow navigation lives on the controller (5512) | `parity/reports/preflight-2026-11-09.md` |
+| Import, formats, media | `parity/reports/data-layer-2026-11-09.md` |
+| Remote commands | `parity/reports/remote-2026-11-09.md` |
+| Stage | `parity/reports/stage-2026-11-09.md` |
+| Transitions | `parity/reports/transitions-2026-11-09.md` |
+
+Pictures and raw artefacts: `EVIDENCE.md`.
+
+## Tests
 
 ```
 crates/core     39
@@ -45,44 +71,35 @@ crates/compat   20
 crates/remote    8
 ```
 
-Run everything with `scripts/check.sh`.
-
-## Decisions
-
-`docs/decisions.md` records why the expensive choices were made: Dioxus on a
-WebView, fixed-resolution rendering, one VirtualDom per output, snapshots over
-events, JSON-first format, relative media paths, GPL, and headless visual
-evidence.
-
 ## Next, in order
 
-1. **Experiment 2 — renderer parity.** Needs one full-size capture of a FreeShow
-   slide and our renderer at the same viewport. This is the highest-risk unknown
-   and it gates renderer work.
-2. **Stage screenshot.** `CJCRSG_DEMO_OPEN=stage cargo run -p cjcrsg-presenter -- <file.cjcp>`
-   then capture the "CJCRSG — Stage" window. The only milestone without visual
-   evidence.
-3. **Experiment 3 — video.** Same clip in 2 and 4 windows; measures whether the
-   WebView decodes it once or four times.
-4. **Second display.** Experiment 1's placement and focus criteria.
-5. **Transition parity.** FreeShow's transition set, not just a fade.
+1. **Per-transition duration and easing.** FreeShow stores `duration` and
+   `easing` per transition; we hardcode 400 ms ease-out. Small, closes a known
+   deviation.
+2. **Media copy-in.** Turn an `External` asset into a `Bundled` one by copying
+   it into the project and rewriting the path. Needed before a project can be
+   shared or zipped.
+3. **Persistence.** Recent projects, restore-on-start. The format is settled;
+   this is UI and storage plumbing.
+4. **Second physical display.** Experiment 1's placement and focus criteria are
+   the only untested part of the walking skeleton. Needs hardware.
+5. **FreeShow remote parity (Socket.IO).** Existing FreeShow remote clients
+   cannot talk to us. This is the compatibility risk of Phase 2.
+6. **Phase 4 media.** Start with a playback coordinator behind a trait; measure
+   CPU inside the app, where the process tree is stable.
 
 ## Known gaps and hazards
 
-- **CI does not run yet.** `.github/workflows/check.yml` is committed and pins
-  `ubuntu-24.04`, but GitHub refuses to start the job: "recent account payments
-  have failed or your spending limit needs to be increased". That is an account
-  setting, not a workflow problem. Until it is resolved, run `scripts/check.sh`
-  locally.
-
-- **No authentication on the remote**, and it binds `0.0.0.0`. Bound it to
+- **No authentication on the remote**, and it binds `0.0.0.0`. Bind it to
   localhost or add auth before it runs on a shared network.
-- **Monitor placement is untested.** `set_fullscreen` uses the window's current
-  monitor; positioning first is unproven.
-- **Desktop automation is unreliable here.** KWin scripting raised the wrong
-  window twice and captured unrelated work. Prefer headless captures; when a
-  window is required, do it by hand.
-- **The engine is linear.** FreeShow has group-level semantics (groups, layout
-  sections) that we have not modelled; `next` walks a flattened list.
-- **`nav.bounds.next-at-end` is unverified** against the reference. Our engine
-  ignores next at the end; FreeShow may wrap or stop.
+- **The engine is linear within a show.** Groups are navigation sections, not
+  FreeShow's full layout/section model.
+- **`nav.bounds.next-at-end` is unverified** against the reference. Ours ignores
+  next at the end; FreeShow may wrap or stop.
+- **Transition timing is fixed** at 400 ms ease-out for every effect.
+- **Experiment 3 measured dropped frames only.** CPU cost per surface is
+  unmeasured; the proxy harness could not attribute it. Measure in-app.
+- **Desktop automation is unreliable on this machine.** Prefer headless
+  renders; capture windows by hand.
+- **CI is green but the repo history is short.** The original fork's git history
+  was absent when this repository started; see `docs/provenance.md`.

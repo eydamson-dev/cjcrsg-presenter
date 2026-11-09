@@ -12,6 +12,7 @@ system WebView through wry (WebKitGTK on Linux, WebView2 on Windows, WKWebView
 on macOS) — that WebView is what renders the slides, and it is a dependency of
 Dioxus, not an alternative to it.
 
+- [docs/status.md](docs/status.md) — **start here**: what works now and what is next
 - [PROJECT.md](PROJECT.md) — what this is, why, and the stack
 - [docs/architecture.md](docs/architecture.md) — the design and its invariants
 - [docs/plan.md](docs/plan.md) — phases and exit criteria

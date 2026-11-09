@@ -1,30 +1,36 @@
 # Agent instructions — cjcrsg-presenter
 
 Rust reimplementation of the CJCRSG Presenter (a FreeShow derivative).
-Read `PROJECT.md`, `docs/architecture.md` and `docs/experiments.md` before
-changing code.
 
-## Current phase
+## Start here
 
-**Architecture validation.** Do not add product features, and do not port
-Svelte components or device integrations, until the three experiments in
-`docs/experiments.md` pass with recorded results. The experiments exist to fail
-cheaply; skipping them converts a one-day risk into a one-quarter one.
+Read in this order, and stop when you have what you need:
+
+1. **`docs/status.md`** — what exists *now*, what is in flight, what is next.
+   Update it at the end of every session; it is the handover.
+2. **`docs/decisions.md`** — why the expensive choices were made (D1–D9).
+3. **`docs/architecture.md`** — the design and the invariants behind it.
+4. **`EVIDENCE.md`** — proof per milestone, with pictures and raw artefacts.
+5. **`docs/plan.md`** — phases and exit criteria.
+
+`docs/status.md` is the only place that describes current state. Do not restate
+it here: this file drifted once already by carrying a "current phase" that was
+weeks out of date.
 
 ## Invariants — do not break these
 
-1. **No Dioxus in the core.** `crates/core` (and later `crates/compat`,
-   `crates/persistence`) must not depend on `dioxus`, `dioxus-desktop`, `tao`,
-   or any WebView crate. If it cannot be tested with `cargo test` and no window,
-   it does not belong in the core.
+1. **No Dioxus in the core.** `crates/core`, `crates/compat` and
+   `crates/remote` must not depend on `dioxus`, `dioxus-desktop`, `tao`, or any
+   WebView crate. If it cannot be tested with `cargo test` and no window, it
+   does not belong there.
 
 2. **The engine owns the show, never a window.** Closing an output window must
    not change the active slide, stop media, or lose state. Reopening must
    reconstruct from the current snapshot — never from replayed events.
 
-3. **One VirtualDom per output, one shared state publisher.** Outputs subscribe
-   to `RenderHub`; they do not talk to each other and have no channel of their
-   own.
+3. **One `VirtualDom` per output, one shared state publisher.** Outputs subscribe
+   to `SharedEngine`; they do not talk to each other and have no channel of
+   their own.
 
 4. **The renderer is a consumer.** It never decides which slide is active. Any
    logic that answers "what is on screen now" lives in the engine.
@@ -36,45 +42,62 @@ cheaply; skipping them converts a one-day risk into a one-quarter one.
    WebView compositor animate. Never stream frames or per-frame positions.
 
 7. **Preserve unknown data.** The compatibility layer must round-trip fields it
-   does not model (`#[serde(flatten)]` extension maps). A user's project must
-   not lose data because we have not implemented a feature yet.
+   does not model. A user's project must not lose data because we have not
+   implemented a feature yet.
 
 8. **Pin Dioxus.** `dioxus` and `dioxus-desktop` are `=0.7.10`. Commit
-   `Cargo.lock`. Isolate desktop-specific API use behind one adapter module so a
-   0.x upgrade is a contained change.
+   `Cargo.lock`. Keep desktop-specific API use at the edges.
+
+9. **Evidence ships with the work.** Every milestone lands with a screenshot or
+   raw artefact under `parity/reports/evidence/` **and** an `EVIDENCE.md` update
+   in the same commit. `scripts/check.sh` fails if the page's declared test
+   count disagrees with the workspace, so a stale page breaks the build.
 
 ## Build and test
 
 ```bash
-cargo test                 # headless; must pass without a display server
-cargo test -p presenter-core
-cargo run -p cjcrsg-presenter
-cargo clippy --workspace --all-targets -- -D warnings
+scripts/check.sh                                          # fmt + clippy + tests + evidence check
+cargo test -p presenter-core                              # headless, no display needed
+cargo run -p cjcrsg-presenter                             # desktop app
+cargo run -p cjcrsg-presenter -- render <f.cjcp> out.html # real components to HTML
+cargo run -p cjcrsg-presenter -- serve --port 5521        # remote, headless
+CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter              # Experiment 1, automated
 ```
 
-The desktop app needs `webkit2gtk4.1-devel` on Linux. `cargo test` must not.
+The desktop app needs `webkit2gtk4.1-devel`, `libsoup3-devel` and
+`libxdo-devel` on Linux. `cargo test` must not need a display server.
 
 ## Style
 
 - Rust 2021, `rustfmt`, no `unwrap()`/`expect()` outside tests and `main`.
 - Typed errors with `thiserror` in libraries; `anyhow` only at the application
   edge.
-- Logging with `tracing`; no `println!` outside examples.
+- Logging with `tracing`; no `println!` outside the CLI.
 - Public items get doc comments explaining *why*, not what.
 - Comments explain constraints. Do not narrate obvious code.
 
 ## Traps
 
-- **The directory was a FreeShow fork.** Git history and provenance matter for
-  GPL attribution. Do not rewrite or re-init history to "clean it up" —
-  see `docs/provenance.md`.
-- **`set_fullscreen()` uses the window's current monitor**, not a chosen one.
-  Position the window on the target monitor first, then fullscreen.
-- **Monitor indices are not stable identities.** Enumerate and match on
-  geometry/name; never persist a raw index.
-- **Last-window-close can exit the app.** Give the controller and the output
-  windows different close policies.
+- **`./scripts/check.sh | tail` hides the exit code.** The pipeline's status is
+  `tail`'s. A failing fmt check was committed this way. Run it bare.
+- **`asset!()` needs the Dioxus CLI.** Without `dx` the stylesheet silently
+  fails to load and the window renders as browser defaults, with no error.
+  Embed CSS with `include_str!`.
+- **`calc()` cannot divide a length by a number inside `scale()`.** Slides use a
+  `--slide-scale` variable set by script instead.
+- **Wayland refuses focus stealing and offers no capture-by-window-id.** An app
+  cannot focus its own window; `spectacle -u` needs a cursor; KWin scripting
+  matched the wrong window twice and captured unrelated work. Use
+  `dioxus-ssr` + headless Chromium for visual evidence.
+- **Playwright's Chromium has no H.264.** Video tests must use VP9/WebM, or they
+  pass silently with a dead player.
+- **`set_fullscreen()` uses the window's current monitor.** Position first, then
+  fullscreen. Monitor indices are not stable identities; never persist one.
+- **Last-window-close can exit the app.** Controller and outputs need different
+  close policies.
 - **WebView window cycles leak.** A `DesktopContext` held strongly inside a
   callback registered on that same window keeps it alive. Use weak references.
-- **Experiment results are data.** Record measurements in `parity/reports/`,
-  not in chat. A conclusion without a number is an opinion.
+- **`pkill -f "cjcrsg-presenter"` kills the invoking shell.** The pattern
+  matches its own command line. Use a pid file.
+- **The directory was a FreeShow fork.** Git history and provenance matter for
+  GPL attribution. See `docs/provenance.md`.

@@ -178,6 +178,19 @@ than photographs of windows.
 
 ---
 
+## Verification
+
+| Check | Result |
+| --- | --- |
+| `scripts/check.sh` locally | fmt, clippy `-D warnings`, 67 tests, evidence count — all pass |
+| GitHub Actions `check` on `main` | passing on `ubuntu-24.04` (runs `42541284369`, `42541450720`) |
+
+CI runs the same script, so a green tick means the same thing as a green local
+run. The workflow pins the runner and installs the WebKit/GTK/Xdo headers the
+desktop crate needs to link.
+
+---
+
 ## Reproducing any of these
 
 ```bash
