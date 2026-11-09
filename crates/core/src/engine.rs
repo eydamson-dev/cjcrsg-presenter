@@ -784,13 +784,15 @@ mod tests {
         use crate::media::{MediaKind, MediaOrigin};
 
         let mut project = fixture();
+        // Absolute on the host running the test, so this works on Windows too.
+        let absolute = std::env::temp_dir().join("cjcp-logo.png");
         for slide in project.shows[0].groups[0].slides.iter_mut() {
             slide.elements.push(SlideElement {
                 id: format!("{}-bg", slide.id),
                 class_name: "media".into(),
                 style: String::new(),
                 media: Some(MediaRef {
-                    path: "/srv/media/logo.png".into(),
+                    path: absolute.to_string_lossy().to_string(),
                     kind: MediaKind::Image,
                     origin: MediaOrigin::External,
                     looped: false,
@@ -800,12 +802,17 @@ mod tests {
             });
         }
 
-        let mut engine = ShowEngine::new(project).with_media_root("/ignored");
+        let mut engine =
+            ShowEngine::new(project).with_media_root(std::env::temp_dir().join("ignored-root"));
         let media = engine.state().slide.elements[1]
             .media
             .clone()
             .expect("a media element");
-        assert_eq!(media.src, "file:///srv/media/logo.png");
+        assert_eq!(
+            media.src,
+            crate::media::file_url(&absolute),
+            "an absolute path is not joined to the root"
+        );
 
         engine.toggle_clear();
         let next = engine.state().next.expect("a next slide");

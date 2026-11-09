@@ -279,7 +279,12 @@ mod tests {
     #[test]
     fn a_file_url_is_absolute_and_percent_encoded() {
         let url = file_url(Path::new("/media/worship clip #1.mp4"));
-        assert_eq!(url, "file:///media/worship%20clip%20%231.mp4");
+        assert!(url.starts_with("file://"), "{url}");
+        assert!(url.ends_with("/media/worship%20clip%20%231.mp4"), "{url}");
+        assert!(
+            !url.contains(' ') && !url.contains('#'),
+            "not encodable: {url}"
+        );
     }
 
     #[test]
