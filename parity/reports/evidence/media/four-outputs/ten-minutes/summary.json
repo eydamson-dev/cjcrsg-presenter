@@ -1,0 +1,33 @@
+{
+  "Audience": {
+    "samples": 308,
+    "seconds": 614.9,
+    "frames": 17907,
+    "fps": 29.12,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 600
+  },
+  "Stage": {
+    "samples": 308,
+    "seconds": 616.0,
+    "frames": 17940,
+    "fps": 29.12,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 600
+  },
+  "Confidence": {
+    "samples": 302,
+    "seconds": 614.9,
+    "frames": 17905,
+    "fps": 29.12,
+    "dropped": 0,
+    "size": "1920x1080",
+    "ended_paused": true,
+    "final_t": 600
+  },
+  "_all_four_playing": false
+}

@@ -68,6 +68,32 @@ frames across all four.
 Raw: `evidence/media/four-outputs/summary.json`, `probe.log`,
 `clip.txt` (ffprobe).
 
+## Ten minutes
+
+Repeated with a 10-minute 1920×1080 VP9 clip (115 MB), same app, same probe,
+after the output kinds changed so that **Preview shows the next slide** and no
+longer decodes the live video. That makes the product's maximum three concurrent
+live-video surfaces, not four:
+
+| Output | Frames | FPS | Dropped | Final position |
+| --- | --- | --- | --- | --- |
+| Audience | 17,907 | 29.12 | **0** | 600.0 s |
+| Stage (muted) | 17,940 | 29.12 | **0** | 600.0 s |
+| Confidence | 17,905 | 29.12 | **0** | 600.0 s |
+| Preview | — | — | — | shows the next slide (still image) |
+
+614–616 s of samples, zero dropped frames. Frames are 0.5 % below 30 fps × 600 s,
+which is the startup and teardown inside the sample window rather than loss: the
+dropped counter is the browser's own, and it stayed at zero. Each output reached
+600.0 s, the exact end of the clip.
+
+The 30-second run above (four decoders, before the preview change) still stands
+as the four-way test; this one is the long-duration test of the surfaces that
+decode in the product today.
+
+Raw: `evidence/media/four-outputs/ten-minutes/summary.json`, `probe.log`,
+`clip.txt`.
+
 ## Decision
 
 The WebView-per-output path stands for 1080p VP9 on this machine: four decoders,
@@ -76,7 +102,8 @@ this measurement.
 
 ## What this does not prove
 
-- **30 seconds, not 10 minutes.** Drift over a service is unmeasured.
+- **No A/V drift measurement.** There is no audio clock to compare against; the
+  test clip is video only.
 - **VP9, not H.264.** Playwright's Chromium cannot decode H.264, so VP9 was
   used; the app's own WebView does play H.264, but that path is untested.
 - **WebKitGTK, not WebView2.** Windows decode and composition are unmeasured.
@@ -86,5 +113,6 @@ this measurement.
   checked.
 - **Same clip, four decodes.** Nothing is shared between outputs.
 
-The pass criteria in `docs/experiments.md` are met for dropped frames at 1080p
-over 30 s; the 10-minute run and the H.264/WebView2 repeat remain.
+The dropped-frame criterion is met at 1080p over both 30 s (four decoders) and
+10 minutes (three, by design). The H.264/WebView2 repeat, CPU cost and hardware
+decode confirmation remain.

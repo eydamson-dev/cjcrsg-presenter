@@ -152,6 +152,10 @@ probing `getVideoPlaybackQuality()`:
 | Preview | 841 | 27.99 | 0 |
 | Confidence | 841 | 29.99 | 0 |
 
+Over **10 minutes**, with Preview showing the next slide (so three surfaces
+decode live video): 17,907 / 17,940 / 17,905 frames at 29.12 fps each, **0
+dropped**, every output reaching the clip's exact 600.0 s end.
+
 The same measurement caught a defect the harness hid: the app's page origin is
 `dioxus://`, where `file://` media is blocked (`NETWORK_NO_SOURCE`, zero
 frames). A loopback media server with an allowlist and Range support fixed it;
