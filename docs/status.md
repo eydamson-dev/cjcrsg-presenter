@@ -181,6 +181,11 @@ show between two shows, T-002 setting off at the project end, T-003 selection
 after `next_section`/`next_group`. A differential selection harness is still
 absent; the feature's acceptance used unit tests plus the observed reference run.
 
+0. **Tier 1 observation (gate for everything below).** The plan now schedules
+   every FreeShow feature into three tiers (`docs/plan.md`, generated list in
+   `docs/freeshow-reference/tiers.md`). Tier 1 has 63 features; only the presenting
+   slice has `observed` claims. The reader must observe the rest before any of
+   them can be accepted.
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is
    still no project catalogue (folders, create, rename, import), and the left
