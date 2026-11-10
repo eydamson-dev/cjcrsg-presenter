@@ -68,6 +68,10 @@ Then:
   one scenario the implementer did not supply, chosen from the contract's edge cases.
 - Compare normalised state after every action. Record each mismatch.
 - Check visual evidence by looking at it, not by reading its size or name.
+- For native behaviour — window lifecycle, focus, real keyboard or mouse, multiple
+  windows — verify in the agent workspace, following `docs/agent-workspace.md`.
+  Capture the workspace root: a window capture misses the WebView. A Linux run is
+  never evidence about Windows.
 
 Validate against the FreeShow reference, not only the scenarios:
 

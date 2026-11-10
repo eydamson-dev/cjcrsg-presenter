@@ -38,6 +38,20 @@ tools discoverable rather than preloaded.
 The **KWin** backend also works with zero extra packages, but see the capture
 trap below — prefer **X11** for this app.
 
+## From OpenCode
+
+The server is registered globally in `~/.config/opencode/opencode.json` as
+`agent-workspace`, so every session has the tools without setup. Under Code Mode
+they are `tools["agent-workspace"].workspace_*`, found with `search()` rather
+than loaded up front.
+
+Orientation before acting: `mcp_agent_context` gives one snapshot of running
+workspaces, handles and viewer state.
+
+`workspace_start` opens the GPUI viewer on the host by default. Pass
+`open_viewer: false` when the run should stay invisible, and
+`acknowledge_hidden_workspace: true` with a `purpose`, which the tool requires.
+
 ## Running it
 
 ```bash

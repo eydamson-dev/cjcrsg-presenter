@@ -96,10 +96,15 @@ not a working feature.
 | --- | --- |
 | `crates/core`, `compat`, `remote` | `cargo test` — no display server, no window |
 | the renderer, CSS, transitions | `render` → `capture_page.mjs` → **open the image and look at it** |
-| window lifecycle, recovery | `CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter` |
-| the controller UI | run with `GDK_BACKEND=x11`, then `scripts/capture_window.sh CJCRSG out.png`, and look at the image |
+| native windows, focus, real keyboard/mouse, multi-window | the agent workspace — [`docs/agent-workspace.md`](docs/agent-workspace.md). Drive it, capture the **root**, look at the image |
+| window lifecycle, recovery | `CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter`, on the host or in the workspace |
+| the controller UI | `render` for layout; the workspace for behaviour. Capture the root and crop — a window capture misses the WebView |
 | the remote | `serve`, then `curl` the endpoints |
 | anything visual | also update `EVIDENCE.md` (invariant 9) |
+
+The workspace is the default for anything that needs a native window, not an
+optional extra. Do not judge native behaviour from the DOM, a metric, or a
+window capture alone.
 
 Never say a UI is correct because the DOM or a metric looks right. Capture it,
 look at it, and say what you saw.

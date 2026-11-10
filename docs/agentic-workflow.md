@@ -105,6 +105,10 @@ is not a code change to match the page, and it is not a silent edit to the page.
 - The reference is living. Its source of truth is the pinned reference code and the
   running reference, not our port. A page is corrected when either shows it wrong,
   with an audit entry. A port difference is a deviation, not a page change.
+- A claim about native behaviour — window lifecycle, focus, real input, multiple
+  windows — is verified in the agent workspace (`docs/agent-workspace.md`), not
+  from the DOM or a metric. The workspace is the sandbox for the real app; it is
+  never evidence about Windows.
 
 ## Running a milestone
 
