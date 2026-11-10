@@ -4,7 +4,7 @@ What exists, what does not, and what to do next. **Update this at the end of
 every session.** It is the only place that describes current state; if it is
 wrong, the next session starts wrong.
 
-Last updated: 2026-11-09.
+Last updated: 2026-11-10.
 
 ## Verify the workspace in one command
 
