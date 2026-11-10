@@ -97,7 +97,7 @@ not a working feature.
 | `crates/core`, `compat`, `remote` | `cargo test` — no display server, no window |
 | the renderer, CSS, transitions | `render` → `capture_page.mjs` → **open the image and look at it** |
 | native windows, focus, real keyboard/mouse, multi-window | the agent workspace — [`docs/agent-workspace.md`](docs/agent-workspace.md). Drive it, capture the **root**, look at the image |
-| window lifecycle, recovery | `CJCRSG_SMOKE=1 cargo run -p cjcrsg-presenter`, on the host or in the workspace |
+| window lifecycle, recovery | `scripts/native-check.sh` — builds and runs `CJCRSG_SMOKE=1` in the workspace, one command |
 | the controller UI | `render` for layout; the workspace for behaviour. Capture the root and crop — a window capture misses the WebView |
 | the remote | `serve`, then `curl` the endpoints |
 | anything visual | also update `EVIDENCE.md` (invariant 9) |

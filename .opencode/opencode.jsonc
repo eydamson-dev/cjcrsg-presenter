@@ -1,0 +1,21 @@
+{
+  // Project-scoped MCP servers live here rather than in the global config, so
+  // other projects do not carry tools they cannot use.
+  //
+  // The agent workspace runs the real desktop app for native GUI testing; see
+  // docs/agent-workspace.md. It is Linux-only: it needs Xvfb, openbox and
+  // agent-workspace-linux on PATH. On Windows set "disabled": true.
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "agent-workspace": {
+        "type": "local",
+        "command": ["agent-workspace-linux", "mcp"],
+        "timeout": {
+          "startup": 60000,
+          "execution": 600000
+        }
+      }
+    }
+  }
+}

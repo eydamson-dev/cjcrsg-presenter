@@ -52,6 +52,18 @@ workspaces, handles and viewer state.
 `open_viewer: false` when the run should stay invisible, and
 `acknowledge_hidden_workspace: true` with a `purpose`, which the tool requires.
 
+## One command
+
+```bash
+scripts/native-check.sh
+```
+
+Builds the app, starts a workspace, runs `CJCRSG_SMOKE=1` inside it, prints the
+report and returns the exit code. Pass proves the native layer; a failure prints
+the app's exit code and the report path. It needs `Xvfb` and `openbox`
+(`CJCRSG_NATIVE_NO_BUILD=1` skips the build, `CJCRSG_NATIVE_SESSION=kwin` switches
+backend).
+
 ## Running it
 
 ```bash

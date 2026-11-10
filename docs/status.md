@@ -19,8 +19,9 @@ Runs rustfmt, clippy (`-D warnings`), the test suite, and a check that
 To set up a new machine first, follow `CONTRIBUTING.md`.
 
 For native GUI behaviour — real windows, real mouse and keyboard — run the app
-in the agent workspace: [`docs/agent-workspace.md`](agent-workspace.md). It
-complements the SSR/Playwright evidence and never replaces the Windows VM.
+in the agent workspace: [`docs/agent-workspace.md`](agent-workspace.md), or just
+`scripts/native-check.sh`. It complements the SSR/Playwright evidence and never
+replaces the Windows VM.
 
 ## What works end to end
 
