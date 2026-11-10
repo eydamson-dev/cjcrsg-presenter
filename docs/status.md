@@ -18,6 +18,10 @@ Runs rustfmt, clippy (`-D warnings`), the test suite, and a check that
 
 To set up a new machine first, follow `CONTRIBUTING.md`.
 
+For native GUI behaviour — real windows, real mouse and keyboard — run the app
+in the agent workspace: [`docs/agent-workspace.md`](agent-workspace.md). It
+complements the SSR/Playwright evidence and never replaces the Windows VM.
+
 ## What works end to end
 
 ```bash
@@ -221,6 +225,12 @@ slide grid. The five drawer tabs with no library behind them say so explicitly
 
 ## Known gaps and hazards
 
+- **The controller does not repaint on engine changes.** `POST /api/next` moves
+  `/api/state` to revision 1 while the controller keeps showing `rev 0 · 1 / 12`
+  until the user clicks something; reproduced on the host with a real GPU, so it
+  is not a headless artefact. The 250 ms tick at `apps/desktop/src/app.rs:23-43`
+  is not producing a repaint. Screenshots of the controller are unreliable until
+  this is fixed — see `docs/agent-workspace.md`.
 - **No authentication on the remote**, and it binds `0.0.0.0` — which now
   provably triggers a Windows Firewall prompt on first launch. Bind it to
   localhost or add auth before it runs on a shared network.

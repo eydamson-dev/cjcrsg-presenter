@@ -18,10 +18,12 @@ Read in this order, and stop when you have what you need:
    cannot prove.
 9. **`docs/ui-parity.md`** — the controller-shell plan: why ours differs, the
    target layout, and what moves where.
-10. **`docs/agentic-workflow.md`** — who does each stage of a behaviour's path from
+10. **`docs/agent-workspace.md`** — the hidden desktop that runs the real app for
+    native GUI testing: what it can prove, what it cannot, and its traps.
+11. **`docs/agentic-workflow.md`** — who does each stage of a behaviour's path from
     FreeShow to an accepted milestone. Read it before starting any parity or
     milestone work.
-11. **`docs/freeshow-reference/WHAT-IS-THIS.md`**, then `USING-THIS.md` — the written
+12. **`docs/freeshow-reference/WHAT-IS-THIS.md`**, then `USING-THIS.md` — the written
     description of FreeShow's behaviour at the pinned commit. For any
     FreeShow-derived behaviour, find the feature ID in `feature-inventory.md` and
     read its page before you design, implement, or verify it. The reference is

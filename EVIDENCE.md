@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-09.** <!-- tests: 195 -->
+**As of `main`, 2026-11-10.** <!-- tests: 195 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -710,6 +710,36 @@ run. The workflow pins the runner and installs the WebKit/GTK/Xdo headers the
 desktop crate needs to link.
 
 ---
+
+## Native desktop harness — agent workspace
+
+An agent runs the real app in a hidden desktop (`agent-workspace-linux`, X11
+backend on Xvfb) and drives it with real mouse and keyboard. Adopted
+2026-11-10 as the native-behaviour harness, alongside the SSR/Playwright
+evidence and the Windows VM — not replacing either.
+
+**Experiment 1 run unmodified inside the workspace: passed, exit 0.** Four
+outputs reached revision 10, the stage window closed and reopened to the live
+revision in **303 ms** against the 1,000 ms budget.
+
+| | |
+| --- | --- |
+| Raw result | `parity/reports/evidence/agent-workspace/smoke.json` |
+| Controller, real window | `parity/reports/evidence/agent-workspace/controller-in-workspace.png` |
+| Five windows | `parity/reports/evidence/agent-workspace/five-windows.png` |
+| Runbook | [`docs/agent-workspace.md`](docs/agent-workspace.md) |
+
+This closes the gap Experiment 1 previously named: it could not be photographed
+because the Wayland session refuses to let a program focus its own window. In a
+private desktop the capture is the workspace root and always lands.
+
+**What it found immediately.** The controller does not repaint when the engine
+changes: `POST /api/next` advances `/api/state` to revision 1 while the window
+still reads `rev 0 · 1 / 12`, indefinitely. Reproduced on the host with
+`GDK_BACKEND=x11` and a real GPU, so it is an application defect, not an Xvfb
+artefact — before/after pair in
+`parity/reports/evidence/agent-workspace/host{0,1,2}.png`. Open; see
+`docs/agent-workspace.md`.
 
 ## Reproducing any of these
 

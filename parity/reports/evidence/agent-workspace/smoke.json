@@ -1,0 +1,14 @@
+{
+  "revision": 11,
+  "recovered_in_ms": 303,
+  "passed": true,
+  "checks": [
+    { "name": "four outputs open", "pass": true, "detail": "open=4" },
+    { "name": "all outputs reach revision after 10 advances", "pass": true, "detail": "engine=10 applied=[(Audience, Some(10)), (Stage, Some(10)), (Preview, Some(10)), (Confidence, Some(10))]" },
+    { "name": "stage closes", "pass": true, "detail": "close_requested=true now_open=false" },
+    { "name": "engine keeps running with an output closed", "pass": true, "detail": "10 -> 11" },
+    { "name": "reopened output reaches the live revision", "pass": true, "detail": "target=11 applied=Some(11) in 303ms" },
+    { "name": "recovery under 1 s", "pass": true, "detail": "303ms" },
+    { "name": "other outputs unaffected", "pass": true, "detail": "Some(11)" }
+  ]
+}
