@@ -23,6 +23,11 @@ in the agent workspace: [`docs/agent-workspace.md`](agent-workspace.md), or just
 `scripts/native-check.sh`. It complements the SSR/Playwright evidence and never
 replaces the Windows VM.
 
+For the **real desktop** — live KDE apps, system dialogs, permission prompts —
+drive it with `computer-use-linux`:
+[`docs/computer-use-linux.md`](computer-use-linux.md). Prefer the workspace for
+anything isolatable; use this only when the task must touch the live desktop.
+
 ## What works end to end
 
 ```bash
@@ -272,8 +277,11 @@ slide grid. The five drawer tabs with no library behind them say so explicitly
 - **Style-level transitions are not modelled.** FreeShow resolves slide → style
   → global; we resolve slide → default. A project that keeps its timing in
   `styles.json` gets the default (DEV-012 covers the related direction gap).
-- **Desktop automation is unreliable on this machine.** Prefer headless
-  renders; capture windows by hand. For the reference specifically, the KDE
+- **Real-desktop automation goes through `computer-use-linux`.** Raw Wayland
+  refuses focus stealing and window-id capture; the tool's KWin backend and
+  portal screenshots sidestep that for live desktop work. See
+  `docs/computer-use-linux.md`. The WebView controller still needs `render` or
+  the workspace for its internal DOM. For the reference specifically, the KDE
   desktop cannot capture its output window at all (`UnknownVizError`, both
   Playwright and the app's own capture), so reference frames come from the
   agent workspace: `parity/README.md`, `docs/agent-workspace.md`.

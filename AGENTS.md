@@ -29,6 +29,9 @@ Read in this order, and stop when you have what you need:
     read its page before you design, implement, or verify it. The reference is
     living: correct it when the code or a run shows it wrong, and never change it to
     match our port.
+13. **`docs/computer-use-linux.md`** — the tool that drives the **real** KDE
+    desktop (AT-SPI trees, windows, input, screenshots). Complement to item 10;
+    read it before doing anything on the live desktop.
 
 ## Agentic workflow
 
@@ -100,6 +103,7 @@ not a working feature.
 | window lifecycle, recovery | `scripts/native-check.sh` — builds and runs `CJCRSG_SMOKE=1` in the workspace, one command |
 | the controller UI | `render` for layout; the workspace for behaviour. Capture the root and crop — a window capture misses the WebView |
 | the remote | `serve`, then `curl` the endpoints |
+| real desktop apps, system dialogs, live KDE windows, permission prompts | `computer-use-linux` — [`docs/computer-use-linux.md`](docs/computer-use-linux.md). Semantic AT-SPI tree + screenshots; the WebView controller stays with `render`/workspace |
 | anything visual | also update `EVIDENCE.md` (invariant 9) |
 
 The workspace is the default for anything that needs a native window, not an
