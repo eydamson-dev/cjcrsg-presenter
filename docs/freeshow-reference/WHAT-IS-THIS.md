@@ -14,8 +14,8 @@ from a screenshot or from a similar app.
   (1.6.8-beta.3), the same commit the parity harness runs.
 - **Built from:** the published docs (mirrored in `source/`) plus a read of the
   source at that commit, plus screenshots of the running app.
-- **Size:** 224 features with stable IDs, 60 detail pages, 1,628 code citations,
-  28 screenshots.
+- **Size:** 225 features with stable IDs, 65 detail pages, 1,636 code citations,
+  30 screenshots.
 - **Status:** mostly `code`-level knowledge, with a growing set of `observed`
   claims from recorded runs (`show/presenting.md`, `outputs/output-window.md`).
   The rest is not runtime-verified; a page existing does not make a behaviour

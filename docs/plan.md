@@ -36,9 +36,14 @@ counts as delivered:
    execution run, as in DEV-015.
 5. **Accept.** The orchestrator records the IDs in `docs/status.md`.
 
-Today, of the 63 Tier 1 features, only the presenting slice has real `observed`
-claims (`show/presenting.md`, the end-of-show move). The remaining 62 need the
-observation step before they can be accepted.
+Today two slices of Tier 1 have real `observed` claims: the end-of-show move
+(`show/presenting.md`, 2026-11-09) and output-window basics — present, start,
+lock, Space while locked, unlock, next, clear
+(`outputs/output-window.md`, 2026-11-11, run in
+`parity/reports/evidence/observe-outputs-2026-11-11-workspace/`). The rest of the
+63 still need the observation step before they can be accepted. The driver that
+produced the second is `parity/tools/observe_reference.mjs`; extending it is how
+the next slice moves from `code` to `observed`.
 
 ## Phase 0 — Architecture validation (done)
 
@@ -100,8 +105,8 @@ Tier 1 features: `show.present`, `show.present.active`, `show.slides`,
 - [x] Stage display: current + next slide — `stage.items`
 - [x] Stage display: clock slot and operator notes — `stage.items`
 - [ ] Remote command parity with the existing socket.io surface (ours is JSON/HTTP) — `remote.show`, `remote.output`; the FreeShow surface is `sys.servers`
-- [ ] Output layers observed in the reference (background, slide, overlays, audio, timer) — `out.layers`
-- [ ] Output lock and its three distinct scopes observed — `out.lock`
+- [ ] Output layers observed in the reference (background, slide, overlays, audio, timer) — `out.layers`; the five layers are observed as clear targets (2026-11-11), their compositing is still `code`
+- [ ] Output lock and its three distinct scopes observed — `out.lock`; the single controller control (Ctrl+L) is observed blocking Space (2026-11-11), the three scopes are still `code`
 - [ ] Multi-output selection and specific-output bindings observed — `out.multiple.select`
 - [ ] Slide and background ghosting observed — `show.backgrounds`
 - [ ] Disabled slides skipped by navigation, playable by click — `show.slides.disabled`

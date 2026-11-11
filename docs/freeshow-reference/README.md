@@ -124,10 +124,10 @@ Every behavioural claim carries one label:
 | Measure | Value |
 | --- | --- |
 | Features in `feature-inventory.md` | 225 |
-| Detail pages | 60 |
-| Code citations checked | 1,628, 0 failed |
+| Detail pages | 65 |
+| Code citations checked | 1,636, 0 failed |
 | Screenshots of the running reference | 30 |
-| Claims labelled `observed` | present/visibility/lock/advance/clear (2026-11-11); end-of-show (2026-11-09) |
+| Claims labelled `observed` | 90: present/visibility/lock/advance/clear (2026-11-11); end-of-show (2026-11-09) |
 
 Some behaviour is now `observed` from recorded runs; see `show/presenting.md`
 and `outputs/output-window.md`. Most pages remain `code`. An `observed` claim may
