@@ -36,6 +36,11 @@ jobs:
           rustup default stable
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          # rust-cache excludes the rustup binary from its cache but restores the
+          # ~/.cargo/bin symlinks that point at it, leaving `rustup: command not
+          # found` on self-hosted runners. Do not cache the bin dir.
+          cache-bin: false
 
       - name: Format
         run: cargo fmt --all --check
@@ -79,6 +84,11 @@ jobs:
           rustup default stable
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          # rust-cache excludes the rustup binary from its cache but restores the
+          # ~/.cargo/bin symlinks that point at it, leaving `rustup: command not
+          # found` on self-hosted runners. Do not cache the bin dir.
+          cache-bin: false
 
       - name: Check
         run: ./scripts/check.sh
@@ -116,6 +126,11 @@ jobs:
           rustup default stable
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          # rust-cache excludes the rustup binary from its cache but restores the
+          # ~/.cargo/bin symlinks that point at it, leaving `rustup: command not
+          # found` on self-hosted runners. Do not cache the bin dir.
+          cache-bin: false
 
       - name: Build
         run: cargo build --release --target x86_64-pc-windows-msvc -p cjcrsg-presenter
