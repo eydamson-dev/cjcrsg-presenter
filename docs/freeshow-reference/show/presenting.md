@@ -4,7 +4,9 @@
 - **Area:** show
 - **Online docs:** <https://freeshow.app/docs/show-type>
 - **Pinned code:** ff784eb
-- **Confidence:** `code` overall; the end-of-show claims are `observed` from the 2026-11-09 run.
+- **Confidence:** `code` overall; the end-of-show claims are `observed` from the
+  2026-11-09 run, and start/advance/lock through an unmapped output are
+  `observed` from the 2026-11-11 run.
 
 ## Summary
 
@@ -120,6 +122,15 @@ Shot list (1920×1080, controller window plus one output window on a second scre
    `special.nextItemOnLastSlide` off, neither happens; at the end of the project,
    space does nothing. Evidence:
    `parity/reports/reader/next-at-end-2026-11-09.md`.
+6. **[observed, 2026-11-11]** With `Parity Fixture` open in the project and the
+   output page created but its window not mapped, Space started the show on the
+   output (slide 1, `Verse one, line one` / `Verse one, line two`). With the
+   output locked, the same Space changed nothing; after Ctrl+L unlocked it, the
+   next Space advanced the output to `Verse one, line three` and the controller
+   position moved `1/5` → `2/5`. Evidence:
+   `parity/reports/evidence/observe-outputs-2026-11-11-workspace/` (`steps.json`
+   steps 5–9). This confirms that starting and advancing a show do not depend
+   on the output window being visible; see `outputs/output-window.md`.
 
 ### End of show — observed
 
@@ -350,9 +361,12 @@ window still displays the previous slide. The earlier `code` reading said space
 ## Screenshot
 
 
-![The output window at 1920x1080 showing the live slide.](../screenshots/output-window.png)
+![The output page rendering the live slide: a 1920×1080 Playwright page
+screenshot of the output window.](../screenshots/output-window.png)
 
-Captured from the running reference (1.6.8-beta.3), 2026-11-09.
+Captured from the running reference (1.6.8-beta.3), 2026-11-09. As in
+`outputs/output-window.md`, this is a page screenshot; the 2026-11-11 runs show
+the page can render while the window is not mapped. See audit `A-007`.
 
 Screenshot: `../screenshots/show-presenting.png` — not yet captured. Shot list above.
 
@@ -362,3 +376,8 @@ Screenshot: `../screenshots/show-presenting.png` — not yet captured. Shot list
   next project item and the second plays it; the setting stops both. Claims moved
   from `code` to `observed` using
   `parity/reports/reader/next-at-end-2026-11-09.md`. Audit `A-004`.
+- `2026-11-11` — added observed Space start/advance evidence through an output
+  page whose window was not mapped, including the lock blocking advance. No
+  existing behaviour claim was contradicted.
+- `2026-11-11` — corrected the shared output screenshot caption: it is a page
+  screenshot, not evidence of a mapped window. Audit `A-007`.

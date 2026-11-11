@@ -127,11 +127,12 @@ Every behavioural claim carries one label:
 | Detail pages | 60 |
 | Code citations checked | 1,628, 0 failed |
 | Screenshots of the running reference | 30 |
-| Claims labelled `observed` | 0 |
+| Claims labelled `observed` | present/visibility/lock/advance/clear (2026-11-11); end-of-show (2026-11-09) |
 
-No page is a runtime-verified contract yet. The reference was run to capture the
-screenshots, not to exercise each behaviour. A page becomes a contract only when a
-scenario confirms it; `USING-THIS.md` says what each label permits.
+Some behaviour is now `observed` from recorded runs; see `show/presenting.md`
+and `outputs/output-window.md`. Most pages remain `code`. An `observed` claim may
+become a requirement, but no page is a contract until a scenario confirms it;
+`USING-THIS.md` says what each label permits.
 
 The checks:
 
@@ -161,3 +162,9 @@ before turning a page into a requirement.
   An entry cites a page here and uses the inventory ID as its stable key.
 - `docs/deviations.md` lists what we knowingly do not match. A deviation must cite a
   page here.
+
+## Changelog
+
+- `2026-11-11` — corrected "Current state": the directory now has `observed`
+  claims from recorded runs (end-of-show, and present/visibility/lock/advance/
+  clear). Audit `A-006`.

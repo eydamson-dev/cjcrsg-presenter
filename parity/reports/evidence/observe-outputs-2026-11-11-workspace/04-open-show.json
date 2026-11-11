@@ -1,0 +1,208 @@
+{
+  "index": 4,
+  "step": "open_show",
+  "purpose": "select the fixture show in the project",
+  "status": "ok",
+  "startedAt": "2026-11-11T14:30:28.532Z",
+  "timestamp": "2026-11-11T14:30:29.419Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 710
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 0
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1919,
+        "height": 1079
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 21,
+        "width": 1920,
+        "height": 1059
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Fixture\n Verse one, line one \n Verse one, line two \n1\n-\n Verse one, line three \n2\n-\n Verse two, line one \n3\n-\n Verse one, line three \n4\n-\n Verse two, line one \n5\n-\nNew arrangement\nClear all\nGroups\nMetadata\nNo groups\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n3\nUnlabeled\n3\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Fixture\nCreated\nSunday, October 27, 2024\nModified\n—\nUsed\n—\nCategory\nNone\nSlides\n3\nWords\n16\nTemplate\nNone",
+    "textLength": 682,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": true,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture"
+    ],
+    "activeProjectItems": [
+      "Parity Fixture"
+    ],
+    "projectButtons": [],
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "",
+    "lines": [],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the project is still open"
+    },
+    {
+      "ok": true,
+      "check": "\"Parity Fixture\" is the active project item"
+    }
+  ],
+  "screenshot": {
+    "controller": "04-open-show-controller.png",
+    "output": "04-open-show-output.png",
+    "outputMethod": "playwright",
+    "errors": []
+  },
+  "durationMs": 1172,
+  "finishedAt": "2026-11-11T14:30:29.704Z"
+}

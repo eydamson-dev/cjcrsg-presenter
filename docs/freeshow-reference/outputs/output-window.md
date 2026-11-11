@@ -6,13 +6,19 @@
 - **Area:** outputs
 - **Online docs:** [Output](https://freeshow.app/docs/output)
 - **Pinned code:** ff784eb388c7baef60d67e6d4e7c504f4322bca3
-- **Confidence:** `code` (see page-level exceptions in Doc vs code)
+- **Confidence:** `code` overall; `observed` for the present/lock/advance/clear
+  path measured on 2026-11-11 (see Observed). Unobserved parts stay `code`.
 
 ## Screenshot
 
-![The output window at 1920x1080 showing the live slide.](../screenshots/output-window.png)
+![The output page rendering the live slide: a 1920×1080 Playwright page
+screenshot of the output window.](../screenshots/output-window.png)
 
-Captured from the running reference (1.6.8-beta.3), 2026-11-09.
+Captured from the running reference (1.6.8-beta.3), 2026-11-09. This is a
+screenshot of the output window's *page*, not a frame captured from a mapped
+window; whether that window was on screen at capture time was not recorded. The
+2026-11-11 runs show the page renders while the window is not mapped. See
+`A-007`.
 
 
 ## Summary
@@ -21,6 +27,87 @@ Each output is a frameless, transparent, always-on-top window created hidden and
 shown inactive; an "invisible" output is instead an offscreen surface that is
 never shown and exists only to be captured (NDI, OMT, RTMP, recording). The
 window is a view of `outputs[id].out`; the state lives in the main window.
+
+On one display the output window may never be shown at all: a Present click
+creates the output page and leaves the window hidden while the output still
+renders, starts, locks, advances and clears (`observed`, 2026-11-11 — see
+Observed). A page existing is not evidence that a window is on screen.
+
+## Observed — the `outputs-basic` run
+
+Source: `parity/reports/evidence/observe-outputs-2026-11-11-workspace/`.
+Scenario `outputs-basic`, 2026-11-11, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`). One
+display at 1920×1080, hidden X11 agent workspace, project `Parity Project`, show
+`Parity Fixture` (3 slides), no media. The harness repaired the fixture's group
+links in the scratch copy only (`seed.json`: `groupRepairs` added `fx-2` and
+`fx-3` as children of `fx-1`); the controller's 5 entries come from that
+flattening, not from a 5-slide fixture. 11/11 steps, 21 screenshots
+(`run.json`, `steps.json`). A second run on a Wayland/KDE desktop with an RTX
+5060 Ti (`parity/reports/evidence/observe-outputs-2026-11-11-host/`) recorded
+the same present-time window state but produced **no output frames**:
+Playwright's `page.screenshot` and `capturePage()` both failed, and the
+reference logged `Capture failed for output default: [Error: UnknownVizError]`.
+That run is not used for frame claims.
+
+Every bullet below is `observed` from the workspace run unless it says
+otherwise. "Frame is byte-identical" means the md5 of the captured output PNG
+matches; all output captures in the run were 1919×1079.
+
+1. **Present creates an output page.** A Present click adds a second page whose
+   root class is `fill context #output_window`
+   (`src/frontend/MainOutput.svelte:122-124`) in a window titled `Primary`.
+   The main window stays the only visible window.
+2. **The output window is not on screen.** `browserWindows[].visible` is false
+   for `Primary` in every step from `present` to `clear`, before and after
+   starting the show; the run's README records that the X server never mapped
+   `Primary`. The page still renders, and its slides advance, lock and clear.
+   The same `present` step on the two-display GPU desktop also recorded `Primary`
+   `visible:false`, so this is not a GPU-less-workspace artefact.
+3. **The Present control stays off.** `presentButton` is
+   `{ on: false, className: "context #output display off …",
+   title: "Present [Ctrl+O]" }` in all 11 steps, even while the output page
+   exists and shows a slide. The control's state is derived from the windows'
+   reported visibility (`src/frontend/utils/receivers.ts:119-124`), and no
+   visible output was reported.
+4. **Space starts the show on the output.** After `open_show` the output was
+   empty; a Space put slide 1 on it as one slide with two lines:
+   `Verse one, line one` / `Verse one, line two`.
+5. **Ctrl+L locks without changing the frame.** The single lock control's
+   `data-title` flips from `Lock output [Ctrl+L]` to `Unlock output [Ctrl+L]`,
+   and the captured output PNG is byte-identical to the unlocked frame
+   (md5 `0acc002ff1ed99999da5a5778e848294`).
+6. **Space while locked does not advance.** The output text is unchanged
+   (`Verse one, line one` / `Verse one, line two`) and the frame is
+   byte-identical to the locked frame.
+7. **Ctrl+L unlocks.** The title returns to `Lock output [Ctrl+L]`; the frame is
+   still identical.
+8. **Space after unlocking advances.** The output text becomes
+   `Verse one, line three`; the controller's position indicator moves `1/5` to
+   `2/5`, consistent with group children being flattened into layout entries.
+   The frame differs from the previous one
+   (md5 `cf5178b7e8197d4a99d5e7e32bf987d9`).
+9. **The clear controls are inline in the controller.** In the preview column,
+   top to bottom: `Clear all [esc]` (enabled), then five layer groups —
+   `Background` (no clear title; disabled), `Clear slide  [F2]` (enabled; two
+   spaces), `Clear overlays [F3]` (disabled), `Clear audio [F4]` (disabled),
+   `Clear next slide timer` (disabled). Locking disabled `Clear all` and
+   `Clear slide`.
+10. **Escape clears the output.** Output text becomes `""` and the captured
+    frame is byte-identical to the empty output captured before `start`
+    (md5 `a695902316f25b356d8a3862f6f6f782`). `Clear all` is replaced by
+    `Restore output`, still disabled immediately after the clear — the 1 s
+    enable delay at `src/frontend/components/output/preview/ClearButtons.svelte:22-28`.
+11. **The output surface was 1919×1079, not 1920×1080.** Chromium shrinks a
+    normal window that exactly matches a display; on the 2560×1440 desktop run
+    the recorded bounds were 1920×1080. The size is not a fixed property of an
+    output.
+
+**Boundary this run does not cover.** A second display, more than one output,
+per-output styles/aspect/line limits, invisible/NDI outputs, transitions,
+media, audio, the stage layout, and any frame from a window that was actually
+mapped on a display. Nothing here says what a visible output looks like on a
+projector.
 
 ## <a id="outwindow"></a>`out.window` — the output window
 
@@ -46,7 +133,12 @@ taskbar entry by default, that sits above other windows.
 4. The window loads the output page, gets no menu, and its title is the output
    name (`OutputLifecycle.ts:285`, `:1574-1575`).
 5. Showing calls `showInactive()` then `moveTop()` (`OutputVisibility.ts:142-148`);
-   hiding calls `setKiosk(false)` and `hide()` (`:150-167`).
+   hiding calls `setKiosk(false)` and `hide()` (`:150-167`). This branch is not
+   always reached: an output whose resolved bounds cover more than half of the
+   main window is hidden instead of shown when bounds are not locked and it is
+   auto-positioned, auto-started, or always-on-top (`OutputVisibility.ts:58-72`).
+   The default output is always-on-top, so this is the single-display case the
+   2026-11-11 run observed.
 6. **Invisible output:** created with `show:false` and `webPreferences.offscreen`,
    never shown, rendered at the configured size with DPI correction so the
    captured pixels match the config (`OutputLifecycle.ts:112-118,254-261`;
@@ -109,6 +201,19 @@ Each layer button has a tiny expand control underneath for that layer's tools
 - **Scene** is a separate layer with its own clear button; **Clear all** does
   not clear a scene (`clear.ts:13-34`, `ClearButtons.svelte:115-124`).
 
+**Observed (2026-11-11).** With one output and one slide showing, the inline
+list was, top to bottom: `Clear all [esc]` (enabled), `Background` (disabled,
+no `data-title`), `Clear slide  [F2]` (enabled; note the two spaces),
+`Clear overlays [F3]` (disabled), `Clear audio [F4]` (disabled), and
+`Clear next slide timer` (disabled). This matches the order and the
+enabled/disabled rules above (`ClearButtons.svelte:133,144,159,175,188,202`).
+Locking the output disabled `Clear all` and `Clear slide`. Escape cleared the
+output and replaced `Clear all` with `Restore output`, which was still disabled
+immediately after the clear; the post-clear frame was byte-identical to the
+empty frame before `start`. Boundary: no background, overlay, audio or timer
+content existed, so the per-layer clear actions (F1–F4) themselves were not
+fired; only Clear all via Escape was.
+
 ## <a id="outenable"></a>`out.enable` — present and stop
 
 - The present button is in the top bar; it is red while `outputDisplay` is true
@@ -122,8 +227,18 @@ Each layer button has a tiny expand control underneath for that layer's tools
   created at all (`output.ts:120`).
 - `outputDisplay` is derived from the windows' reported state; it only changes
   when all visible outputs agree (`receivers.ts:111-125`).
+- **`observed` (2026-11-11):** one Present click on one display created the
+  output page in a window titled `Primary`, but the window was not visible and
+  the control stayed `off` for the whole run. The output page still rendered,
+  started, locked, advanced and cleared. The output's default bounds covered
+  the controller and the window is always-on-top, so `toggleOutput` took the
+  hide branch (`OutputVisibility.ts:58-72`); with no visible output reported,
+  `outputDisplay` stayed false (`receivers.ts:119-124`). See Observed.
 - **Edge cases:** with one display and `autoStartup`, no window is shown
-  (`OutputVisibility.ts:52-54`). If no output is enabled, the first one is
+  (`OutputVisibility.ts:52-54`). A normal Present on one display can also leave
+  the window hidden when its bounds cover the main window and it is
+  always-on-top or auto-positioned (`OutputVisibility.ts:58-72`; observed
+  2026-11-11). If no output is enabled, the first one is
   silently enabled (`output.ts:631-646`).
 
 ## <a id="outpreview"></a>`out.preview` — previews and meters
@@ -160,6 +275,11 @@ Shortcuts in the tooltips: Arrow Left/Right, Ctrl+R, Space, Ctrl+L
 (`ShowActions.svelte:90-107`). `refreshOut` bumps `out.refresh` on every active
 output (`output.ts:761-769`).
 
+**Observed (2026-11-11).** The run recorded the lock control only: Ctrl+L
+flipped its title from `Lock output [Ctrl+L]` to `Unlock output [Ctrl+L]` and
+back. The other four buttons' presence and disabled states were not captured,
+so the five-button order above remains `code`, not `observed`.
+
 ## <a id="outlock"></a>`out.lock` — three different locks
 
 | Lock | Where | Effect |
@@ -171,6 +291,15 @@ output (`output.ts:761-769`).
 Not stopped by the global lock, as far as was traced: enabling/disabling
 outputs, toggling a per-output lock, and editing styles/settings
 (`output.ts:115-134`; `apiHelper.ts:347-361`; `Styles.svelte:23-39`).
+
+**Observed (2026-11-11).** The single lock control flipped its title on Ctrl+L
+(`ShowActions.svelte:107`), and the captured output frame was byte-identical
+before and after locking (md5 `0acc002ff1ed99999da5a5778e848294`). Space while
+locked left the output text and frame unchanged, matching the early return at
+`helpers/OutputHelper.ts:30`. `Clear all` and `Clear slide` became disabled
+while locked (`ClearButtons.svelte:133,159`); unlocking restored the title and
+still did not change the frame. Boundary: only the global lock on one output
+was exercised; per-output (`active:false`) and bounds locks were not.
 
 ## <a id="outstatus"></a>`out.status` — the dot
 
@@ -240,6 +369,11 @@ output / Inactive (`OutputPreviewLabel.svelte:40-46`).
 - **Align with screen** snaps every unlocked, visible output to the display
   nearest its centre and reports the new bounds and screen
   (`OutputBounds.ts:80-103`).
+- **Observed (2026-11-11), default only:** with one display and no configured
+  bounds, the created output took the whole primary display — recorded as
+  1919×1079 on a 1920×1080 X11 display and 1920×1080 on a 2560×1440 Wayland
+  display. That is what made it cover the controller. Multi-monitor placement,
+  manual X/Y, and bounds lock were not exercised.
 
 ## <a id="outrecorder"></a>`out.recorder` — two recorders
 
@@ -295,6 +429,13 @@ output / Inactive (`OutputPreviewLabel.svelte:40-46`).
 
 ## Doc vs code
 
+- `doc` says pressing the present button "activate[s] the output window(s)" and
+  that "the button is red when the output window(s) are active"
+  (`source/docs/output.md:36`). `observed` 2026-11-11: on one display the output
+  page presented, advanced, locked and cleared while the button stayed `off` and
+  no window was mapped. Code separates the output page/content from the window's
+  visible state (`OutputVisibility.ts:58-72`; `receivers.ts:119-124`), so "active"
+  in the doc covers two different things. Audit `A-005`.
 - `doc` says double-click "disables" the output window
   (`source/docs/output.md:51`). Code calls `toggleOutputs(null,{state:false})`,
   hiding **all** enabled outputs (`utils/common.ts:81-83`).
@@ -318,3 +459,15 @@ output / Inactive (`OutputPreviewLabel.svelte:40-46`).
   is `unknown`.
 - Which exact actions the global lock does *not* guard across the whole API
   surface is not exhaustively traced; the list above is what was read.
+- Whether a mapped output window shows the same frame as the hidden page
+  capture, and how it behaves on a second display (focus, always-on-top,
+  bounds), is `unknown`. A run with two displays and a screen capture of the
+  second display would establish it.
+
+## Changelog
+
+- `2026-11-11` — added the `outputs-basic` observed section (present creates a
+  hidden output page; Present stays off; start, lock, advance and clear work);
+  corrected the present/visibility edge case and the screenshot caption; added
+  the caveat that an output window can be created without being shown. Audit
+  `A-005`, `A-007`.

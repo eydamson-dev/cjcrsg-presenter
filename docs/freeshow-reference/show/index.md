@@ -3,7 +3,8 @@
 - **Area:** show
 - **Online docs:** <https://freeshow.app/docs/show-type>
 - **Pinned code:** ff784eb (`ff784eb388c7baef60d67e6d4e7c504f4322bca3`, 1.6.8-beta.3)
-- **Confidence:** `code` (every claim on the pages below is read from source; nothing was run)
+- **Confidence:** `code` overall; `presenting.md` carries `observed` claims from
+  the 2026-11-09 end-of-show run and the 2026-11-11 `outputs-basic` run.
 
 ## Summary
 
@@ -14,8 +15,10 @@ happens when it is presented.
 
 Label vocabulary used on these pages: `code` = read from the source at the pinned
 commit, not executed; `doc` = claimed only by the mirrored freeshow.app page;
-`unknown` = not established. Nothing here is `observed`. This maps to
-`docs/parity-workflow.md` §5, where `code` is "inferred from source".
+`unknown` = not established; `observed` = seen in a recorded run at the pinned
+commit, with the artefacts kept. `presenting.md` has `observed` claims; the
+other pages are `code`. This maps to `docs/parity-workflow.md` §5, where `code`
+is "inferred from source".
 
 ## Pages in this area
 
@@ -161,3 +164,9 @@ arrangement):
 1. Show tab, grid view, a slide with a background, the active slide outlined.
 2. The same show in each of the five view modes, taken from the same scroll position.
 3. The Shows drawer with two categories, one archived.
+
+## Changelog
+
+- `2026-11-11` — corrected the area confidence line: `presenting.md` is not all
+  `code` (observed end-of-show claims since 2026-11-09, plus the 2026-11-11
+  start/advance run). Audit `A-006`.

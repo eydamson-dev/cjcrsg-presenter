@@ -1,0 +1,271 @@
+{
+  "index": 10,
+  "step": "clear_entries",
+  "purpose": "enumerate the per-layer clear entries",
+  "status": "ok",
+  "startedAt": "2026-11-11T14:19:47.882Z",
+  "timestamp": "2026-11-11T14:19:48.134Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 809
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 23
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1329
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Fixture\n Verse one, line one \n Verse one, line two \n1\n-\n Verse one, line three \n2\n-\n Verse two, line one \n3\n-\n Verse one, line three \n4\n-\n Verse two, line one \n5\n-\nNew arrangement\n Verse one, line three \nClear all\nParity Fixture\n2/5\nGroups\nMetadata\nNo groups\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n3\nUnlabeled\n3\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Fixture\nCreated\nSunday, October 27, 2024\nModified\nWednesday, November 11, 2026\nUsed\nWednesday, November 11, 2026\nCategory\nNone\nSlides\n3\nWords\n16\nTemplate\nNone",
+    "textLength": 779,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": false,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Background",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture"
+    ],
+    "activeProjectItems": [
+      "Parity Fixture"
+    ],
+    "projectButtons": [],
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Verse one, line three",
+    "lines": [
+      "Verse one, line three"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the clear controls are in the preview column"
+    },
+    {
+      "ok": true,
+      "check": "the \"Background\" per-layer entry is present"
+    },
+    {
+      "ok": true,
+      "check": "the \"Slide\" per-layer entry is present"
+    },
+    {
+      "ok": true,
+      "check": "the \"Overlays\" per-layer entry is present"
+    },
+    {
+      "ok": true,
+      "check": "the \"Audio\" per-layer entry is present"
+    },
+    {
+      "ok": true,
+      "check": "the \"Next slide timer\" per-layer entry is present"
+    },
+    {
+      "ok": true,
+      "check": "the Clear all entry is present"
+    },
+    {
+      "ok": true,
+      "check": "Clear all is enabled while a slide is shown"
+    },
+    {
+      "ok": true,
+      "check": "the Clear slide entry is enabled while a slide is shown"
+    }
+  ],
+  "screenshot": {
+    "controller": "10-clear-entries-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+    ],
+    "outputRetried": true
+  },
+  "durationMs": 31229,
+  "finishedAt": "2026-11-11T14:20:19.111Z"
+}

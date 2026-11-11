@@ -4,7 +4,7 @@ What exists, what does not, and what to do next. **Update this at the end of
 every session.** It is the only place that describes current state; if it is
 wrong, the next session starts wrong.
 
-Last updated: 2026-11-10.
+Last updated: 2026-11-11.
 
 ## Verify the workspace in one command
 
@@ -115,8 +115,9 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Controller drawer: 8 tabs, 40/300/744 px geometry, 79/80 px drag threshold, remembered height across restart, 17 images and 9 session files | `parity/reports/ui-drawer-2026-11-09.md` |
 | Project browser: open project first, recents newest first, missing-file flag, Forget, and the outline in the Shows tab | `parity/reports/ui-project-browser-2026-11-09.md` |
 | Next at a show end: press 1 selects (output unchanged, rev 1), press 2 plays (rev 2); setting off stays rev 0; choice survives restart | `parity/reports/evidence/dev-015/README.md` |
+| Reference `outputs-basic`, observed: 11/11 steps; Ctrl+L flips the lock, Space while locked leaves the frame byte-identical, Escape clears to an empty frame; the output window is never mapped, even with two displays | `parity/reports/evidence/observe-outputs-2026-11-11-workspace/` |
 
-| FreeShow reference: 225 features, 60 pages, 1,630 code citations, 30 screenshots | `docs/freeshow-reference/` |
+| FreeShow reference: 225 features, 65 pages, 1,636 code citations, 30 screenshots, 90 claims `observed` | `docs/freeshow-reference/` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -130,23 +131,26 @@ memory.
   `ChurchApps/FreeShowWeb` at `8d875b5`; `scripts/fetch_freeshow_docs.sh` refreshes it.
 - `feature-inventory.md` lists 225 features with stable IDs; every ID is mentioned
   by at least one detail page.
-- 60 pages cover getting started, projects, shows, the drawer, outputs, the remote
+- 65 pages cover getting started, projects, shows, the drawer, outputs, the remote
   clients, cloud and transfer, advanced topics, formats, and the internal
   architecture (IPC, servers, settings, persistence, API, stores, media, i18n,
   security, build).
-- Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`.
-  The end-of-show move is `observed` from a 2026-11-09 run; the rest is
-  `code`/`doc`/`unknown`. `USING-THIS.md` says what each label permits.
+- Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`;
+  90 are `observed`. Two runs supply them: the end-of-show move (2026-11-09) and
+  `outputs-basic` (2026-11-11: present, start, lock, Space while locked, unlock,
+  next, clear). `USING-THIS.md` says what each label permits.
 - 30 screenshots of the running reference are in `screenshots/`, with the state and
   viewport of each in its README.
 - `scripts/check_freeshow_refs.py` verifies every `src/...:line` citation against
-  the pinned checkout (1,628 at present). `scripts/check_freeshow_coverage.py`
-  reports inventory IDs no page mentions.
+  the pinned checkout (1,636 at present, 0 failed). `scripts/check_freeshow_coverage.py`
+  reports inventory IDs no page mentions (none at present).
 
-`audit.md` records contradictions found while writing it. The first is still open:
-`parity/reports/navigation-end-behaviour-2026-11-09.md` was corrected: the report
-now records the `special.nextItemOnLastSlide` branch and the observed two-step
-move. The run is `parity/reports/reader/next-at-end-2026-11-09.md`.
+`audit.md` records contradictions found while writing it. Two are closed by the
+2026-11-11 runs: `parity/reports/navigation-end-behaviour-2026-11-09.md` now
+records the `special.nextItemOnLastSlide` branch and the observed two-step move
+(run: `parity/reports/reader/next-at-end-2026-11-09.md`), and `A-005`/`A-007`
+correct the claim that presenting opens a visible output window. The harness that
+produced the second is `parity/tools/observe_reference.mjs`.
 
 ## Not using Craft Anything
 
@@ -186,11 +190,14 @@ show between two shows, T-002 setting off at the project end, T-003 selection
 after `next_section`/`next_group`. A differential selection harness is still
 absent; the feature's acceptance used unit tests plus the observed reference run.
 
-0. **Tier 1 observation (gate for everything below).** The plan now schedules
-   every FreeShow feature into three tiers (`docs/plan.md`, generated list in
-   `docs/freeshow-reference/tiers.md`). Tier 1 has 63 features; only the presenting
-   slice has `observed` claims. The reader must observe the rest before any of
-   them can be accepted.
+0. **Tier 1 observation (gate for everything below).** Tier 1 has 63 features
+   (`docs/plan.md`, `docs/freeshow-reference/tiers.md`). Two slices are now
+   `observed`: the end-of-show move, and output-window basics (present, start,
+   lock, Space while locked, unlock, next, clear) through
+   `parity/tools/observe_reference.mjs`. The next slice needs that driver
+   extended — it covers one output and no media, so stage, multiple outputs,
+   per-output styles, media and audio are still `code` only. Record the runs
+   before accepting anything in them.
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is
    still no project catalogue (folders, create, rename, import), and the left
@@ -266,6 +273,9 @@ slide grid. The five drawer tabs with no library behind them say so explicitly
   → global; we resolve slide → default. A project that keeps its timing in
   `styles.json` gets the default (DEV-012 covers the related direction gap).
 - **Desktop automation is unreliable on this machine.** Prefer headless
-  renders; capture windows by hand.
+  renders; capture windows by hand. For the reference specifically, the KDE
+  desktop cannot capture its output window at all (`UnknownVizError`, both
+  Playwright and the app's own capture), so reference frames come from the
+  agent workspace: `parity/README.md`, `docs/agent-workspace.md`.
 - **CI is green but the repo history is short.** The original fork's git history
   was absent when this repository started; see `docs/provenance.md`.

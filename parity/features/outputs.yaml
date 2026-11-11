@@ -1,0 +1,184 @@
+# Outputs: present, window visibility, lock, clear
+
+Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the `outputs-basic`
+run of 2026-11-11. Labels follow `docs/freeshow-reference/USING-THIS.md`:
+`label: observed` means a recorded run at the pin, `code` means read from the
+pinned source only.
+
+Run evidence for every `observed` note below:
+`parity/reports/evidence/observe-outputs-2026-11-11-workspace/` — scenario
+`outputs-basic`, 11/11 steps, 21 screenshots, one 1920×1080 display, hidden X11
+workspace, show `Parity Fixture` (3 slides, no media). The Wayland/RTX 5060 Ti
+run (`...-host/`) recorded the same present-time window state but no output
+frames; do not use it for frame claims.
+
+---
+
+```yaml
+id: out.window
+area: outputs
+title: Present creates an output page that can stay hidden while the output runs
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/electron/output/helpers/OutputLifecycle.ts:251-291
+    - src/electron/output/helpers/OutputVisibility.ts:33-74
+    - src/frontend/MainOutput.svelte:122-147
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed: a Present click created a second page with root class
+  "fill context #output_window" in a window titled "Primary". On one display the
+  window's isVisible() was false in every step, before and after starting the
+  show, while the output page rendered, advanced, locked and cleared. The
+  two-display GPU desktop also recorded "Primary" visible:false at present.
+  Mechanism: createOutputWindow builds the BrowserWindow with show:false
+  (OutputLifecycle.ts:251-291); toggleOutput hides instead of showing when the
+  output's bounds cover more than half the main window, bounds are not locked,
+  and it is auto-positioned, auto-started, or always-on-top (the default)
+  (OutputVisibility.ts:58-72; helpers/output.ts:129-133). Boundary: second
+  display, multiple outputs, per-output styles, and any mapped output frame are
+  not covered by the run.
+```
+
+```yaml
+id: out.window.position
+area: outputs
+title: Default output bounds on a single display
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/electron/output/helpers/OutputVisibility.ts:76-110
+    - src/electron/output/helpers/OutputLifecycle.ts:293-306
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed, default only: with one display and no configured bounds the created
+  output took the whole primary display — 1919×1079 on a 1920×1080 X11 display
+  and 1920×1080 on a 2560×1440 Wayland display. That is what made it cover the
+  controller and take the hide branch. Multi-monitor placement, manual X/Y,
+  "Choose screen", bounds lock and "Align with screen" were not exercised, so
+  the rest of the placement page stays code and confidence is medium.
+```
+
+```yaml
+id: out.enable
+area: outputs
+title: Present creates the output page; the control's own state follows visible windows
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/helpers/output.ts:115-134
+    - src/frontend/components/main/Top.svelte:27-50
+    - src/frontend/components/main/Top.svelte:132-154
+    - src/frontend/utils/receivers.ts:111-125
+    - src/electron/output/helpers/OutputVisibility.ts:52-72
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed: one Present click on one display created the output page but the
+  Present control stayed off for all 11 steps —
+  { on: false, className: "context #output display off …", title: "Present [Ctrl+O]" }.
+  Space then put the show's first slide on the output. The control is a
+  state-dependent toggle (helpers/output.ts:129) and outputDisplay comes from the
+  windows' reported visibility (receivers.ts:119-124), so a hidden output leaves
+  it off. The page is still real: it renders and advances. Boundary: the
+  two-click stop, Ctrl/Cmd-click force-stop, Ctrl+O, and per-output enabled:false
+  were not exercised.
+```
+
+```yaml
+id: out.controls
+area: outputs
+title: The output control row and its lock button
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/output/ShowActions.svelte:89-119
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed: the lock control was present exactly once and Ctrl+L flipped its
+  data-title from "Lock output [Ctrl+L]" to "Unlock output [Ctrl+L]" and back.
+  The other four buttons (previous, next, update/start, transition) were not
+  captured, so the five-button order and their disabled rules on this page
+  remain code, not observed. Confidence is medium for the row as a whole.
+```
+
+```yaml
+id: out.lock
+area: outputs
+title: Ctrl+L locks the output; a locked output does not advance or clear
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/helpers/OutputHelper.ts:20-32
+    - src/frontend/components/output/ShowActions.svelte:107
+    - src/frontend/components/output/preview/ClearButtons.svelte:133,159
+    - src/frontend/utils/shortcuts.ts:341
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed: Ctrl+L locked and unlocked the single output. The captured frame
+  was byte-identical before and after locking (md5 0acc002ff1ed99999da5a5778e848294).
+  Space while locked left the output text and frame unchanged, matching the
+  early return at helpers/OutputHelper.ts:30. While locked, "Clear all" and
+  "Clear slide" became disabled (ClearButtons.svelte:133,159). Boundary: the
+  per-output (active:false) lock and the bounds lock were not exercised, and
+  the full list of guarded API actions was not measured.
+```
+
+```yaml
+id: out.layers
+area: outputs
+title: Inline per-layer clear controls, and Escape clears all
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/output/preview/ClearButtons.svelte:114-215
+    - src/frontend/components/output/clear.ts:13-34
+    - src/frontend/utils/shortcuts.ts:351-355
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed: with one slide showing, the inline clear list was, top to bottom,
+  "Clear all [esc]" (enabled), then five layer groups: "Background" (no clear
+  title, disabled), "Clear slide  [F2]" (enabled; two spaces), "Clear overlays
+  [F3]" (disabled), "Clear audio [F4]" (disabled), "Clear next slide timer"
+  (disabled). Escape emptied the output: text "", frame byte-identical to the
+  empty frame before start (md5 a695902316f25b356d8a3862f6f6f782), and
+  "Clear all" was replaced by "Restore output", still disabled immediately after
+  the clear (the 1 s delay at ClearButtons.svelte:22-28). Boundary: no
+  background, overlay, audio or timer content existed, so F1–F4 per-layer clears
+  were not fired; only Clear all via Escape was measured.
+```

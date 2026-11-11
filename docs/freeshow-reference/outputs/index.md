@@ -19,13 +19,17 @@ content lives in the main window's stores, not in the output windows.
 
 | Label | Meaning here | D13 equivalent |
 | --- | --- | --- |
+| `observed` | Seen in a recorded run at the pin, with the artefacts kept. | `observed` |
 | `code` | Read from `src/...:line` at the pin, not run. | `inferred` |
 | `doc` | Stated only by `source/docs/...md`. | weaker `inferred` |
 | `unknown` | Not established; see Open questions. | `unknown` |
 
-Nothing here is `observed`, so under `docs/decisions.md:191-193` no behaviour on
-these pages may enter a required contract without a run or an explicit
-provisional contract.
+The present/start/lock/advance/clear path is now `observed` from the
+2026-11-11 `outputs-basic` run (one display, one output, no media); see
+[output-window](output-window.md#observed--the-outputs-basic-run). The rest of
+this area is still `code`, so a contract may rest only on the observed entries
+without a further run or explicit provisional approval
+(`docs/decisions.md:191-193`).
 
 ## The output model
 
@@ -39,7 +43,9 @@ provisional contract.
   (`src/frontend/stores.ts:383`), so a window consumes state; it does not own it.
 - `outputDisplay` is present/stop; `outputState` is the per-window active state
   reported by the main process (`src/frontend/stores.ts:139-140`,
-  `src/frontend/utils/receivers.ts:111-125`).
+  `src/frontend/utils/receivers.ts:111-125`). A window can exist and render while
+  never being shown; `outputDisplay` then stays `false` (`observed`,
+  2026-11-11, `output-window.md#observed--the-outputs-basic-run`).
 - `styles` is a separate store; an output points at one style by id, and no
   style means the built-in default (`src/frontend/stores.ts:380`,
   `src/frontend/components/helpers/output.ts:1856-1861`).
@@ -148,3 +154,9 @@ NDI/invisible), one locked (struck-through name), clear-button column visible,
   of one member being resized is not traced.
 - `OutputLifecycle.ts:279` minimizes non-offscreen outputs at creation on macOS;
   why and whether it stays minimized is `unknown`.
+
+## Changelog
+
+- `2026-11-11` — the outputs area is no longer all `code`: added the `observed`
+  label row, pointed at the `outputs-basic` run, and recorded that an output
+  window can exist and render without being shown. Audit `A-006`.

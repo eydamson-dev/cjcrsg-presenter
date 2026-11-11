@@ -1,0 +1,177 @@
+{
+  "index": 1,
+  "step": "ready",
+  "purpose": "controller up, seeded project listed",
+  "status": "ok",
+  "startedAt": "2026-11-11T14:15:47.801Z",
+  "timestamp": "2026-11-11T14:15:48.154Z",
+  "windowCount": 1,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 355
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1329
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nProjects\nUnlabeled\nParity Project\nFreeShow\nv1.6.8-beta.3\nDocumentation\nQuick search\nNew project\nNew show\nClear all\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n3\nUnlabeled\n3\nCategories\nPresentations\nSongs\nNew category\nNo shows\nImport\nNew show\n22\n:\n15\n:48\nWednesday, November 11, 2026",
+    "textLength": 340,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": true,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        }
+      ]
+    },
+    "projectsArea": true,
+    "projectArea": false,
+    "projectItems": [],
+    "activeProjectItems": [],
+    "projectButtons": [
+      "Parity Project"
+    ],
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": false,
+    "text": null,
+    "lines": []
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the controller window was found"
+    },
+    {
+      "ok": true,
+      "check": "the left panel is the project list"
+    },
+    {
+      "ok": true,
+      "check": "the seeded project \"Parity Project\" is listed (the profile's projects.json is read from the store path)"
+    },
+    {
+      "ok": true,
+      "check": "no output window is open before presenting"
+    },
+    {
+      "ok": true,
+      "check": "the lock control starts as Lock output [Ctrl+L]"
+    }
+  ],
+  "screenshot": {
+    "controller": "01-ready-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": []
+  },
+  "durationMs": 730,
+  "finishedAt": "2026-11-11T14:15:48.531Z"
+}

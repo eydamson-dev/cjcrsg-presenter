@@ -1,0 +1,108 @@
+{
+  "seededAt": "2026-11-11T14:30:15.450Z",
+  "store": "/tmp/opencode/fs-store",
+  "dataPath": "/tmp/opencode/fs-data",
+  "settings": {
+    "initialized": true,
+    "disabledServers": {
+      "remote": false,
+      "stage": false,
+      "controller": false,
+      "output_stream": false
+    },
+    "outLocked": false
+  },
+  "project": {
+    "id": "parity",
+    "name": "Parity Project",
+    "shows": [
+      {
+        "id": "fx-show"
+      },
+      {
+        "id": "fx-notes"
+      },
+      {
+        "id": "tx-show"
+      }
+    ]
+  },
+  "projectCheck": {
+    "projectCount": 1
+  },
+  "shows": [
+    {
+      "file": "parity-three-slides.show",
+      "id": "fx-show",
+      "name": "Parity Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-with-notes.show",
+      "id": "fx-notes",
+      "name": "Parity With Notes",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-transitions.show",
+      "id": "tx-show",
+      "name": "Transition Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "tx-2",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "tx-3",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        }
+      ]
+    }
+  ],
+  "showFiles": [
+    "Parity Fixture.show",
+    "Parity With Notes.show",
+    "Transition Fixture.show"
+  ],
+  "skipped": [
+    {
+      "file": "parity-with-media.show",
+      "reason": "missing media: /srv/freeshow/media/background.mp4, /srv/freeshow/media/logo.png"
+    }
+  ],
+  "targetShow": {
+    "name": "Parity Fixture",
+    "id": "fx-show",
+    "file": "parity-three-slides.show"
+  }
+}

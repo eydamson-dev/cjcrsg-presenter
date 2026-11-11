@@ -1,0 +1,226 @@
+{
+  "index": 11,
+  "step": "clear",
+  "purpose": "Escape empties the output",
+  "status": "ok",
+  "startedAt": "2026-11-11T14:20:19.112Z",
+  "timestamp": "2026-11-11T14:20:19.790Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 769
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 0
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1329
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Fixture\n Verse one, line one \n Verse one, line two \n1\n-\n Verse one, line three \n2\n-\n Verse two, line one \n3\n-\n Verse one, line three \n4\n-\n Verse two, line one \n5\n-\nNew arrangement\nRestore output\nGroups\nMetadata\nNo groups\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n3\nUnlabeled\n3\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Fixture\nCreated\nSunday, October 27, 2024\nModified\nWednesday, November 11, 2026\nUsed\nWednesday, November 11, 2026\nCategory\nNone\nSlides\n3\nWords\n16\nTemplate\nNone",
+    "textLength": 741,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Restore output",
+          "disabled": true,
+          "active": false,
+          "text": "Restore output"
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture"
+    ],
+    "activeProjectItems": [
+      "Parity Fixture"
+    ],
+    "projectButtons": [],
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "",
+    "lines": [],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "escapePresses": 1,
+  "firstEscapeCleared": true,
+  "cleared": true,
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the output window stays open when cleared"
+    },
+    {
+      "ok": true,
+      "check": "Escape emptied the output within the wait"
+    },
+    {
+      "ok": true,
+      "check": "the output no longer shows the fixture text"
+    },
+    {
+      "ok": true,
+      "check": "the clear controls are still readable after clearing"
+    },
+    {
+      "ok": true,
+      "check": "Clear all is disabled or Restore output is offered"
+    }
+  ],
+  "screenshot": {
+    "controller": "11-clear-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+    ],
+    "outputRetried": true
+  },
+  "durationMs": 31649,
+  "finishedAt": "2026-11-11T14:20:50.761Z"
+}

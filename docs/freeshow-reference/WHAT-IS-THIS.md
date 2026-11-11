@@ -16,9 +16,10 @@ from a screenshot or from a similar app.
   source at that commit, plus screenshots of the running app.
 - **Size:** 224 features with stable IDs, 60 detail pages, 1,628 code citations,
   28 screenshots.
-- **Status:** `code`-level knowledge, not runtime-verified contracts. Nothing is
-  labelled `observed` yet. The app was run to capture screenshots, not to
-  exercise each behaviour.
+- **Status:** mostly `code`-level knowledge, with a growing set of `observed`
+  claims from recorded runs (`show/presenting.md`, `outputs/output-window.md`).
+  The rest is not runtime-verified; a page existing does not make a behaviour
+  understood.
 
 ## What it is and is not
 
@@ -148,3 +149,9 @@ The reference checkout and how to run it are in `docs/reference.md`.
 >
 > Validate the reference before relying on it:
 > `scripts/check_freeshow_refs.py` and `scripts/check_freeshow_coverage.py`.
+
+## Changelog
+
+- `2026-11-11` — corrected the status line: `observed` claims now exist (the
+  2026-11-09 end-of-show run and the 2026-11-11 `outputs-basic` run). Audit
+  `A-006`.

@@ -3,7 +3,7 @@
 Visual proof and raw artefacts for each milestone. The prose reports in
 [`parity/reports/`](parity/reports/) carry the detail; this page is the index.
 
-**As of `main`, 2026-11-10.** <!-- tests: 195 -->
+**As of `main`, 2026-11-11.** <!-- tests: 195 -->
 
 Two things keep this page honest: `git log -1 -- EVIDENCE.md` says when it last
 changed, and `scripts/check.sh` fails if the declared test count and the
@@ -681,22 +681,52 @@ Report: `parity/reports/windows-packaging-2026-11-09.md`.
 ## FreeShow reference documentation
 
 The written reference of the pinned FreeShow (`ff784eb`, 1.6.8-beta.3) lives in
-`docs/freeshow-reference/`: 225 features with stable IDs, 60 detail pages, and
-1,630 `src/...:line` citations, all checked against the checkout.
+`docs/freeshow-reference/`: 225 features with stable IDs, 65 detail pages, and
+1,636 `src/...:line` citations, all checked against the checkout.
 
 ![FreeShow 1.6.8-beta.3 at rest](docs/freeshow-reference/screenshots/main-show-view.png)
 
 - 30 screenshots of the running reference, captured under Playwright, not by
   desktop screenshot tools. `docs/freeshow-reference/screenshots/README.md` names
   the state and viewport of each.
-- `scripts/check_freeshow_refs.py` — 1,630 references, 0 failed.
+- `scripts/check_freeshow_refs.py` — 1,636 references, 0 failed.
 - `scripts/check_freeshow_coverage.py` — 225 of 225 IDs mentioned by a page.
 - Upstream docs mirror: 54 pages and 34 images at `8d875b5`, refreshed with
   `scripts/fetch_freeshow_docs.sh`.
 
-Nothing here is a behavioural observation: the app was run only to capture
-screenshots, and the pages label every claim `code`, `doc`, `unknown` or
-`observed`. A page becomes a contract only through a scenario.
+The pages label every claim `code`, `doc`, `unknown` or `observed`; 90 claims are
+now `observed` from runs, 1,426 `code`, 465 `doc`, 181 `unknown`. A page becomes
+a contract only through a scenario, and `code` still needs a run before it counts
+as one.
+
+### Output-window basics, observed
+
+`parity/tools/observe_reference.mjs` drives the reference through its own
+windows: a fresh profile, named operator steps, a JSON record and a screenshot
+after each. The first scenario, `outputs-basic`, ran 11/11 steps on 2026-11-11.
+
+| Reference output | Same slide, locked | Controller |
+| --- | --- | --- |
+| ![First slide on the output](parity/reports/evidence/observe-outputs-2026-11-11-workspace/05-start-output.png) | ![Locked, unchanged](parity/reports/evidence/observe-outputs-2026-11-11-workspace/07-next-while-locked-output.png) | ![Controller after start](parity/reports/evidence/observe-outputs-2026-11-11-workspace/05-start-controller.png) |
+
+The two output frames are byte-identical (md5 `0acc002f…`): Space does nothing to
+a locked output. The record also shows Ctrl+L flipping `Lock output [Ctrl+L]` →
+`Unlock output [Ctrl+L]` and back, Space advancing to `Verse one, line three`
+with the controller moving `1/5` → `2/5`, and Escape emptying the output and
+replacing `Clear all [esc]` with a disabled `Restore output`.
+
+What it cost to learn, and why it is recorded: the output window is **never on
+screen** here — `isVisible()` is false and X never maps `Primary`, on the GPU-less
+workspace and on a two-display RTX 5060 Ti desktop alike. The reference presents
+to a hidden output whose configured bounds land on the controller's display. Frame captures are only available off the GPU: the
+desktop run produced none (`UnknownVizError`), the workspace produced all 21.
+
+| | |
+| --- | --- |
+| Workspace run (frames) | `parity/reports/evidence/observe-outputs-2026-11-11-workspace/` |
+| Desktop run (no frames) | `parity/reports/evidence/observe-outputs-2026-11-11-host/` |
+| Reference pages updated | `docs/freeshow-reference/outputs/output-window.md`, `show/presenting.md`, `audit.md` `A-005`–`A-007` |
+| Driver and its traps | `parity/README.md`, "Observing the reference" |
 
 ## Verification
 

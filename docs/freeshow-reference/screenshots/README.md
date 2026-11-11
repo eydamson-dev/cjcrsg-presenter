@@ -6,13 +6,21 @@ Captured from the pinned reference, not from the online docs.
 - **Captured:** 2026-11-09
 - **Profile:** `/tmp/opencode/fs-store` (the seeded profile from `docs/reference.md`),
   project "Parity Project", shows "Welcome" and "Parity Fixture"
-- **Main window content area:** 1600×900 for the shell captures; the output window
-  is 1920×1080; clients are 1280×800
+- **Main window content area:** 1600×900 for the shell captures; the output
+  capture is a page image, 1920×1080 in this set (the 2026-11-11 run measured
+  1919×1079 on a 1920×1080 X11 display and 1920×1080 on a 2560×1440 display, so
+  the size is environment-dependent, not a property of an output); clients are
+  1280×800
 - **Scripts:** `parity/tools/capture_freeshow_ui.mjs` and
   `parity/tools/capture_freeshow_clients.mjs`
 
 Each image is a real capture of the running app under Playwright, not a mock. The
 one exception is noted below.
+
+`output-window.png` is a Playwright *page* screenshot of the output window
+(`parity/tools/capture_freeshow_ui.mjs:130-135`). The 2026-11-11 runs show that
+the output page renders while its window is not mapped, so this image is
+evidence of the rendered output, not that a window was on screen.
 
 ## Main window
 
@@ -23,7 +31,7 @@ one exception is noted below.
 | `show-edit.png` | Edit view: slide list, item selected, Textbox/Item tools | show.edit, show.edit.tabs, show.items |
 | `stage-view.png` | Stage view with the current slide | stage.layouts |
 | `new-show-dialog.png` | New show dialog: Quick lyrics, Web search, Empty show | show.create, show.quicklyrics |
-| `output-window.png` | The output window, 1920×1080, showing the live slide | out.window, out.layers |
+| `output-window.png` | The output page's render, 1920×1080 page image; not proof the window was mapped | out.window, out.layers |
 | `edit-add-items.png` | The Add items menu: Textbox, Media, Camera, Timer, Clock, Table, Chart, Icon, More | show.items |
 | `show-chords-mode.png` | Chords mode in the Edit view | show.chords |
 | `show-groups-panel.png` | The Groups panel in Show view | show.groups |
@@ -79,3 +87,9 @@ one exception is noted below.
 2. Open the PNG and check it shows the feature, not an empty state.
 3. Add a row here and point the feature page at it with
    `![caption](../screenshots/<file>.png)`.
+
+## Changelog
+
+- `2026-11-11` — noted that `output-window.png` is a page screenshot, not proof
+  of a mapped window, and that the output image size is environment-dependent.
+  Audit `A-007`.
