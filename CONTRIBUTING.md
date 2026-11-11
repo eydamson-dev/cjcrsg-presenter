@@ -14,7 +14,7 @@ The project is a Rust reimplementation of the CJCRSG Presenter, which is a
 | Platform | Status |
 | --- | --- |
 | Fedora 44 (KDE) | Developed and tested. Commands below were run on this platform. |
-| Ubuntu 24.04 | Used by CI. Full build and check. |
+| Ubuntu 24.04 | Used by CI (self-hosted proxmox runner). Full build and check. |
 | Windows 10/11 (MSVC) | Library crates build and test. The desktop app compiles in CI but has **never been run**. See [Windows](#windows). |
 | macOS | Not documented yet. The desktop crate should build with Xcode tools, but nothing here has been verified on macOS. |
 

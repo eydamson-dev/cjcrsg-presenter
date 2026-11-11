@@ -14,7 +14,9 @@ scripts/check.sh
 
 Runs rustfmt, clippy (`-D warnings`), the test suite, and a check that
 `EVIDENCE.md` declares the correct test count. CI runs the same script on
-`ubuntu-24.04` and is green.
+`ubuntu-24.04` on the self-hosted proxmox runner (`proxmox-ci-03`), which has the
+Rust toolchain and WebKitGTK libs pre-installed; Windows jobs stay on
+`windows-latest`. Both are green.
 
 To set up a new machine first, follow `CONTRIBUTING.md`.
 

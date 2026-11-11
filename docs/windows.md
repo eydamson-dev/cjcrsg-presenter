@@ -60,13 +60,19 @@ cargo test   -p presenter-core -p presenter-compat -p presenter-remote
 
 | Job | Runner | Purpose |
 | --- | --- | --- |
-| `library` | ubuntu-24.04 **and** windows-latest | fmt, clippy, tests of the three library crates. No system libraries needed |
-| `desktop-linux` | ubuntu-24.04 | full workspace, incl. the desktop crate, plus the `EVIDENCE.md` count check |
+| `library` | self-hosted (Ubuntu 24.04) **and** windows-latest | fmt, clippy, tests of the three library crates. No system libraries needed |
+| `desktop-linux` | self-hosted (Ubuntu 24.04) | full workspace, incl. the desktop crate, plus the `EVIDENCE.md` count check |
 | `desktop-windows` | windows-latest | compiles the desktop binary for MSVC and uploads it |
 
-The Linux desktop job installs `libwebkit2gtk-4.1-dev`, `libsoup-3.0-dev`,
-`libxdo-dev` and friends; the library matrix needs none of that, which is why it
-is fast and worth running on every OS.
+The Linux jobs run on the self-hosted proxmox runner `proxmox-ci-03` (an Ubuntu
+24.04 VM) because GitHub-hosted ubuntu runners are unreliable for this account.
+That VM has the Rust toolchain and the WebKitGTK libs (`libwebkit2gtk-4.1-dev`,
+`libsoup-3.0-dev`, `libxdo-dev`, …) pre-installed, so the desktop job skips its
+`apt-get` step there (`if: runner.environment == 'github-hosted'`). `rust-cache`
+runs with `cache-bin: false` — its restore otherwise drops the `rustup` binary and
+the next job fails with `rustup: command not found`. Windows jobs stay on
+`windows-latest`. The repo is public, so `pull_request` is omitted: a fork PR must
+never execute on the homelab runner; `push` to main is trusted.
 
 ## Visual testing: two layers, never cross-compared
 
