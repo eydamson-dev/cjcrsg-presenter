@@ -3,11 +3,15 @@ name: check
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Linux jobs run on the self-hosted proxmox runner (proxmox-ci-03): GitHub-hosted
+# ubuntu runners are unreliable for this account. Windows jobs stay on
+# windows-latest. `pull_request` is omitted because the repo is public — a fork PR
+# must not execute on the homelab runner.
 
 jobs:
   # Library crates only: no display, no WebView, no system libraries. Fast enough
@@ -17,8 +21,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest]
-    runs-on: ${{ matrix.os }}
+        include:
+          - os: ubuntu-24.04
+            runner: self-hosted
+          - os: windows-latest
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,11 +53,14 @@ jobs:
   # EVIDENCE.md still declares the right test count.
   desktop-linux:
     name: desktop (ubuntu-24.04)
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
+      # On GitHub-hosted runners the libs must be installed each run; the
+      # self-hosted proxmox runner has them pre-installed (see infra.md).
       - name: System libraries for the desktop shell
+        if: runner.environment == 'github-hosted'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
