@@ -4,7 +4,7 @@ What exists, what does not, and what to do next. **Update this at the end of
 every session.** It is the only place that describes current state; if it is
 wrong, the next session starts wrong.
 
-Last updated: 2026-11-11.
+Last updated: 2026-11-12.
 
 ## Verify the workspace in one command
 
@@ -29,6 +29,11 @@ For the **real desktop** â€” live KDE apps, system dialogs, permission prompts â
 drive it with `computer-use-linux`:
 [`docs/computer-use-linux.md`](computer-use-linux.md). Prefer the workspace for
 anything isolatable; use this only when the task must touch the live desktop.
+
+Orchestration runs on `deepseek-v4-pro`; code and harness edits are delegated to
+`deepseek-v4.1-flash#high` agents. The orchestrator does not edit `crates/`, `apps/` or
+the harness itself. See *Models per stage* in
+[`docs/agentic-workflow.md`](agentic-workflow.md) and D14.
 
 ## What works end to end
 

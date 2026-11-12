@@ -121,6 +121,32 @@ is not a code change to match the page, and it is not a silent edit to the page.
    implementer's account of the fix.
 5. Orchestrator accepts or sends back.
 
+## Models per stage
+
+One response is one model, so the Pro/Flash split lives at agent boundaries, not
+inside a turn (D14). The orchestrator runs on `deepseek-v4-pro`; work is delegated
+to `deepseek-v4.1-flash#high`.
+
+| Stage | Agent | Model |
+| --- | --- | --- |
+| 2 Contract, 7 Accept | Orchestrator | `opencode-go/deepseek-v4-pro` |
+| 1 Read | `reader` | `opencode-go/deepseek-v4-pro` |
+| 3 Scenario | `scenario-author` | `opencode-go/deepseek-v4-pro` |
+| 4 Harness | `harness-engineer` | `opencode-go/deepseek-v4.1-flash#high` |
+| 5 Implement | `implementer` | `opencode-go/deepseek-v4.1-flash#high` |
+| 6 Verify | `verifier` | `opencode-go/deepseek-v4-pro` |
+
+The split is a cost decision, not a relaxation of any gate. A Flash implementer's
+candidate is still only "ready" until a Pro verifier passes the exact SHA.
+
+Code edits belong to stage 5, so the orchestrator does not edit `crates/`,
+`apps/` or the harness itself. It writes contracts, acceptance records,
+`docs/status.md` and `EVIDENCE.md`, and hands the rest to the pinned agent.
+
+Stages 5 and 6 keep D13's separate-session, separate-worktree rule: a subagent
+shares the orchestrator's working directory, so launching the implementer as a
+subagent from the main checkout would put both roles in one tree.
+
 ## Status
 
 The agent files exist under `.opencode/agents/`, and OpenCode lists all five.

@@ -1,6 +1,7 @@
 ---
 description: Turns approved behavioural contracts into semantic parity scenarios, including boundary and repeat cases
 mode: all
+model: opencode-go/deepseek-v4-pro
 permissions:
   - action: edit
     resource: "*"

@@ -215,3 +215,44 @@ are not final; changing their shape needs a note here.
 
 **Revisit when.** The slice fails to catch a deliberately wrong implementation, or
 independent verification proves too slow to run per milestone.
+
+## D14 — Thinking on V4 Pro, building on V4.1 Flash
+
+**Context.** Both `opencode-go/deepseek-v4-pro` and `opencode-go/deepseek-v4.1-flash#high`
+are available. The expensive model is better at reading unfamiliar code, holding a
+contract in mind and catching a wrong verdict; the cheap one writes code and runs
+tools at a fraction of the cost. A single model choice for every stage pays Pro
+prices for mechanical edits, or Flash prices for the judgement calls.
+
+**Constraint that shaped this.** One assistant response is one model. A turn cannot
+reason in Pro and then edit in Flash, so the split has to happen at an agent or
+session boundary, not inside a turn. OpenCode also stores the model on the
+*session*, and selecting a primary agent does not change it, so the orchestrator's
+model comes from the root `model` setting while the worker split comes from each
+agent's `model` field.
+
+**Decision.**
+1. The orchestrator (main session) runs `opencode-go/deepseek-v4-pro`. Global
+   default model in `~/.config/opencode/opencode.json`.
+2. Code and harness edits are delegated to `opencode-go/deepseek-v4.1-flash#high`
+   agents: `implementer` and `harness-engineer` are pinned to Flash.
+3. Judgement stages stay on Pro: `reader`, `scenario-author` and `verifier`.
+4. Maintenance subagents (`explore`, `general`, `title`, `summary`, `compaction`)
+   run on Flash; anything heavier is passed an explicit `model` on the call.
+5. A subagent shares the orchestrator's working directory, so stages 5 and 6 keep
+   D13's separate-worktree sessions. Their models are pinned, but they are not
+   launched as subagents from the main checkout.
+
+**Why.** The failure mode D13 guards against is an agent confirming its own
+interpretation, so the model that judges is not the model that built. Spending Pro
+on the reader also protects the reference pages, which every later stage cites.
+
+**Consequences.** Orchestration turns cost more and are slower; implementer turns
+are cheaper. A Flash implementer can miss an invariant that a Pro reviewer then
+has to catch, which is exactly the rework D13's three-round cap bounds. The
+conflict of interest this creates is deliberate: verifier on Pro, implementer on
+Flash.
+
+**Revisit when.** A Flash implementer produces defects the Pro verifier catches in
+most milestones, or Pro's latency on orchestration makes the loop slower than a
+single-model one.
