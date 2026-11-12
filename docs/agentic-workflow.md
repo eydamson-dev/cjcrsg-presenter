@@ -136,6 +136,17 @@ to `deepseek-v4.1-flash#high`.
 | 5 Implement | `implementer` | `opencode-go/deepseek-v4.1-flash#high` |
 | 6 Verify | `verifier` | `opencode-go/deepseek-v4-pro` |
 
+### Vision delegate
+
+Neither the orchestrator nor the Pro agents can read images. A dedicated
+`vision-reader` agent (`.opencode/agents/vision-reader.md`) runs on
+`opencode-go/qwen3.7-plus` and does one thing: read a screenshot or frame and
+report what it shows. The orchestrator spawns it whenever a step needs "look at
+the image" — `AGENTS.md`'s "never say a UI is correct from the DOM alone" rule is
+satisfied through this delegate, not by switching the orchestrator to a vision
+model. It is read-only (no edit, no shell, no subagents). It is not one of the
+seven stages; it is a cross-cutting helper any stage may call.
+
 The split is a cost decision, not a relaxation of any gate. A Flash implementer's
 candidate is still only "ready" until a Pro verifier passes the exact SHA.
 

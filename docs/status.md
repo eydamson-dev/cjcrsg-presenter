@@ -35,6 +35,10 @@ Orchestration runs on `deepseek-v4-pro`; code and harness edits are delegated to
 the harness itself. See *Models per stage* in
 [`docs/agentic-workflow.md`](agentic-workflow.md) and D14.
 
+Visual inspection is delegated to the `vision-reader` agent on
+`opencode-go/qwen3.7-plus`; the orchestrator and the Pro agents have no image
+input, so "look at the screenshot" goes through that delegate.
+
 ## What works end to end
 
 ```bash
