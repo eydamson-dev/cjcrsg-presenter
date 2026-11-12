@@ -1,0 +1,364 @@
+{
+  "index": 13,
+  "step": "enable_output",
+  "purpose": "Settings > Outputs: re-enabling an output recreates its window",
+  "status": "ok",
+  "startedAt": "2026-11-12T08:59:43.274Z",
+  "timestamp": "2026-11-12T08:59:46.974Z",
+  "windowCount": 4,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 366
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 21
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 45
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 23
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 5,
+      "title": "Parity Stage",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 3,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 6,
+      "title": "Secondary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1052
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nGeneral\nOutputs\nStyles\nAudio\nConnection\nFiles\nProfiles\nTheme\nSmart\nOther\nOutputs\nEnabled\nUnnamed\nUse style\nWINDOW\n1920x1080\nOutput screen\nAlways on top\nPrimary\nSecondary\nParity Stage\nPrimary\n Verse two, line one \nSecondary\n Verse one, line three \nParity Stage\n Verse two, line one \n Verse one, line three \nOutput selector",
+    "textLength": 346,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": false,
+      "entries": [],
+      "groups": []
+    },
+    "projectsArea": false,
+    "projectArea": false,
+    "projectItems": [],
+    "activeProjectItems": [],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        },
+        {
+          "id": "secondary",
+          "name": "Secondary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        },
+        {
+          "id": "stage",
+          "name": "Parity Stage",
+          "titleBar": true,
+          "buttonTitle": "",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Verse two, line one",
+    "lines": [
+      "Verse two, line one"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "primary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse two, line one",
+      "lines": [
+        "Verse two, line one"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "error": null
+    },
+    {
+      "id": "secondary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse one, line three",
+      "lines": [
+        "Verse one, line three"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "error": null
+    },
+    {
+      "id": "stage",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse two, line one \n Verse one, line three",
+      "lines": [
+        "Verse two, line one",
+        "Verse one, line three"
+      ],
+      "stageArea": true,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "error": null
+    }
+  ],
+  "before": [
+    {
+      "id": "primary",
+      "text": "Verse two, line one",
+      "stageArea": false
+    },
+    {
+      "id": "stage",
+      "text": "Verse two, line one \n Verse one, line three",
+      "stageArea": true
+    }
+  ],
+  "after": [
+    {
+      "id": "primary",
+      "text": "Verse two, line one",
+      "stageArea": false
+    },
+    {
+      "id": "secondary",
+      "text": "Verse one, line three",
+      "stageArea": false
+    },
+    {
+      "id": "stage",
+      "text": "Verse two, line one \n Verse one, line three",
+      "stageArea": true
+    }
+  ],
+  "toggleBefore": {
+    "checked": "false",
+    "disabled": false
+  },
+  "toggleAfter": {
+    "checked": "true",
+    "disabled": false
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output1": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output2": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output1 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output2 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the Enabled switch read as off before re-enabling"
+    },
+    {
+      "ok": true,
+      "check": "two output pages existed before re-enabling"
+    },
+    {
+      "ok": true,
+      "check": "re-enabling the output recreates its window"
+    },
+    {
+      "ok": true,
+      "check": "the re-enabled output renders its own page again"
+    },
+    {
+      "ok": true,
+      "check": "the re-enabled output renders a slide, not a stage layout"
+    },
+    {
+      "ok": true,
+      "check": "re-enabling one output does not change the other output"
+    },
+    {
+      "ok": true,
+      "check": "the \"Secondary\" OS window exists again"
+    },
+    {
+      "ok": true,
+      "check": "the preview draws three tiles again"
+    }
+  ],
+  "screenshot": {
+    "controller": "13-enable-output-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image",
+      "13-enable-output-output-2.png: page.screenshot: Timeout 15000ms exceeded.",
+      "13-enable-output-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+    ],
+    "outputRetried": true,
+    "otherOutputs": [
+      {
+        "file": "13-enable-output-output-2.png",
+        "ok": false,
+        "method": null,
+        "error": "page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "file": "13-enable-output-output-3.png",
+        "ok": false,
+        "method": null,
+        "error": "page.screenshot: Timeout 15000ms exceeded."
+      }
+    ]
+  },
+  "durationMs": 64523,
+  "finishedAt": "2026-11-12T09:00:47.797Z"
+}

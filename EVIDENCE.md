@@ -694,8 +694,8 @@ The written reference of the pinned FreeShow (`ff784eb`, 1.6.8-beta.3) lives in
 - Upstream docs mirror: 54 pages and 34 images at `8d875b5`, refreshed with
   `scripts/fetch_freeshow_docs.sh`.
 
-The pages label every claim `code`, `doc`, `unknown` or `observed`; 90 claims are
-now `observed` from runs, 1,426 `code`, 465 `doc`, 181 `unknown`. A page becomes
+The pages label every claim `code`, `doc`, `unknown` or `observed`; 99 claims are
+now `observed` from runs, 1,417 `code`, 465 `doc`, 181 `unknown`. A page becomes
 a contract only through a scenario, and `code` still needs a run before it counts
 as one.
 
@@ -727,6 +727,33 @@ desktop run produced none (`UnknownVizError`), the workspace produced all 21.
 | Desktop run (no frames) | `parity/reports/evidence/observe-outputs-2026-11-11-host/` |
 | Reference pages updated | `docs/freeshow-reference/outputs/output-window.md`, `show/presenting.md`, `audit.md` `A-005`–`A-007` |
 | Driver and its traps | `parity/README.md`, "Observing the reference" |
+
+### Stage + multiple outputs, observed
+
+The second scenario, `stage-multi-output`, ran 14/14 steps on 2026-11-12 with two
+enabled normal outputs and one stage output seeded into the scratch profile. It
+records, per step and per output, each output's own DOM text and the preview
+tile state:
+
+| | |
+| --- | --- |
+| Controller, three tiles active | `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/05-start-controller.png` |
+| Controller, `Secondary` deselected | `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/08-deselect-secondary-controller.png` |
+| Reference pages updated | `docs/freeshow-reference/outputs/multiple-outputs.md`, `remote/stage.md` |
+| Full record | `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/` |
+
+What the run establishes (`observed`): advance fans out to every active normal
+output, a plain title-bar click toggles an output's active state, the last active
+normal output snaps back to active and toasts, disabling one output destroys its
+window and leaves the others untouched, and a stage output renders the layout —
+its `slide_text` items show the current slide and the next slide, never the slide
+itself.
+
+Output-window PNGs are absent from this run: the three output windows are created
+hidden on the single-display workspace and llvmpipe does not rasterise three
+full-size surfaces within the screenshot timeout, so each output's evidence is its
+DOM text and the controller screenshot, not a frame (see the evidence README's
+"does not show").
 
 ## Verification
 

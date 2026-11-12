@@ -155,7 +155,9 @@ view with two layouts, one selected and one locked, 1440x900.
 - **Area:** remote
 - **Online docs:** <https://freeshow.app/docs/stage>
 - **Pinned code:** ff784eb
-- **Confidence:** `code`
+- **Confidence:** `code`; `observed` for the `slideOffset` 0 = current /
+  1 = next behaviour measured 2026-11-12 (see "Observed" below). The negative
+  offset and the skip-disabled-slides rule stay `code`.
 
 ### Summary
 
@@ -196,7 +198,10 @@ Stage view with the item menu open, 1440x900.
 3. Slide text: `slideOffset` selects the slide relative to the live one —
    0 = current, 1 = next, negative = previous — and the lookup skips disabled
    slides (`stage.ts:147-187`; the stage client has its own copy of the algorithm,
-   `src/server/stage/items/SlideText.svelte:27-46`).
+   `src/server/stage/items/SlideText.svelte:27-46`). `observed` (2026-11-12):
+   0 = current and 1 = next, shown simultaneously (see Observed); the negative
+   (previous) offset and the skip-disabled-slides rule were not exercised and
+   stay `code`.
 4. Styled vs plain: `keepStyle` on the item makes the client render the original
    items at the slide's resolution inside a fitted canvas
    (`src/server/stage/items/SlideText.svelte:95-105`, `src/frontend/components/stage/Stagebox.svelte:455`);
@@ -217,6 +222,22 @@ Stage view with the item menu open, 1440x900.
 9. Item labels are generated from the item type and offset, e.g. "Current slide
    text", "Next slide text", "Next slide text +2"
    (`src/frontend/components/stage/stage.ts:80-103`).
+
+### Observed — the `stage-multi-output` run
+
+Source: `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/`
+(scenario `stage-multi-output`, 2026-11-12,
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3`, `commitMatchesPin: true`). A stage
+output window rendered the seeded layout `Parity Stage` with two `slide_text`
+items (`slideOffset` 0 and 1). After `start`, the stage page's DOM text was the
+current slide's two lines then the next slide's one line:
+`Verse one, line one` / `Verse one, line two` / `Verse one, line three` — i.e.
+the `slideOffset` 0 item shows the current slide and the `slideOffset` 1 item
+shows the next slide, simultaneously (`start`, index 5). After `advance` the
+text was `Verse one, line three` / `Verse two, line one` (new current plus new
+next) (`advance`, index 6). This observes only the 0 and 1 offsets; the negative
+(previous) offset and the skip-disabled-slides rule were not exercised and stay
+`code`.
 
 ### State and persistence
 
@@ -362,3 +383,14 @@ None.
 - Whether a `?name=` that matches nothing should fall through to the stored layout.
   In the code it does (`receiver.ts:28-41`: no match → continues to the stored
   value).
+
+---
+
+## Changelog
+
+- `2026-11-12` — relabelled the `stage.items` `slideOffset` 0 = current /
+  1 = next behaviour `observed` from the `stage-multi-output` run; added an
+  Observed subsection to Stage items and the `observed` annotation to the
+  slide-text bullet. No claim was corrected (the `code` claims were confirmed,
+  not contradicted), so no audit entry. The negative offset and
+  skip-disabled-slides rule stay `code`.

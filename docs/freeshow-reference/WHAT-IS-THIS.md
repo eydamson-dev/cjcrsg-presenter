@@ -17,9 +17,9 @@ from a screenshot or from a similar app.
 - **Size:** 225 features with stable IDs, 65 detail pages, 1,636 code citations,
   30 screenshots.
 - **Status:** mostly `code`-level knowledge, with a growing set of `observed`
-  claims from recorded runs (`show/presenting.md`, `outputs/output-window.md`).
-  The rest is not runtime-verified; a page existing does not make a behaviour
-  understood.
+  claims from recorded runs (`show/presenting.md`, `outputs/output-window.md`,
+  `outputs/multiple-outputs.md`, `remote/stage.md`). The rest is not
+  runtime-verified; a page existing does not make a behaviour understood.
 
 ## What it is and is not
 
@@ -155,3 +155,6 @@ The reference checkout and how to run it are in `docs/reference.md`.
 - `2026-11-11` — corrected the status line: `observed` claims now exist (the
   2026-11-09 end-of-show run and the 2026-11-11 `outputs-basic` run). Audit
   `A-006`.
+- `2026-11-12` — the `stage-multi-output` run added `observed` claims to
+  `outputs/multiple-outputs.md` and `remote/stage.md`; noted both in the status
+  line.

@@ -26,9 +26,12 @@ content lives in the main window's stores, not in the output windows.
 
 The present/start/lock/advance/clear path is now `observed` from the
 2026-11-11 `outputs-basic` run (one display, one output, no media); see
-[output-window](output-window.md#observed--the-outputs-basic-run). The rest of
-this area is still `code`, so a contract may rest only on the observed entries
-without a further run or explicit provisional approval
+[output-window](output-window.md#observed--the-outputs-basic-run). The
+multiple-output present/fan-out/select/disable path and the stage-window path
+are `observed` from the 2026-11-12 `stage-multi-output` run; see
+[multiple-outputs](multiple-outputs.md#observed--the-stage-multi-output-run).
+The rest of this area is still `code`, so a contract may rest only on the
+observed entries without a further run or explicit provisional approval
 (`docs/decisions.md:191-193`).
 
 ## The output model
@@ -160,3 +163,6 @@ NDI/invisible), one locked (struck-through name), clear-button column visible,
 - `2026-11-11` — the outputs area is no longer all `code`: added the `observed`
   label row, pointed at the `outputs-basic` run, and recorded that an output
   window can exist and render without being shown. Audit `A-006`.
+- `2026-11-12` — the multiple-output and stage-window paths are also `observed`
+  now (`stage-multi-output` run); pointed the "rest is still `code`" note at the
+  `multiple-outputs` observed section too.

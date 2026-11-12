@@ -128,8 +128,9 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Project browser: open project first, recents newest first, missing-file flag, Forget, and the outline in the Shows tab | `parity/reports/ui-project-browser-2026-11-09.md` |
 | Next at a show end: press 1 selects (output unchanged, rev 1), press 2 plays (rev 2); setting off stays rev 0; choice survives restart | `parity/reports/evidence/dev-015/README.md` |
 | Reference `outputs-basic`, observed: 11/11 steps; Ctrl+L flips the lock, Space while locked leaves the frame byte-identical, Escape clears to an empty frame; the output window is never mapped, even with two displays | `parity/reports/evidence/observe-outputs-2026-11-11-workspace/` |
+| Reference `stage-multi-output`, observed: 14/14 steps; advance fans out to every active normal output, a plain title-bar click toggles an output's active state, the last active normal output snaps back and toasts, and a stage output renders the layout (current + next slide text) rather than the slide | `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/` |
 
-| FreeShow reference: 225 features, 65 pages, 1,636 code citations, 30 screenshots, 90 claims `observed` | `docs/freeshow-reference/` |
+| FreeShow reference: 225 features, 65 pages, 1,636 code citations, 30 screenshots, 99 claims `observed` | `docs/freeshow-reference/` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -148,9 +149,11 @@ memory.
   architecture (IPC, servers, settings, persistence, API, stores, media, i18n,
   security, build).
 - Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`;
-  90 are `observed`. Two runs supply them: the end-of-show move (2026-11-09) and
+  99 are `observed`. Three runs supply them: the end-of-show move (2026-11-09),
   `outputs-basic` (2026-11-11: present, start, lock, Space while locked, unlock,
-  next, clear). `USING-THIS.md` says what each label permits.
+  next, clear), and `stage-multi-output` (2026-11-12: multiple outputs, output
+  selection, disable/enable, and a stage output rendering the layout).
+  `USING-THIS.md` says what each label permits.
 - 30 screenshots of the running reference are in `screenshots/`, with the state and
   viewport of each in its README.
 - `scripts/check_freeshow_refs.py` verifies every `src/...:line` citation against
@@ -203,13 +206,15 @@ after `next_section`/`next_group`. A differential selection harness is still
 absent; the feature's acceptance used unit tests plus the observed reference run.
 
 0. **Tier 1 observation (gate for everything below).** Tier 1 has 63 features
-   (`docs/plan.md`, `docs/freeshow-reference/tiers.md`). Two slices are now
-   `observed`: the end-of-show move, and output-window basics (present, start,
-   lock, Space while locked, unlock, next, clear) through
+   (`docs/plan.md`, `docs/freeshow-reference/tiers.md`). Three slices are now
+   `observed`: the end-of-show move, output-window basics (present, start, lock,
+   Space while locked, unlock, next, clear), and stage + multiple outputs
+   (fan-out to active outputs, selection toggles, disable/enable isolation, and
+   a stage output rendering the layout) — all through
    `parity/tools/observe_reference.mjs`. The next slice needs that driver
-   extended — it covers one output and no media, so stage, multiple outputs,
-   per-output styles, media and audio are still `code` only. Record the runs
-   before accepting anything in them.
+   extended again — it still covers no media and no per-output styles, so
+   media, audio and `out.styles` are still `code` only. Record the runs before
+   accepting anything in them.
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is
    still no project catalogue (folders, create, rename, import), and the left

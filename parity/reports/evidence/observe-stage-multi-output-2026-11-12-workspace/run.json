@@ -1,0 +1,525 @@
+{
+  "status": "passed",
+  "scenario": "stage-multi-output",
+  "startedAt": "2026-11-12T08:50:32.504Z",
+  "finishedAt": "2026-11-12T09:01:50.023Z",
+  "reference": {
+    "path": "/home/eydamson/projects/reference/freeshow",
+    "version": "1.6.8-beta.3",
+    "commit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "commitMatchesPin": true,
+    "pinnedCommit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "built": true
+  },
+  "profile": {
+    "store": "/tmp/opencode/fs-store",
+    "dataPath": "/tmp/opencode/fs-data",
+    "project": {
+      "id": "parity",
+      "name": "Parity Project",
+      "shows": [
+        {
+          "id": "fx-show"
+        },
+        {
+          "id": "fx-notes"
+        },
+        {
+          "id": "tx-show"
+        }
+      ]
+    },
+    "shows": [
+      {
+        "file": "parity-three-slides.show",
+        "id": "fx-show",
+        "name": "Parity Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-with-notes.show",
+        "id": "fx-notes",
+        "name": "Parity With Notes",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-transitions.show",
+        "id": "tx-show",
+        "name": "Transition Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "tx-2",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "tx-3",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          }
+        ]
+      }
+    ],
+    "skipped": [
+      {
+        "file": "parity-with-media.show",
+        "reason": "missing media: /srv/freeshow/media/background.mp4, /srv/freeshow/media/logo.png"
+      }
+    ],
+    "multiOutput": {
+      "layout": {
+        "id": "parity-stage",
+        "name": "Parity Stage",
+        "items": [
+          {
+            "id": "textCurrent",
+            "type": "slide_text",
+            "slideOffset": 0
+          },
+          {
+            "id": "textNext",
+            "type": "slide_text",
+            "slideOffset": 1
+          }
+        ]
+      },
+      "outputs": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "enabled": true,
+          "active": true,
+          "stageOutput": null
+        },
+        {
+          "id": "secondary",
+          "name": "Secondary",
+          "enabled": true,
+          "active": true,
+          "stageOutput": null
+        },
+        {
+          "id": "stage",
+          "name": "Parity Stage",
+          "enabled": true,
+          "active": true,
+          "stageOutput": "parity-stage"
+        }
+      ],
+      "readBack": {
+        "settingsOutputs": [
+          "primary",
+          "secondary",
+          "stage"
+        ],
+        "stageLayouts": [
+          "parity-stage"
+        ]
+      }
+    }
+  },
+  "harness": {
+    "script": "parity/tools/observe_reference.mjs",
+    "node": "v24.21.0",
+    "platform": "linux",
+    "playwright": "/home/eydamson/projects/cjcrsg-presenter/parity/tools/node_modules/playwright/index.js",
+    "display": ":90",
+    "waylandDisplay": "wayland-1",
+    "locale": "en-PH"
+  },
+  "controller": {
+    "viewport": {
+      "innerWidth": 1600,
+      "innerHeight": 900,
+      "devicePixelRatio": 1
+    },
+    "displays": {
+      "primary": {
+        "accelerometerSupport": "unknown",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "colorDepth": 24,
+        "colorSpace": "{r:[0.6453, 0.3272], g:[0.2979, 0.5983], b:[0.1454, 0.0556], w:[0.3127, 0.3290]}, transfer:GAMMA22, matrix:RGB, range:FULL}",
+        "depthPerComponent": 8,
+        "detected": true,
+        "displayFrequency": 0,
+        "id": 65,
+        "internal": false,
+        "label": "Beihai Century Joint Innovation Technology Co.,Ltd 27G2R",
+        "maximumCursorSize": {
+          "width": 0,
+          "height": 0
+        },
+        "monochrome": false,
+        "nativeOrigin": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scaleFactor": 1,
+        "size": {
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workAreaSize": {
+          "width": 2560,
+          "height": 1440
+        },
+        "touchSupport": "unknown"
+      },
+      "all": [
+        {
+          "accelerometerSupport": "unknown",
+          "bounds": {
+            "x": 2560,
+            "y": 360,
+            "width": 1920,
+            "height": 1080
+          },
+          "colorDepth": 24,
+          "colorSpace": "{primaries:BT709, transfer:GAMMA22, matrix:RGB, range:FULL}",
+          "depthPerComponent": 8,
+          "detected": true,
+          "displayFrequency": 0,
+          "id": 64,
+          "internal": false,
+          "label": "GWD ARZOPA",
+          "maximumCursorSize": {
+            "width": 0,
+            "height": 0
+          },
+          "monochrome": false,
+          "nativeOrigin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scaleFactor": 1,
+          "size": {
+            "width": 1920,
+            "height": 1080
+          },
+          "workArea": {
+            "x": 2560,
+            "y": 360,
+            "width": 1920,
+            "height": 1080
+          },
+          "workAreaSize": {
+            "width": 1920,
+            "height": 1080
+          },
+          "touchSupport": "unknown"
+        },
+        {
+          "accelerometerSupport": "unknown",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 2560,
+            "height": 1440
+          },
+          "colorDepth": 24,
+          "colorSpace": "{r:[0.6453, 0.3272], g:[0.2979, 0.5983], b:[0.1454, 0.0556], w:[0.3127, 0.3290]}, transfer:GAMMA22, matrix:RGB, range:FULL}",
+          "depthPerComponent": 8,
+          "detected": true,
+          "displayFrequency": 0,
+          "id": 65,
+          "internal": false,
+          "label": "Beihai Century Joint Innovation Technology Co.,Ltd 27G2R",
+          "maximumCursorSize": {
+            "width": 0,
+            "height": 0
+          },
+          "monochrome": false,
+          "nativeOrigin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scaleFactor": 1,
+          "size": {
+            "width": 2560,
+            "height": 1440
+          },
+          "workArea": {
+            "x": 0,
+            "y": 0,
+            "width": 2560,
+            "height": 1440
+          },
+          "workAreaSize": {
+            "width": 2560,
+            "height": 1440
+          },
+          "touchSupport": "unknown"
+        }
+      ]
+    },
+    "fonts": {
+      "status": "loaded",
+      "families": [
+        "CMGSans",
+        "NotoColorEmojiLimited"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "index": 1,
+      "step": "ready",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 2,
+      "step": "open_project",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 3,
+      "step": "open_show",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 4,
+      "step": "present_outputs",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 5,
+      "step": "start",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 6,
+      "step": "advance",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 7,
+      "step": "stage_tile_click",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 8,
+      "step": "deselect_secondary",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 9,
+      "step": "advance_inactive",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 10,
+      "step": "last_active_guard",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 11,
+      "step": "reselect_secondary",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 12,
+      "step": "disable_output",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 13,
+      "step": "enable_output",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 14,
+      "step": "back_to_show",
+      "status": "ok",
+      "error": null
+    }
+  ],
+  "screenshots": {
+    "written": 14,
+    "problems": [
+      {
+        "step": "present_outputs",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "present_outputs",
+        "error": "04-present-outputs-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "present_outputs",
+        "error": "04-present-outputs-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "start",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "start",
+        "error": "05-start-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "start",
+        "error": "05-start-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "advance",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "advance",
+        "error": "06-advance-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "advance",
+        "error": "06-advance-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "stage_tile_click",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "stage_tile_click",
+        "error": "07-stage-tile-click-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "stage_tile_click",
+        "error": "07-stage-tile-click-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "deselect_secondary",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "deselect_secondary",
+        "error": "08-deselect-secondary-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "deselect_secondary",
+        "error": "08-deselect-secondary-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "advance_inactive",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "advance_inactive",
+        "error": "09-advance-inactive-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "advance_inactive",
+        "error": "09-advance-inactive-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "last_active_guard",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "last_active_guard",
+        "error": "10-last-active-guard-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "last_active_guard",
+        "error": "10-last-active-guard-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "reselect_secondary",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "reselect_secondary",
+        "error": "11-reselect-secondary-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "reselect_secondary",
+        "error": "11-reselect-secondary-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "disable_output",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "disable_output",
+        "error": "12-disable-output-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "enable_output",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "enable_output",
+        "error": "13-enable-output-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "enable_output",
+        "error": "13-enable-output-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "back_to_show",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "back_to_show",
+        "error": "14-back-to-show-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+      },
+      {
+        "step": "back_to_show",
+        "error": "14-back-to-show-output-3.png: page.screenshot: Timeout 15000ms exceeded."
+      }
+    ]
+  },
+  "failed": []
+}

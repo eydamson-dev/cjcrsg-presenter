@@ -1,16 +1,22 @@
 # Outputs: present, window visibility, lock, clear
 
 Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the `outputs-basic`
-run of 2026-11-11. Labels follow `docs/freeshow-reference/USING-THIS.md`:
-`label: observed` means a recorded run at the pin, `code` means read from the
-pinned source only.
+run of 2026-11-11 and the `stage-multi-output` run of 2026-11-12. Labels follow
+`docs/freeshow-reference/USING-THIS.md`: `label: observed` means a recorded run
+at the pin, `code` means read from the pinned source only.
 
 Run evidence for every `observed` note below:
-`parity/reports/evidence/observe-outputs-2026-11-11-workspace/` — scenario
-`outputs-basic`, 11/11 steps, 21 screenshots, one 1920×1080 display, hidden X11
-workspace, show `Parity Fixture` (3 slides, no media). The Wayland/RTX 5060 Ti
-run (`...-host/`) recorded the same present-time window state but no output
-frames; do not use it for frame claims.
+- `parity/reports/evidence/observe-outputs-2026-11-11-workspace/` — scenario
+  `outputs-basic`, 11/11 steps, 21 screenshots, one 1920×1080 display, hidden X11
+  workspace, show `Parity Fixture` (3 slides, no media). The Wayland/RTX 5060 Ti
+  run (`...-host/`) recorded the same present-time window state but no output
+  frames; do not use it for frame claims.
+- `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/` —
+  scenario `stage-multi-output`, 14/14 steps, one 1920×1080 display, hidden X11
+  workspace. Two normal outputs (`Primary`, `Secondary`) and one stage output
+  (`Parity Stage`), one stage layout with two `slide_text` items. Output content
+  is DOM text (`outputs[]`), not output PNGs (the output windows were created
+  hidden and their page screenshots timed out on llvmpipe).
 
 ---
 
@@ -181,4 +187,87 @@ notes: >
   the clear (the 1 s delay at ClearButtons.svelte:22-28). Boundary: no
   background, overlay, audio or timer content existed, so F1–F4 per-layer clears
   were not fired; only Clear all via Escape was measured.
+```
+
+```yaml
+id: out.multiple
+area: outputs
+title: Several outputs at once, each with its own window, enabled independently
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/settings/tabs/OutputsTabs.svelte:89-152
+    - src/frontend/components/settings/tabs/Outputs.svelte:54-73
+    - src/frontend/components/helpers/output.ts:151-155,699-714
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (stage-multi-output, 2026-11-12): one Present click opened three
+  output pages and three distinct OS windows (Primary, Secondary, Parity Stage),
+  none offscreen and none minimized. A command fans out to the active normal
+  outputs only: Space (start) put slide 1 on both normal outputs, advance moved
+  both, and after Secondary was deactivated advance moved only Primary
+  (Secondary kept its slide byte-for-byte). Disabling Secondary from
+  Settings > Outputs removed its page and OS window while Primary kept its slide
+  and Parity Stage its layout; re-enabling recreated both and left the other two
+  unchanged. Boundary: out.multiple.specific bindings were not exercised, so the
+  bound-output branch stays code.
+```
+
+```yaml
+id: out.multiple.select
+area: outputs
+title: A plain title-bar click toggles an output's active state; the last one is guarded
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/output/preview/OutputPreviewLabel.svelte:13-38
+    - src/frontend/components/actions/apiHelper.ts:353-357
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (stage-multi-output, 2026-11-12): with three enabled outputs every
+  preview tile had a title bar. A plain click on Secondary's title-bar button
+  deactivated it (name struck, active:false), and a second click reactivated it.
+  Clicking the last active normal output snapped it back to active:true and a
+  toast "You have to have at least one active output!" appeared. Boundary:
+  Ctrl/Cmd-click (select one) and the title-bar context menu were not exercised,
+  so those stay code.
+```
+
+```yaml
+id: out.stage-window
+area: outputs
+title: A stage output renders the stage layout, not the slide, and is always active
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/MainOutput.svelte:143-144
+    - src/frontend/components/output/preview/OutputPreviewLabel.svelte:19-27
+    - src/frontend/components/helpers/output.ts:1202-1229
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (stage-multi-output, 2026-11-12): the stage output's page reported
+  stageArea:true and rendered the seeded layout (not a slide), unlike the two
+  normal outputs (stageArea:false). Its title-bar button offered no output lock
+  (buttonTitle:"") and clicking it left it active; the stage followed the source
+  output it mirrors on advance. Boundary: the fan-out exclusion mechanism, the
+  stage web client (stage.url), the layout editor and the "Current output"
+  source dropdown were not exercised.
 ```

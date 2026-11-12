@@ -1,0 +1,309 @@
+{
+  "index": 12,
+  "step": "disable_output",
+  "purpose": "Settings > Outputs: disabling one output must not disturb the others",
+  "status": "ok",
+  "startedAt": "2026-11-12T08:58:54.487Z",
+  "timestamp": "2026-11-12T08:58:57.465Z",
+  "windowCount": 3,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 330
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 21
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 45
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 5,
+      "title": "Parity Stage",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 3,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1052
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nGeneral\nOutputs\nStyles\nAudio\nConnection\nFiles\nProfiles\nTheme\nSmart\nOther\nOutputs\nEnabled\nUnnamed\nUse style\nWINDOW\n1920x1080\nOutput screen\nAlways on top\nPrimary\nSecondary\nParity Stage\nPrimary\n Verse two, line one \nParity Stage\n Verse two, line one \n Verse one, line three \nOutput selector",
+    "textLength": 312,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": false,
+      "entries": [],
+      "groups": []
+    },
+    "projectsArea": false,
+    "projectArea": false,
+    "projectItems": [],
+    "activeProjectItems": [],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        },
+        {
+          "id": "stage",
+          "name": "Parity Stage",
+          "titleBar": true,
+          "buttonTitle": "",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Verse two, line one",
+    "lines": [
+      "Verse two, line one"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "primary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse two, line one",
+      "lines": [
+        "Verse two, line one"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "error": null
+    },
+    {
+      "id": "stage",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse two, line one \n Verse one, line three",
+      "lines": [
+        "Verse two, line one",
+        "Verse one, line three"
+      ],
+      "stageArea": true,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "error": null
+    }
+  ],
+  "before": [
+    {
+      "id": "primary",
+      "text": "Verse two, line one",
+      "stageArea": false
+    },
+    {
+      "id": "secondary",
+      "text": "Verse one, line three",
+      "stageArea": false
+    },
+    {
+      "id": "stage",
+      "text": "Verse two, line one \n Verse one, line three",
+      "stageArea": true
+    }
+  ],
+  "after": [
+    {
+      "id": "primary",
+      "text": "Verse two, line one",
+      "stageArea": false
+    },
+    {
+      "id": "stage",
+      "text": "Verse two, line one \n Verse one, line three",
+      "stageArea": true
+    }
+  ],
+  "toggleBefore": {
+    "checked": "true",
+    "disabled": false
+  },
+  "toggleAfter": {
+    "checked": "false",
+    "disabled": false
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output1": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output1 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the Enabled switch showed the output as enabled before the click"
+    },
+    {
+      "ok": true,
+      "check": "all three outputs were enabled before the switch was turned off"
+    },
+    {
+      "ok": true,
+      "check": "disabling one output removes its window and leaves the other two"
+    },
+    {
+      "ok": true,
+      "check": "the disabled output's page is gone"
+    },
+    {
+      "ok": true,
+      "check": "the other outputs are untouched by disabling one"
+    },
+    {
+      "ok": true,
+      "check": "the remaining normal output still shows the same slide"
+    },
+    {
+      "ok": true,
+      "check": "the stage output is unaffected and still renders its layout"
+    },
+    {
+      "ok": true,
+      "check": "the \"Secondary\" OS window is gone"
+    },
+    {
+      "ok": true,
+      "check": "the other two OS windows remain"
+    },
+    {
+      "ok": true,
+      "check": "the preview now draws two tiles"
+    }
+  ],
+  "screenshot": {
+    "controller": "12-disable-output-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image",
+      "12-disable-output-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+    ],
+    "outputRetried": true,
+    "otherOutputs": [
+      {
+        "file": "12-disable-output-output-2.png",
+        "ok": false,
+        "method": null,
+        "error": "page.screenshot: Timeout 15000ms exceeded."
+      }
+    ]
+  },
+  "durationMs": 48785,
+  "finishedAt": "2026-11-12T08:59:43.272Z"
+}

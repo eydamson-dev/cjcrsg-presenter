@@ -96,6 +96,46 @@ each step — text appeared, the lock title flipped, Space while locked did not
 advance, Escape emptied the output — not that the behaviour is right for the
 port.
 
+`--scenario stage-multi-output` runs the other slice: `ready`, `open_project`,
+`open_show`, `present_outputs`, `start`, `advance`, `stage_tile_click`,
+`deselect_secondary`, `advance_inactive`, `last_active_guard`,
+`reselect_secondary`, `disable_output`, `enable_output`, `back_to_show`. It
+records `out.multiple`, `out.multiple.select`, `out.stage-window` and
+`stage.items`:
+
+- **Seed.** That scenario seeds two enabled normal outputs plus a stage output
+  into the scratch profile: `outputs` inside `settings.json` (the reference's
+  own default key, `src/electron/data/defaults.ts:19-30`) and a `stage.json`
+  (`store.ts:38`) holding one layout with two `slide_text` items, `slideOffset`
+  0 and 1, copied from the reference's default layout
+  (`utils/createData.ts:17-38`). The stage output's entry carries
+  `stageOutput: <layout id>` (`helpers/output.ts:1202-1229`). `outputs-basic`
+  seeds neither, so its observations are unchanged.
+- **Reading several outputs.** Each output page names its own output in the DOM:
+  `Zoomed` renders `id={outputId}` (`slide/Zoomed.svelte:156`) in both the slide
+  (`Output.svelte:408`) and the stage layout (`StageLayout.svelte:164`), and the
+  preview tile carries the same id. That is how `steps.json`'s `outputs[]`,
+  `controller.preview.tiles[]` and the OS window titles are joined without
+  guessing. A stage page is identified by `.stageArea` (`StageLayout.svelte:147`),
+  which a normal output never renders.
+- **One Present click, three windows.** `toggleOutputs(null)` fans out to every
+  enabled output, stage included. On this machine all three windows are created
+  hidden (the reasons are in the section above), so their *content* is
+  observable while their pixels are not.
+- **What it asserts.** Both normal outputs follow `start` and `advance`; a plain
+  click on a tile deactivates exactly that output and the next advance skips it;
+  the last active normal output snaps back and toasts; the stage tile cannot be
+  deactivated; the stage page shows the current slide's text and the next
+  slide's text at the same time and follows the output it mirrors; disabling one
+  output from Settings > Outputs removes its window and leaves the other two
+  untouched.
+
+The disable/enable steps drive the real settings UI: the top-bar Settings
+button, the `Outputs` section in the left panel, the output's tab, then the
+`Enabled` switch. The steps read the switch's `aria-checked` and the selected
+tab before clicking, and record both, so a wrong tab fails loudly instead of
+disabling the wrong output.
+
 **Present can be capture-only, not a shown window.** The reference creates the
 output window and leaves it hidden: `BrowserWindow.isVisible()` is `false` in
 both a GPU-less X11 workspace (one display) and a Wayland desktop with **two**
@@ -134,17 +174,21 @@ controller screenshots were fine. The reference's own capture agrees:
 with `[OSR] capture mode: cpu bitmap ... gpu compositing=hardware`. Use the
 workspace when the output frame is part of the evidence.
 
-**What it cannot observe:** multiple outputs, per-output styles or transitions,
-window placement and monitors, the stage window, the remote/stage/controller web
-clients, media, audio, or anything that depends on the controller clock. The
-output window's size comes from the profile and the screen and is recorded, not
-forced; the controller clock is visible in controller screenshots and must be
-masked before any pixel comparison. The controller's clear controls are inline
-in 1.6.8-beta.3 (`ClearButtons.svelte`), so `clear_entries` enumerates them
-there; there is no pop-up menu to open. If Playwright cannot screenshot the
-output window, the driver asks the main process for `capturePage()` and records
-which route produced the file; if both fail it records the error rather than
-dropping the window.
+**What it cannot observe:** per-output styles or transitions, window placement
+and monitors, the remote/stage/controller web clients, media, audio, or anything
+that depends on the controller clock. Multiple outputs and the stage *window* are
+covered by `stage-multi-output`; the stage **web client** (port 5511, `stage.url`
+and its query parameters) is not — it needs a browser pointed at the reference's
+stage server, which is a different route. The output window's size comes from the
+profile and the screen and is recorded, not forced; the controller clock is
+visible in controller screenshots and must be masked before any pixel comparison.
+The controller's clear controls are inline in 1.6.8-beta.3
+(`ClearButtons.svelte`), so `clear_entries` enumerates them there; there is no
+pop-up menu to open. If Playwright cannot screenshot the output window, the
+driver asks the main process for `capturePage()` and records which route produced
+the file; if both fail it records the error rather than dropping the window.
+Every further output window is captured to `NN-<step>-output-2.png`,
+`-output-3.png`, … by the same two routes.
 
 **The profile is disposable.** `/tmp/opencode/fs-store` and
 `/tmp/opencode/fs-data` are deleted and reseeded on every run (the paths are

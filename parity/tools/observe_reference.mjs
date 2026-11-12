@@ -8,7 +8,7 @@
 // called.
 //
 // Usage:
-//   cd parity/tools && node observe_reference.mjs <outdir> [--scenario outputs-basic]
+//   cd parity/tools && node observe_reference.mjs <outdir> [--scenario outputs-basic|stage-multi-output]
 //
 // The scratch profile is deleted and reseeded on every run. The reference
 // checkout is only read: its package.json and built public/index.html are
@@ -42,6 +42,27 @@ const OPTIONAL_MEDIA_FIXTURE = "parity-with-media.show"
 const CONTROLLER_VIEWPORT = { width: 1600, height: 900 }
 const OUTPUT_WINDOW_TITLE = "Primary"
 const FIXTURE_TEXT = ["Verse one", "Verse two", "line one", "line three"]
+
+// The stage/multi-output scenario needs reference state that no committed fixture
+// carries: two enabled normal outputs and a stage output bound to a layout.
+// Outputs live in `settings.outputs` (src/electron/data/defaults.ts:19-30); stage
+// layouts live in `stage.json` (src/electron/data/store.ts:38). Both are seeded
+// into the scratch store only; the committed fixtures and the reference checkout
+// are never written.
+const OUTPUT_BOUNDS = { x: 0, y: 0, width: 1920, height: 1080 }
+const OUTPUT_PRIMARY = { id: "primary", name: "Primary", color: "#F0008C" }
+const OUTPUT_SECONDARY = { id: "secondary", name: "Secondary", color: "#0A84FF" }
+const STAGE_LAYOUT_ID = "parity-stage"
+const STAGE_LAYOUT_NAME = "Parity Stage"
+const OUTPUT_STAGE = { id: "stage", name: STAGE_LAYOUT_NAME, color: "#555555" }
+const STAGE_ITEM_CURRENT = "textCurrent"
+const STAGE_ITEM_NEXT = "textNext"
+
+// Slide text of `parity-three-slides.show`, in layout order.
+const SLIDE_ONE = "Verse one, line one"
+const SLIDE_ONE_SECOND_LINE = "Verse one, line two"
+const SLIDE_TWO = "Verse one, line three"
+const SLIDE_THREE = "Verse two, line one"
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 const firstLine = (err) => String(err && err.message ? err.message : err).split("\n")[0]
@@ -215,6 +236,72 @@ function repairShowGroups(show) {
     return repairs
 }
 
+// Two enabled normal outputs plus a stage output bound to one layout. Shapes come
+// from the reference's own types and defaults:
+//   output entry  src/types/Output.ts:8-39, defaults at src/electron/data/defaults.ts:19-30
+//   stage output  src/frontend/components/helpers/output.ts:1202-1229 (`enableStageOutput`)
+//   stage layout  src/types/Stage.ts:10-35, items from src/frontend/utils/createData.ts:17-38
+// The first `slide_text` item is the current slide; the second is `slideOffset: 1`,
+// the next one (src/frontend/components/stage/stage.ts:49-55).
+function seedMultiOutput(store) {
+    const outputs = {
+        [OUTPUT_PRIMARY.id]: {
+            enabled: true,
+            active: true,
+            name: OUTPUT_PRIMARY.name,
+            color: OUTPUT_PRIMARY.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: "default",
+            show: {}
+        },
+        [OUTPUT_SECONDARY.id]: {
+            enabled: true,
+            active: true,
+            name: OUTPUT_SECONDARY.name,
+            color: OUTPUT_SECONDARY.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: "default",
+            show: {}
+        },
+        [OUTPUT_STAGE.id]: {
+            enabled: true,
+            active: true,
+            stageOutput: STAGE_LAYOUT_ID,
+            name: OUTPUT_STAGE.name,
+            color: OUTPUT_STAGE.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null
+        }
+    }
+
+    const layout = {
+        name: STAGE_LAYOUT_NAME,
+        disabled: false,
+        password: "",
+        settings: {},
+        items: {
+            [STAGE_ITEM_CURRENT]: {
+                type: "slide_text",
+                style: "width:1870px;height:680px;left:25px;top:25px;font-family: Arial;font-weight:bold;",
+                align: ""
+            },
+            [STAGE_ITEM_NEXT]: {
+                type: "slide_text",
+                slideOffset: 1,
+                lineCount: 2,
+                style: "width:1870px;height:330px;left:25px;top:725px;font-family: Arial;font-weight:bold;color:#aaaaaa;",
+                align: ""
+            }
+        },
+        itemOrder: [STAGE_ITEM_CURRENT, STAGE_ITEM_NEXT]
+    }
+
+    writeJson(join(store, "stage.json"), { [STAGE_LAYOUT_ID]: layout })
+    return { outputs, layout }
+}
+
 function seedProfile(options) {
     const store = assertScratchPath("--store", options.store)
     const dataPath = assertScratchPath("--data", options.dataPath)
@@ -285,6 +372,12 @@ function seedProfile(options) {
         projectTemplates: {}
     }
 
+    // Only the stage/multi-output scenario gets outputs and a stage layout: a seed
+    // with three outputs would change what `outputs-basic` observes, and that
+    // scenario is committed evidence.
+    const multiOutput = options.scenario === "stage-multi-output" ? seedMultiOutput(store) : null
+    if (multiOutput) settings.outputs = multiOutput.outputs
+
     writeJson(join(store, "config.json"), config)
     writeJson(join(store, "settings.json"), settings)
     writeJson(join(store, "projects.json"), projects)
@@ -296,6 +389,42 @@ function seedProfile(options) {
     const target = fixtures.find((fixture) => fixture.name === TARGET_SHOW)
     if (!target) throw new Error(`fixture named "${TARGET_SHOW}" was not seeded`)
 
+    // Read back everything the seed claims. A seed that did not land is the
+    // difference between an observation and an assertion about an empty profile.
+    const projectCheck = JSON.parse(readFileSync(join(store, "projects.json"), "utf8"))
+    const showFiles = readdirSync(join(dataPath, "Shows")).sort()
+
+    let multiOutputRecord = null
+    if (multiOutput) {
+        const outputsOnDisk = JSON.parse(readFileSync(join(store, "settings.json"), "utf8")).outputs || {}
+        const stageOnDisk = JSON.parse(readFileSync(join(store, "stage.json"), "utf8"))
+        const outputIds = Object.keys(outputsOnDisk)
+        const stageIds = Object.keys(stageOnDisk)
+        if (outputIds.length !== 3 || !stageIds.includes(STAGE_LAYOUT_ID)) {
+            throw new Error(`the multi-output seed did not land: outputs=${JSON.stringify(outputIds)}, stage layouts=${JSON.stringify(stageIds)}`)
+        }
+        const layoutOnDisk = stageOnDisk[STAGE_LAYOUT_ID]
+        multiOutputRecord = {
+            layout: {
+                id: STAGE_LAYOUT_ID,
+                name: layoutOnDisk.name,
+                items: Object.entries(layoutOnDisk.items || {}).map(([id, item]) => ({
+                    id,
+                    type: item.type || null,
+                    slideOffset: Number(item.slideOffset || 0)
+                }))
+            },
+            outputs: Object.entries(outputsOnDisk).map(([id, output]) => ({
+                id,
+                name: output.name,
+                enabled: output.enabled === true,
+                active: output.active === true,
+                stageOutput: output.stageOutput || null
+            })),
+            readBack: { settingsOutputs: outputIds, stageLayouts: stageIds }
+        }
+    }
+
     const seededShows = fixtures.map((fixture) => ({
         file: fixture.file,
         id: fixture.id,
@@ -304,11 +433,6 @@ function seedProfile(options) {
         mediaPaths: fixture.mediaPaths,
         groupRepairs: groupRepairs[fixture.id]
     }))
-
-    // Read the files back. A seed that did not land is the difference between an
-    // observation and an assertion about an empty profile.
-    const projectCheck = JSON.parse(readFileSync(join(store, "projects.json"), "utf8"))
-    const showFiles = readdirSync(join(dataPath, "Shows")).sort()
 
     return {
         seededAt: new Date().toISOString(),
@@ -320,6 +444,7 @@ function seedProfile(options) {
         shows: seededShows,
         showFiles,
         skipped,
+        multiOutput: multiOutputRecord,
         targetShow: { name: TARGET_SHOW, id: target.id, file: target.file }
     }
 }
@@ -476,6 +601,35 @@ function readController(page) {
             .map((element) => clean(element.innerText))
             .filter(Boolean)
 
+        // One tile per enabled output (MultiOutputs.svelte:246-256). The tile's
+        // title bar only exists while more than one output is enabled
+        // (MultiOutputs.svelte:254-256), and its button carries the output id
+        // (OutputPreviewLabel.svelte:49-55 via MaterialButton's `id`). The
+        // indicator's `locked` class is the `active` state (line 51); a
+        // deactivated output's name is struck through (line 54).
+        const previewRoot = document.querySelector("#previewArea")
+        const tiles = previewRoot
+            ? [...previewRoot.querySelectorAll(".outputPreview")].map((tile) => {
+                  const button = tile.querySelector(".outputTitle button")
+                  const nameElem = tile.querySelector(".outputTitle p")
+                  const indicator = tile.querySelector(".indicator")
+                  const decoration = nameElem ? getComputedStyle(nameElem).textDecorationLine || "" : ""
+                  return {
+                      id: tile.id || null,
+                      name: clean(nameElem ? nameElem.innerText : ""),
+                      titleBar: !!button,
+                      // A stage output's title-bar button has no title
+                      // (OutputPreviewLabel.svelte:50: `title={output.stageOutput ? "" : ...}`).
+                      buttonTitle: button ? button.getAttribute("data-title") || "" : null,
+                      indicatorTitle: indicator ? indicator.getAttribute("data-title") || "" : null,
+                      active: indicator ? !indicator.classList.contains("locked") : !decoration.includes("line-through"),
+                      struck: decoration.includes("line-through")
+                  }
+              })
+            : []
+
+        const toast = document.querySelector(".toast")
+
         return {
             text: fullText.slice(0, 6000),
             textLength: fullText.length,
@@ -486,7 +640,9 @@ function readController(page) {
             projectArea: !!document.querySelector("#projectArea"),
             projectItems,
             activeProjectItems,
-            projectButtons
+            projectButtons,
+            preview: { root: !!previewRoot, tiles },
+            toast: clean(toast ? toast.innerText : "")
         }
     })
 }
@@ -502,7 +658,7 @@ function readOutput(page) {
                 .trim()
 
         const root = document.querySelector('[class~="#output_window"]') || document.querySelector("main.background")
-        if (!root) return { root: false, text: "", lines: [], rootClass: null, mainBackground: null }
+        if (!root) return { root: false, text: "", lines: [], rootClass: null, mainBackground: null, outputId: null, stageArea: false }
 
         const raw = root.innerText || (document.body ? document.body.innerText : "")
         const lines = raw
@@ -510,12 +666,22 @@ function readOutput(page) {
             .map((line) => clean(line))
             .filter(Boolean)
         const main = document.querySelector("main")
+        // `Zoomed` renders the output id as its element id
+        // (slide/Zoomed.svelte:156), and both output branches use it: the slide
+        // (output/Output.svelte:408) and the stage layout
+        // (stage/StageLayout.svelte:164). It is the only place a page names
+        // itself, and it is what joins a window to a preview tile.
+        const zoomed = document.querySelector(".zoomed[id]")
         return {
             root: true,
             text: clean(raw),
             lines,
             rootClass: root.className,
-            mainBackground: main ? getComputedStyle(main).backgroundColor : null
+            mainBackground: main ? getComputedStyle(main).backgroundColor : null,
+            outputId: zoomed ? zoomed.id : null,
+            // A stage output renders StageLayout (MainOutput.svelte:143-144),
+            // whose root is `.stageArea` (stage/StageLayout.svelte:147).
+            stageArea: !!document.querySelector(".stageArea")
         }
     })
 }
@@ -635,17 +801,23 @@ async function captureState(ctx) {
     const found = await findPages(ctx.app)
     const inventory = await windowInventory(ctx.app, found.all)
     const main = found.main || ctx.win
-    const output = found.outputs[0] || null
 
     let controller = { error: "controller window not found" }
     if (main) {
         controller = await withTimeout(readController(main), 10000, "reading the controller").catch((err) => ({ error: firstLine(err) }))
     }
 
-    let outputState = null
-    if (output) {
-        outputState = await withTimeout(readOutput(output), 10000, "reading the output").catch((err) => ({ error: firstLine(err) }))
+    // Every output page, not just the first. `output` below keeps its original
+    // meaning (the first page found) so `outputs-basic` reads exactly as before;
+    // `outputs` is the per-output view the multi-output scenario needs.
+    const pageStates = []
+    for (const page of found.outputs) {
+        const state = await withTimeout(readOutput(page), 10000, "reading an output").catch((err) => ({ error: firstLine(err) }))
+        pageStates.push({ url: page.url(), ...state })
     }
+
+    const output = found.outputs[0] || null
+    const outputState = pageStates[0] || null
 
     const lockTitle = (controller.lockTitles || [])[0] || null
     // The Present control's own state: a present that never flips it is still a
@@ -671,6 +843,8 @@ async function captureState(ctx) {
             projectItems: controller.projectItems || [],
             activeProjectItems: controller.activeProjectItems || [],
             projectButtons: controller.projectButtons || [],
+            preview: controller.preview || { root: false, tiles: [] },
+            toast: controller.toast || "",
             presentButton,
             error: controller.error || null
         },
@@ -684,7 +858,19 @@ async function captureState(ctx) {
                   rootClass: outputState.rootClass || null,
                   error: outputState.error || null
               }
-            : { present: false, text: null, lines: [] }
+            : { present: false, text: null, lines: [] },
+        outputs: pageStates
+            .map((page) => ({
+                id: page.outputId || null,
+                url: page.url,
+                text: page.text || "",
+                lines: page.lines || [],
+                stageArea: !!page.stageArea,
+                rootClass: page.rootClass || null,
+                mainBackground: page.mainBackground || null,
+                error: page.error || null
+            }))
+            .sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")))
     }
 }
 
@@ -759,6 +945,20 @@ async function takeScreenshots(ctx, index, name) {
             result.outputMethod = shot.method
         } else {
             result.errors.push(`output: ${shot.error}`)
+        }
+    }
+
+    // Every further output window is captured too, under its own file. They are
+    // additional evidence only: `outputs-basic` has one output and its record is
+    // unchanged.
+    const extraOutputs = found.outputs.slice(1)
+    if (extraOutputs.length) {
+        result.otherOutputs = []
+        for (let i = 0; i < extraOutputs.length; i++) {
+            const file = join(ctx.outDir, `${prefix}-output-${i + 2}.png`)
+            const shot = await shoot(ctx, extraOutputs[i], file, null)
+            result.otherOutputs.push({ file: basename(file), ok: shot.ok, method: shot.method || null, error: shot.error || null })
+            if (!shot.ok) result.errors.push(`${basename(file)}: ${shot.error}`)
         }
     }
 
@@ -875,7 +1075,8 @@ async function runStep(ctx, step) {
 function logStep(record) {
     const status = record.status === "ok" ? "ok  " : "FAIL"
     const text = record.output && record.output.present ? JSON.stringify((record.output.text || "").slice(0, 60)) : "-"
-    console.log(`[${pad(record.index)}] ${record.step.padEnd(18)} ${status} windows=${record.windowCount ?? "?"} lock=${JSON.stringify(record.lockTitle)} output=${text}`)
+    const extra = Array.isArray(record.outputs) && record.outputs.length > 1 ? ` outputs=${record.outputs.length}` : ""
+    console.log(`[${pad(record.index)}] ${record.step.padEnd(18)} ${status} windows=${record.windowCount ?? "?"}${extra} lock=${JSON.stringify(record.lockTitle)} output=${text}`)
     if (record.status !== "ok") console.error(`       ${record.error}`)
     if (record.screenshot && record.screenshot.errors && record.screenshot.errors.length) {
         console.error(`       screenshot: ${record.screenshot.errors.join(" | ")}`)
@@ -1183,6 +1384,620 @@ function verifyClear(state) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Stage output and multiple outputs
+// (out.multiple, out.multiple.select, out.stage-window, stage.items)
+///////////////////////////////////////////////////////////////////////////////
+
+function outputById(state, id) {
+    return (state.outputs || []).find((output) => output.id === id) || null
+}
+
+function tileById(state, id) {
+    return (state.controller.preview.tiles || []).find((tile) => tile.id === id) || null
+}
+
+function tileNames(state) {
+    return (state.controller.preview.tiles || []).map((tile) => tile.name)
+}
+
+function outputTitles(state) {
+    return (state.browserWindows || []).map((window) => window.title).filter((title) => !!title)
+}
+
+function sortedNames(names) {
+    return [...names].sort((a, b) => String(a).localeCompare(String(b)))
+}
+
+// The OS window titles, straight from the main process. A window takes its title
+// from the output name (OutputLifecycle.ts:1575), which is how a page is matched
+// to a seeded output before it has rendered anything.
+function windowTitles(app) {
+    return withTimeout(
+        app.evaluate(({ BrowserWindow }) =>
+            BrowserWindow.getAllWindows()
+                .filter((window) => !window.isDestroyed())
+                .map((window) => window.getTitle())
+        ),
+        10000,
+        "reading the window titles"
+    )
+}
+
+async function readOutputSnapshot(ctx) {
+    const found = await findPages(ctx.app)
+    const list = []
+    for (const page of found.outputs) {
+        const state = await readOutput(page).catch(() => null)
+        if (!state) continue
+        list.push({ id: state.outputId || null, text: state.text || "", stageArea: !!state.stageArea })
+    }
+    return list.sort((a, b) => String(a.id).localeCompare(String(b.id)))
+}
+
+async function waitForOutputPages(ctx, count, timeout = 45000) {
+    await waitFor(
+        `${count} output window${count === 1 ? "" : "s"}`,
+        async () => (await findPages(ctx.app)).outputs.length === count,
+        timeout
+    )
+}
+
+// The preview tile for one output. MultiOutputs.svelte:246-256 renders one
+// `.outputPreview` per enabled output and OutputPreviewLabel.svelte:49-55 puts
+// the output's name inside the title-bar button.
+function tileLocator(ctx, name) {
+    return ctx.win.locator("#previewArea .outputPreview").filter({ hasText: name })
+}
+
+// A popup is a full-window backdrop (main/Popup.svelte:94-110) and swallows
+// pointer clicks. FreeShow opens "choose_screen" when an output could not be put
+// on a display (OutputVisibility.ts:71 -> ToMain.ALERT "error.display"), which is
+// what happens on a single display, so the multi-output run has to close it
+// before it clicks anything. Clicking the backdrop itself closes it
+// (Popup.svelte:13-19); Escape would too, but Escape also clears the output.
+async function dismissOverlayPopups(ctx) {
+    const popup = ctx.win.locator(".popup")
+    let dismissed = 0
+    await wait(300)
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const count = await popup.count().catch(() => 0)
+        if (!count) break
+        await popup.first().click({ position: { x: 4, y: 4 }, timeout: 15000 })
+        dismissed++
+        await wait(400)
+    }
+    if (dismissed) ctx.log(`dismissed ${dismissed} overlay popup${dismissed === 1 ? "" : "s"}`)
+    return dismissed
+}
+
+async function clickInController(ctx, target) {
+    await dismissOverlayPopups(ctx)
+    if (typeof target === "string") await ctx.win.click(target, { timeout: 20000 })
+    else await target.click({ timeout: 20000 })
+}
+
+function readEnabledToggle(page) {
+    return page.evaluate(() => {
+        const toggle = document.querySelector('[role="switch"][data-title="Enabled"]')
+        if (!toggle) return null
+        return { checked: toggle.getAttribute("aria-checked"), disabled: toggle.classList.contains("disabled") }
+    })
+}
+
+// Settings > Outputs. The top-bar Settings button is `menu._title_settings`
+// (components/main/Top.svelte:118), the left panel lists the settings sections
+// (settings/SettingsTabs.svelte:50-56) and "Outputs" is `settings.display_settings`
+// (public/lang/en.json:1356).
+async function openOutputsSettings(ctx) {
+    const settingsButton = await waitForLocator(ctx.win.locator('button[data-title^="Settings"]'), "the Settings button in the top bar", 15000)
+    await clickInController(ctx, settingsButton)
+
+    const section = await waitForLocator(ctx.win.locator('[id="button"]').filter({ hasText: /^\s*Outputs\s*$/ }), 'the "Outputs" settings section', 20000)
+    await clickInController(ctx, section)
+
+    await waitForLocator(ctx.win.locator(".tabs button.tab").first(), "the output tab strip", 20000)
+}
+
+// Select one output's tab and return the Enabled switch's state, so the step can
+// prove which output the next click will apply to.
+async function selectOutputTab(ctx, name) {
+    const tab = ctx.win.locator(".tabs button.tab").filter({ hasText: name })
+    const button = await waitForLocator(tab, `the "${name}" output tab`, 15000)
+    await clickInController(ctx, button)
+    await waitFor(
+        `the "${name}" output tab to become the selected one`,
+        async () => button.evaluate((element) => element.classList.contains("active")).catch(() => false),
+        15000
+    )
+    await waitForLocator(ctx.win.locator('[role="switch"][data-title="Enabled"]'), "the Enabled switch for the selected output", 15000)
+    await wait(200)
+    const state = await readEnabledToggle(ctx.win)
+    if (!state) throw new StepFailure(`the Enabled switch is not readable for "${name}"`)
+    return state
+}
+
+async function clickEnabledToggle(ctx) {
+    const toggle = await waitForLocator(ctx.win.locator('[role="switch"][data-title="Enabled"]'), "the Enabled switch", 15000)
+    await clickInController(ctx, toggle)
+    await wait(900)
+}
+
+async function stepPresentOutputs(ctx) {
+    ctx.popups = await dismissStartupPopups(ctx.win, ctx.log)
+    const before = await readPresentState(ctx.win)
+    if (!before) throw new StepFailure("the Present button is not in the controller")
+    if (before.on) throw new StepFailure(`the outputs were already presenting before the step: ${JSON.stringify(before)}`)
+
+    // One click, three enabled outputs: `toggleOutputs(null)` fans out to every
+    // enabled output, stage included (helpers/output.ts:115-134).
+    await clickInController(ctx, "#output_window_button")
+
+    await waitForOutputPages(ctx, 3)
+    const expected = [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name]
+    await waitFor(
+        `the three output windows to take their seeded titles`,
+        async () => {
+            const titles = await windowTitles(ctx.app)
+            return expected.every((name) => titles.includes(name))
+        },
+        45000
+    )
+    await waitFor(
+        "the three output pages to finish loading",
+        async () => {
+            const pages = (await findPages(ctx.app)).outputs
+            if (pages.length !== 3) return false
+            const states = await Promise.all(pages.map((page) => page.evaluate(() => document.readyState).catch(() => "")))
+            return states.every((state) => state === "complete")
+        },
+        45000
+    )
+    // MainOutput only mounts the slide after its own 2 s "loaded" delay
+    // (MainOutput.svelte:55-61), and it needs its own output data from the main
+    // process first. Wait until every page names the output it renders.
+    await waitFor(
+        "the three output pages to name the output they render",
+        async () => {
+            const ids = await readOutputSnapshot(ctx)
+            return ids.length === 3 && ids.every((output) => !!output.id)
+        },
+        60000
+    )
+
+    // The reference hides an output it cannot place on a display and opens the
+    // screen picker instead. Record the popup, then close it so later clicks land.
+    const dismissed = await dismissOverlayPopups(ctx)
+    const after = await readPresentState(ctx.win)
+    return { presentButton: after, overlayPopupsDismissed: dismissed }
+}
+
+function verifyPresentOutputs(state) {
+    const ids = sortedNames(state.outputs.map((output) => output.id))
+    check(state.outputs.length === 3, "three output pages exist", state.outputs.map((output) => output.id))
+    check(
+        JSON.stringify(ids) === JSON.stringify(sortedNames([OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.id, OUTPUT_STAGE.id])),
+        "the three pages render the three seeded outputs (each page names its own output id)",
+        ids
+    )
+
+    const normal = state.outputs.filter((output) => !output.stageArea)
+    const stage = state.outputs.filter((output) => output.stageArea)
+    check(normal.length === 2, "two output pages render a slide", normal.map((output) => output.id))
+    check(
+        stage.length === 1 && stage[0].id === OUTPUT_STAGE.id,
+        "the third output's page renders a stage layout, not a slide",
+        stage.map((output) => output.id)
+    )
+
+    const titles = outputTitles(state)
+    for (const name of [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name]) {
+        check(titles.includes(name), `an OS window titled "${name}" exists`, titles)
+    }
+    const outputWindows = (state.browserWindows || []).filter((window) =>
+        [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name].includes(window.title)
+    )
+    check(outputWindows.length === 3, "each enabled output has its own OS window", outputWindows.map((window) => window.title))
+    check(
+        new Set(outputWindows.map((window) => window.id)).size === 3,
+        "the three output windows are distinct windows",
+        outputWindows.map((window) => window.id)
+    )
+    check(
+        outputWindows.every((window) => window.offscreen === false),
+        "every output is a real window in the process, not an offscreen surface",
+        outputWindows.map((window) => ({ title: window.title, offscreen: window.offscreen, visible: window.visible }))
+    )
+
+    const tiles = state.controller.preview.tiles || []
+    check(tiles.length === 3, "the preview draws one tile per enabled output", tileNames(state))
+    check(
+        tiles.every((tile) => tile.titleBar),
+        "every tile has a title bar while more than one output is enabled",
+        tiles.map((tile) => ({ name: tile.name, titleBar: tile.titleBar }))
+    )
+    check(
+        JSON.stringify(sortedNames(tileNames(state))) === JSON.stringify(sortedNames([OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name])),
+        "the tiles are named after the seeded outputs",
+        tileNames(state)
+    )
+    check(
+        tiles.every((tile) => tile.active === true),
+        "all three seeded outputs are active",
+        tiles.map((tile) => ({ name: tile.name, active: tile.active }))
+    )
+    // A stage tile's title-bar button has no title (OutputPreviewLabel.svelte:50),
+    // so the tile itself reports which output renders a stage layout.
+    const stageTiles = tiles.filter((tile) => tile.buttonTitle === "")
+    check(
+        stageTiles.length === 1 && stageTiles[0].name === STAGE_LAYOUT_NAME,
+        "exactly one tile is the stage output (its title bar offers no output lock)",
+        tiles.map((tile) => ({ name: tile.name, buttonTitle: tile.buttonTitle }))
+    )
+}
+
+async function stepStartMultiple(ctx) {
+    await ctx.win.keyboard.press("Space")
+    await waitFor(
+        "both normal outputs to show the first slide",
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            const primary = snapshot.find((output) => output.id === OUTPUT_PRIMARY.id)
+            const secondary = snapshot.find((output) => output.id === OUTPUT_SECONDARY.id)
+            return !!(primary && secondary && primary.text.includes(SLIDE_ONE) && secondary.text.includes(SLIDE_ONE))
+        },
+        30000
+    )
+    await waitFor(
+        "the stage output to follow the first slide",
+        async () => {
+            const stage = (await readOutputSnapshot(ctx)).find((output) => output.id === OUTPUT_STAGE.id)
+            return !!(stage && stage.text.includes(SLIDE_ONE) && stage.text.includes(SLIDE_TWO))
+        },
+        30000
+    )
+}
+
+function verifyStartMultiple(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    const stage = outputById(state, OUTPUT_STAGE.id)
+    check(!!primary && !!secondary && !!stage, "all three output pages are still open", state.outputs.map((output) => output.id))
+
+    check(
+        primary.text.includes(SLIDE_ONE) && primary.text.includes(SLIDE_ONE_SECOND_LINE),
+        "the first output shows the first slide",
+        primary.text
+    )
+    check(
+        secondary.text.includes(SLIDE_ONE) && secondary.text.includes(SLIDE_ONE_SECOND_LINE),
+        "starting the show fans out to the second output as well",
+        secondary.text
+    )
+    check(!primary.text.includes(SLIDE_TWO), "a normal output shows the current slide only, never the next one", primary.text)
+
+    check(stage.stageArea === true, "the stage output is showing a stage layout, not a slide", stage.text)
+    check(
+        stage.text.includes(SLIDE_ONE) && stage.text.includes(SLIDE_ONE_SECOND_LINE),
+        "the stage's current-slide item shows the current slide's text",
+        stage.text
+    )
+    check(
+        stage.text.includes(SLIDE_TWO),
+        "the stage's slideOffset 1 item shows the next slide's text",
+        stage.text
+    )
+}
+
+async function stepAdvanceMultiple(ctx) {
+    await ctx.win.keyboard.press("Space")
+    await waitFor(
+        "both normal outputs to advance",
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            const primary = snapshot.find((output) => output.id === OUTPUT_PRIMARY.id)
+            const secondary = snapshot.find((output) => output.id === OUTPUT_SECONDARY.id)
+            return !!(primary && secondary && primary.text.includes(SLIDE_TWO) && secondary.text.includes(SLIDE_TWO))
+        },
+        30000
+    )
+    await waitFor(
+        "the stage output to follow the advance",
+        async () => {
+            const stage = (await readOutputSnapshot(ctx)).find((output) => output.id === OUTPUT_STAGE.id)
+            return !!(stage && stage.text.includes(SLIDE_TWO) && stage.text.includes(SLIDE_THREE))
+        },
+        30000
+    )
+}
+
+function verifyAdvanceMultiple(state, ctx) {
+    const before = ctx.steps.find((step) => step.step === "start")
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    const stage = outputById(state, OUTPUT_STAGE.id)
+
+    check(
+        !!before && before.outputs.some((output) => output.id === OUTPUT_PRIMARY.id && output.text.includes(SLIDE_ONE)),
+        "the first output showed the first slide before the advance",
+        before ? before.outputs.map((output) => output.id) : null
+    )
+    check(primary.text.includes(SLIDE_TWO), "the first output advanced to the second slide", primary.text)
+    check(!primary.text.includes(SLIDE_ONE_SECOND_LINE), "the first output no longer shows the previous slide", primary.text)
+    check(secondary.text.includes(SLIDE_TWO), "the second active output advanced too (fan-out to every active normal output)", secondary.text)
+    check(stage.text.includes(SLIDE_TWO), "the stage's current-slide item followed the advance", stage.text)
+    check(stage.text.includes(SLIDE_THREE), "the stage's next-slide item moved to the third slide", stage.text)
+    check(!stage.text.includes(SLIDE_ONE_SECOND_LINE), "the stage output no longer shows the first slide", stage.text)
+}
+
+async function stepStageTileClick(ctx) {
+    const dismissed = await dismissOverlayPopups(ctx)
+    const tile = tileLocator(ctx, STAGE_LAYOUT_NAME)
+    const button = await waitForLocator(tile.locator(".outputTitle button"), `the "${STAGE_LAYOUT_NAME}" title bar`, 15000)
+    await button.click({ timeout: 20000 })
+    await wait(500)
+    return { overlayPopupsDismissed: dismissed }
+}
+
+function verifyStageTileClick(state, ctx) {
+    const before = ctx.steps.find((step) => step.step === "advance")
+    const stageBefore = before ? tileById(before, OUTPUT_STAGE.id) : null
+    check(!!stageBefore && stageBefore.active === true, "the stage tile was active before the click", stageBefore)
+
+    const stage = tileById(state, OUTPUT_STAGE.id)
+    check(!!stage && stage.active === true, "clicking the stage tile's title bar leaves it active (a stage output is always active)", stage)
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && primary.active === true, "the first normal output's active state is unchanged", primary)
+    check(!!secondary && secondary.active === true, "the second normal output's active state is unchanged", secondary)
+}
+
+async function stepDeselectSecondary(ctx) {
+    const dismissed = await dismissOverlayPopups(ctx)
+    const tile = tileLocator(ctx, OUTPUT_SECONDARY.name)
+    const button = await waitForLocator(tile.locator(".outputTitle button"), `the "${OUTPUT_SECONDARY.name}" title bar`, 15000)
+    await button.click({ timeout: 20000 })
+    await wait(500)
+    return { overlayPopupsDismissed: dismissed }
+}
+
+function verifyDeselectSecondary(state) {
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    check(!!secondary && secondary.active === false, "a plain click deactivates that output's tile", secondary)
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    check(!!primary && primary.active === true, "the other normal output stays active", primary)
+    const stage = tileById(state, OUTPUT_STAGE.id)
+    check(!!stage && stage.active === true, "the stage output stays active", stage)
+    check(state.outputs.length === 3, "deactivating an output does not close its window", state.outputs.map((output) => output.id))
+    const secondaryPage = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!secondaryPage, "the deactivated output's page is still readable", state.outputs.map((output) => output.id))
+}
+
+async function stepAdvanceWithInactive(ctx) {
+    const before = await readOutputSnapshot(ctx)
+    await ctx.win.keyboard.press("Space")
+    await waitFor(
+        "the active output to advance",
+        async () => {
+            const primary = (await readOutputSnapshot(ctx)).find((output) => output.id === OUTPUT_PRIMARY.id)
+            return !!(primary && primary.text.includes(SLIDE_THREE))
+        },
+        30000
+    )
+    await wait(600)
+    return { before }
+}
+
+function verifyAdvanceWithInactive(state) {
+    const before = state.before || []
+    const beforeSecondary = before.find((output) => output.id === OUTPUT_SECONDARY.id)
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    const stage = outputById(state, OUTPUT_STAGE.id)
+
+    check(!!beforeSecondary, "the inactive output's page was readable before the advance", before.map((output) => output.id))
+    check(primary.text.includes(SLIDE_THREE), "the active normal output advanced", primary.text)
+    check(
+        secondary.text === beforeSecondary.text,
+        "the inactive normal output did not advance: the command fans out to active outputs only",
+        { before: beforeSecondary.text, after: secondary.text }
+    )
+    check(secondary.text !== primary.text, "the two normal outputs are now on different slides", { primary: primary.text, secondary: secondary.text })
+    check(stage.text.includes(SLIDE_THREE), "the stage output followed the source output it mirrors", stage.text)
+}
+
+async function stepLastActiveGuard(ctx) {
+    const dismissed = await dismissOverlayPopups(ctx)
+    const tile = tileLocator(ctx, OUTPUT_PRIMARY.name)
+    const button = await waitForLocator(tile.locator(".outputTitle button"), `the "${OUTPUT_PRIMARY.name}" title bar`, 15000)
+    const toastBefore = await ctx.win.evaluate(() => {
+        const toast = document.querySelector(".toast")
+        return toast ? String(toast.innerText || "").trim() : ""
+    })
+    await button.click({ timeout: 20000 })
+    // Read the toast here: it clears itself after 4 s (main/Toast.svelte:9), which
+    // a full settle of three output pages can outlast.
+    await wait(500)
+    const toastAfter = await ctx.win.evaluate(() => {
+        const toast = document.querySelector(".toast")
+        return toast ? String(toast.innerText || "").trim() : ""
+    })
+    return { overlayPopupsDismissed: dismissed, toastBefore, toastAfter }
+}
+
+function verifyLastActiveGuard(state) {
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    check(
+        !!primary && primary.active === true,
+        "the last active normal output cannot be deactivated: the tile snaps back to active",
+        primary
+    )
+    check(state.toastAfter && state.toastAfter.length > 0, "the reference toasts when the last active output is deactivated", {
+        toastBefore: state.toastBefore,
+        toastAfter: state.toastAfter
+    })
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    check(!!secondary && secondary.active === false, "the already-inactive output is unaffected", secondary)
+    const stage = tileById(state, OUTPUT_STAGE.id)
+    check(!!stage && stage.active === true, "the stage output is still active", stage)
+}
+
+async function stepReselectSecondary(ctx) {
+    const dismissed = await dismissOverlayPopups(ctx)
+    const tile = tileLocator(ctx, OUTPUT_SECONDARY.name)
+    const button = await waitForLocator(tile.locator(".outputTitle button"), `the "${OUTPUT_SECONDARY.name}" title bar`, 15000)
+    await button.click({ timeout: 20000 })
+    await wait(500)
+    return { overlayPopupsDismissed: dismissed }
+}
+
+function verifyReselectSecondary(state) {
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    const stage = tileById(state, OUTPUT_STAGE.id)
+    check(!!secondary && secondary.active === true, "a second plain click activates the output again", secondary)
+    check(!!primary && primary.active === true, "the first normal output is still active", primary)
+    check(!!stage && stage.active === true, "the stage output is still active", stage)
+}
+
+async function stepDisableOutput(ctx) {
+    const before = await readOutputSnapshot(ctx)
+    await dismissOverlayPopups(ctx)
+    await openOutputsSettings(ctx)
+    const toggleBefore = await selectOutputTab(ctx, OUTPUT_SECONDARY.name)
+    await clickEnabledToggle(ctx)
+    await waitForOutputPages(ctx, 2)
+    const after = await readOutputSnapshot(ctx)
+    const toggleAfter = await readEnabledToggle(ctx.win)
+    return { before, after, toggleBefore, toggleAfter }
+}
+
+function verifyDisableOutput(state) {
+    const before = state.before || []
+    const after = state.after || []
+    check(state.toggleBefore && state.toggleBefore.checked === "true", "the Enabled switch showed the output as enabled before the click", state.toggleBefore)
+    check(before.length === 3, "all three outputs were enabled before the switch was turned off", before.map((output) => output.id))
+    check(after.length === 2, "disabling one output removes its window and leaves the other two", after.map((output) => output.id))
+    check(
+        !after.some((output) => output.id === OUTPUT_SECONDARY.id),
+        "the disabled output's page is gone",
+        after.map((output) => output.id)
+    )
+    check(
+        after.some((output) => output.id === OUTPUT_PRIMARY.id) && after.some((output) => output.id === OUTPUT_STAGE.id),
+        "the other outputs are untouched by disabling one",
+        after.map((output) => output.id)
+    )
+
+    const beforePrimary = before.find((output) => output.id === OUTPUT_PRIMARY.id)
+    const afterPrimary = after.find((output) => output.id === OUTPUT_PRIMARY.id)
+    check(
+        !!afterPrimary && !!beforePrimary && afterPrimary.text === beforePrimary.text,
+        "the remaining normal output still shows the same slide",
+        { before: beforePrimary ? beforePrimary.text : null, after: afterPrimary ? afterPrimary.text : null }
+    )
+    const beforeStage = before.find((output) => output.id === OUTPUT_STAGE.id)
+    const afterStage = after.find((output) => output.id === OUTPUT_STAGE.id)
+    check(
+        !!afterStage && afterStage.stageArea === true && !!beforeStage && afterStage.text === beforeStage.text,
+        "the stage output is unaffected and still renders its layout",
+        { before: beforeStage ? beforeStage.text : null, after: afterStage ? afterStage.text : null }
+    )
+
+    const titles = outputTitles(state)
+    check(!titles.includes(OUTPUT_SECONDARY.name), `the "${OUTPUT_SECONDARY.name}" OS window is gone`, titles)
+    check(titles.includes(OUTPUT_PRIMARY.name) && titles.includes(STAGE_LAYOUT_NAME), "the other two OS windows remain", titles)
+    check(state.controller.preview.tiles.length === 2, "the preview now draws two tiles", tileNames(state))
+}
+
+async function stepEnableOutput(ctx) {
+    const before = await readOutputSnapshot(ctx)
+    const toggleBefore = await readEnabledToggle(ctx.win)
+    if (!toggleBefore) throw new StepFailure("the Enabled switch is not readable before re-enabling the output")
+    if (toggleBefore.checked !== "false") {
+        throw new StepFailure(`the Enabled switch did not read as off before re-enabling: ${JSON.stringify(toggleBefore)}`)
+    }
+    await clickEnabledToggle(ctx)
+    await waitForOutputPages(ctx, 3)
+    await waitFor(
+        `the "${OUTPUT_SECONDARY.name}" window to be titled`,
+        async () => (await windowTitles(ctx.app)).includes(OUTPUT_SECONDARY.name),
+        45000
+    )
+    // The new page asks the main process for its own data on mount
+    // (utils/startup.ts:225-233), and MainOutput mounts the slide 2 s after that
+    // (MainOutput.svelte:55-61). Wait for it to name itself rather than guess.
+    await waitFor(
+        `the "${OUTPUT_SECONDARY.name}" page to render its output`,
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            return snapshot.length === 3 && snapshot.some((output) => output.id === OUTPUT_SECONDARY.id)
+        },
+        45000
+    )
+    await wait(400)
+    const after = await readOutputSnapshot(ctx)
+    const toggleAfter = await readEnabledToggle(ctx.win)
+    return { before, after, toggleBefore, toggleAfter }
+}
+
+function verifyEnableOutput(state) {
+    const before = state.before || []
+    const after = state.after || []
+    check(state.toggleBefore && state.toggleBefore.checked === "false", "the Enabled switch read as off before re-enabling", state.toggleBefore)
+    check(before.length === 2, "two output pages existed before re-enabling", before.map((output) => output.id))
+    check(after.length === 3, "re-enabling the output recreates its window", after.map((output) => output.id))
+    const secondary = after.find((output) => output.id === OUTPUT_SECONDARY.id)
+    check(!!secondary, "the re-enabled output renders its own page again", after.map((output) => output.id))
+    check(secondary.stageArea === false, "the re-enabled output renders a slide, not a stage layout", secondary)
+
+    const beforePrimary = before.find((output) => output.id === OUTPUT_PRIMARY.id)
+    const afterPrimary = after.find((output) => output.id === OUTPUT_PRIMARY.id)
+    check(
+        !!afterPrimary && !!beforePrimary && afterPrimary.text === beforePrimary.text,
+        "re-enabling one output does not change the other output",
+        { before: beforePrimary ? beforePrimary.text : null, after: afterPrimary ? afterPrimary.text : null }
+    )
+    const titles = outputTitles(state)
+    check(titles.includes(OUTPUT_SECONDARY.name), `the "${OUTPUT_SECONDARY.name}" OS window exists again`, titles)
+    check(state.controller.preview.tiles.length === 3, "the preview draws three tiles again", tileNames(state))
+    // `toggleAfter` is recorded, not asserted: re-enabling can open the screen
+    // picker, which moves the selected output tab (IPC/responsesMain.ts:167-172),
+    // so the switch may no longer be showing this output.
+}
+
+async function stepBackToShow(ctx) {
+    const dismissed = await dismissOverlayPopups(ctx)
+    const showButton = await waitForLocator(ctx.win.locator('button[data-title^="Presenting"]'), "the Presenting button in the top bar", 15000)
+    await clickInController(ctx, showButton)
+    // With a project open the left panel is the project's show list
+    // (`#projectArea`); `#projectsArea`, the project list, is not present.
+    await waitFor("the show page to come back", async () => (await ctx.win.locator("#projectArea").count()) === 1, 20000)
+    await waitFor(
+        "the show page's preview to draw its three tiles",
+        async () => (await ctx.win.locator("#previewArea .outputPreview").count()) === 3,
+        20000
+    )
+    return { overlayPopupsDismissed: dismissed }
+}
+
+function verifyBackToShow(state) {
+    check(state.controller.present, "the controller window is still the controller")
+    check(state.controller.projectArea, "the left panel is the project's show list again (the show page)", state.controller.projectButtons)
+    check(state.controller.preview.tiles.length === 3, "the preview draws three tiles again", tileNames(state))
+    check(
+        state.controller.preview.tiles.every((tile) => tile.titleBar),
+        "every tile still has a title bar",
+        state.controller.preview.tiles.map((tile) => tile.name)
+    )
+    check(
+        state.controller.preview.tiles.every((tile) => tile.active),
+        "both normal outputs and the stage output end the run active",
+        state.controller.preview.tiles.map((tile) => ({ name: tile.name, active: tile.active }))
+    )
+    check(state.outputs.length === 3, "the three output windows are still open at the end of the run", state.outputs.map((output) => output.id))
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Scenarios
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1202,6 +2017,66 @@ const SCENARIOS = {
             { name: "next", purpose: "Space advances to the second slide", run: stepNext, verify: verifyNext },
             { name: "clear_entries", purpose: "enumerate the per-layer clear entries", run: stepClearEntries, verify: verifyClearEntries },
             { name: "clear", purpose: "Escape empties the output", run: stepClear, verify: verifyClear }
+        ]
+    },
+    "stage-multi-output": {
+        description:
+            "Two enabled normal outputs plus one stage output, seeded into the scratch profile. Open all three, start and advance the show, read each output's own text, toggle outputs in the preview, and disable/enable one output from Settings > Outputs. Records out.multiple, out.multiple.select, out.stage-window and stage.items.",
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            { name: "open_show", purpose: "select the fixture show in the project", run: stepOpenShow, verify: verifyOpenShow },
+            {
+                name: "present_outputs",
+                purpose: "one Present click must open a window for every enabled output",
+                run: stepPresentOutputs,
+                verify: verifyPresentOutputs
+            },
+            { name: "start", purpose: "start the show and read all three outputs", run: stepStartMultiple, verify: verifyStartMultiple },
+            { name: "advance", purpose: "advance: every active normal output follows", run: stepAdvanceMultiple, verify: verifyAdvanceMultiple },
+            {
+                name: "stage_tile_click",
+                purpose: "a click on the stage tile's title bar must not deactivate it",
+                run: stepStageTileClick,
+                verify: verifyStageTileClick
+            },
+            {
+                name: "deselect_secondary",
+                purpose: "a plain click on a tile toggles that output's active state",
+                run: stepDeselectSecondary,
+                verify: verifyDeselectSecondary
+            },
+            {
+                name: "advance_inactive",
+                purpose: "an advance must skip an inactive output and still follow on stage",
+                run: stepAdvanceWithInactive,
+                verify: verifyAdvanceWithInactive
+            },
+            {
+                name: "last_active_guard",
+                purpose: "the last active normal output cannot be deactivated",
+                run: stepLastActiveGuard,
+                verify: verifyLastActiveGuard
+            },
+            {
+                name: "reselect_secondary",
+                purpose: "activating the output again restores the fan-out target",
+                run: stepReselectSecondary,
+                verify: verifyReselectSecondary
+            },
+            {
+                name: "disable_output",
+                purpose: "Settings > Outputs: disabling one output must not disturb the others",
+                run: stepDisableOutput,
+                verify: verifyDisableOutput
+            },
+            {
+                name: "enable_output",
+                purpose: "Settings > Outputs: re-enabling an output recreates its window",
+                run: stepEnableOutput,
+                verify: verifyEnableOutput
+            },
+            { name: "back_to_show", purpose: "return to the show page with all three outputs live", run: stepBackToShow, verify: verifyBackToShow }
         ]
     }
 }
@@ -1254,6 +2129,18 @@ async function main() {
         writeJson(join(options.outDir, "seed.json"), seed)
         log(`profile reseeded: ${seed.store} (data ${seed.dataPath})`)
         log(`seeded shows: ${seed.shows.map((show) => `${show.name} [${show.id}]`).join(", ")}`)
+        if (seed.multiOutput) {
+            log(
+                `seeded outputs: ${seed.multiOutput.outputs
+                    .map((output) => `${output.name}${output.stageOutput ? ` (stage layout ${output.stageOutput})` : ""}`)
+                    .join(", ")}`
+            )
+            log(
+                `seeded stage layout: ${seed.multiOutput.layout.name} [${seed.multiOutput.layout.id}] with ${seed.multiOutput.layout.items
+                    .map((item) => `${item.id} (${item.type}, slideOffset ${item.slideOffset})`)
+                    .join(", ")}`
+            )
+        }
         const repaired = seed.shows.filter((show) => show.groupRepairs && show.groupRepairs.length)
         if (repaired.length) {
             log(`repaired fixture groups for FreeShow's loader: ${repaired.map((show) => `${show.name} (${show.groupRepairs.length} child slides)`).join(", ")}`)
@@ -1321,7 +2208,14 @@ async function main() {
 
         const failed = ctx.steps.filter((step) => step.status !== "ok")
         const screenshots = {
-            written: ctx.steps.reduce((count, step) => count + (step.screenshot && step.screenshot.controller ? 1 : 0) + (step.screenshot && step.screenshot.output ? 1 : 0), 0),
+            written: ctx.steps.reduce(
+                (count, step) =>
+                    count +
+                    (step.screenshot && step.screenshot.controller ? 1 : 0) +
+                    (step.screenshot && step.screenshot.output ? 1 : 0) +
+                    ((step.screenshot && step.screenshot.otherOutputs) || []).filter((entry) => entry.ok).length,
+                0
+            ),
             problems: ctx.steps.flatMap((step) => ((step.screenshot && step.screenshot.errors) || []).map((error) => ({ step: step.step, error })))
         }
         const run = {
@@ -1337,7 +2231,7 @@ async function main() {
                 pinnedCommit: PINNED_COMMIT,
                 built: reference.built
             },
-            profile: { store: seed.store, dataPath: seed.dataPath, project: seed.project, shows: seed.shows, skipped: seed.skipped },
+            profile: { store: seed.store, dataPath: seed.dataPath, project: seed.project, shows: seed.shows, skipped: seed.skipped, multiOutput: seed.multiOutput },
             harness: {
                 script: "parity/tools/observe_reference.mjs",
                 node: process.version,

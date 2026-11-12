@@ -6,7 +6,10 @@
 - **Online docs:** [Multiple outputs](https://freeshow.app/docs/outputs),
   [Stage](https://freeshow.app/docs/stage)
 - **Pinned code:** ff784eb388c7baef60d67e6d4e7c504f4322bca3
-- **Confidence:** `code` (one `doc` claim, see Doc vs code)
+- **Confidence:** `code` (one `doc` claim, see Doc vs code); `observed` for the
+  multi-output present/fan-out/select/disable path and the stage-window path
+  measured 2026-11-12 (see Observed). Unobserved parts — slide/textbox bindings,
+  the stage layout editor, the stage web client — stay `code`/`doc`.
 
 ## Screenshot
 
@@ -23,6 +26,54 @@ its own style, window and capture target. Commands that change the programme
 operator has *selected* (active), unless a slide or textbox is bound to specific
 outputs.
 
+## Observed — the `stage-multi-output` run
+
+Source: `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/`.
+Scenario `stage-multi-output`, 2026-11-12, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`). Hidden X11
+agent workspace, one 1920×1080 display, controller viewport 1600×900. Two
+enabled normal outputs (`Primary`, `Secondary`) and one stage output
+(`Parity Stage`, `stageOutput: parity-stage`), plus one stage layout
+`Parity Stage` with two `slide_text` items (`slideOffset` 0 and 1). Show
+`Parity Fixture` (3 slides). 14/14 steps, `failed: []` (`run.json`,
+`steps.json`). Each output's content is its DOM text (`NN-<step>.json` →
+`outputs[]`); the output *windows* were created hidden and their page screenshots
+timed out on llvmpipe, so an output is evidenced by its page text plus the
+controller screenshot, not by an output PNG (see the run's README, "does not
+show").
+
+1. **Several outputs at once, each with its own window.** One Present click
+   opened three output pages and three distinct OS windows — `Primary`,
+   `Secondary`, `Parity Stage` (`browserWindows[]` ids 3, 4, 5) — none offscreen
+   and none minimized (`present_outputs`, index 4).
+2. **A command fans out to the active normal outputs.** Space (start) put the
+   first slide on both normal outputs, and advance moved both to the next slide
+   (`start`, `advance`). After `Secondary` was deactivated, advance moved only
+   `Primary`; `Secondary` kept its previous slide byte-for-byte
+   (`advance_inactive`). Inactive normal outputs and the stage output are not
+   fan-out targets.
+3. **Enabling/disabling is independent, and disabling destroys the window.**
+   Disabling `Secondary` from Settings > Outputs removed its page and its OS
+   window while `Primary` kept its slide and `Parity Stage` kept its layout
+   (`disable_output`); re-enabling recreated the page and a new OS window and
+   left the other two outputs' content unchanged (`enable_output`).
+4. **Each tile has a title bar, and a plain title-bar click toggles `active`.**
+   With three enabled outputs every preview tile had a title bar; a plain click
+   on `Secondary`'s title-bar button deactivated it (name struck,
+   `active:false`), and a second click reactivated it (`present_outputs`,
+   `deselect_secondary`, `reselect_secondary`).
+5. **The last active normal output cannot be deactivated.** Clicking the last
+   active normal output snapped it back to `active:true` and a toast appeared:
+   "You have to have at least one active output!" (`last_active_guard`).
+6. **A stage output renders the stage layout and is always active.** Its page
+   reports `stageArea:true` and renders the layout, not a slide; its title-bar
+   button offers no output lock (`buttonTitle:""`), and clicking it leaves it
+   active (`present_outputs`, `stage_tile_click`).
+
+**Boundary this run does not cover.** `out.multiple.specific` (slide/textbox
+bindings), the stage web client and `stage.url`, the stage layout editor, and any
+mapped output frame.
+
 ## <a id="outmultiple"></a>`out.multiple` — several outputs at once
 
 - Every output is a normal `outputs` entry; there is no fixed count. Adding is
@@ -37,12 +88,18 @@ outputs.
   Default colour is the theme secondary or `#F0008C`
   (`output.ts:1138-1145,1155`).
 - Enabling/disabling one output does not affect the others; disabling destroys
-  its window (`Outputs.svelte:54-73`).
+  its window (`Outputs.svelte:54-73`). `observed` (2026-11-12): disabling
+  `Secondary` removed its page and OS window and left `Primary` and the stage
+  output untouched; re-enabling recreated them (see Observed).
 - **A command affects:** the slide's bound outputs if it has bindings, otherwise
   all *active normal* outputs (`output.ts:151-155`; `getActiveOutputs(..., true,
   false, true)` at `:699-714`). Advance and clear use
   `getAllActiveOutputIds()` (`helpers/OutputHelper.ts:20-25`; `clear.ts:87,145`).
   Stage outputs are excluded from all of these (`output.ts:648-653,699-703`).
+  `observed` (2026-11-12): start and advance fan out to all *active normal*
+  outputs and skip both inactive normal outputs and the stage output (see
+  Observed). The bound-output branch (`out.multiple.specific`) was not exercised
+  and stays `code`.
 - `doc` says "as many outputs as you would like" (`source/docs/outputs.md:12`).
   No cap was found in the frontend, but absence of a cap is not proof of none;
   it is recorded as `doc`.
@@ -51,9 +108,13 @@ outputs.
 
 - With more than one enabled output, each tile has a title bar. A plain click
   toggles that output's `active` state; Ctrl/Cmd-click makes it the only active
-  output (`OutputPreviewLabel.svelte:13-38`).
+  output (`OutputPreviewLabel.svelte:13-38`). `observed` (2026-11-12): the title
+  bar and the plain-click toggle; Ctrl/Cmd-click was not exercised (see
+  Observed).
 - The last active normal output cannot be deactivated; it snaps back and toasts
-  (`OutputPreviewLabel.svelte:29-33`; `apiHelper.ts:353-357`).
+  (`OutputPreviewLabel.svelte:29-33`; `apiHelper.ts:353-357`). `observed`
+  (2026-11-12): the tile snapped back to `active` and the toast read "You have
+  to have at least one active output!" (see Observed).
 - Right-clicking the **title bar** gives Toggle output, Move to front, Hide from
   preview (`contextMenus.ts:260`; `menuClick.ts:877-898`). Hide from preview only
   hides the tile in the main window, not the window itself
@@ -94,14 +155,20 @@ and sends nothing (`output.ts:151-155`; `resolveOutputIds` at `:85-88`).
 - A stage output is an output whose entry has `stageOutput: <layout id>` instead
   of a `style` (`output.ts:1202-1229`; `src/types/Output.ts:10`).
 - Its window is an ordinary output window, but the output page renders the stage
-  layout rather than the slide (`MainOutput.svelte:143-144`).
+  layout rather than the slide (`MainOutput.svelte:143-144`). `observed`
+  (2026-11-12): the stage output's page reported `stageArea:true` and rendered
+  the layout, not a slide (see Observed).
 - Its resolution is its window bounds, not a style aspect ratio
   (`helpers/output.ts:836`).
 - Created from the Outputs tab: New output → Stage, then pick a layout
   (`OutputsTabs.svelte:100-121`; `Outputs.svelte:364-370`). Default colour is
   `#555555` (`output.ts:1212`).
 - Stage outputs are always active and are excluded from the normal command fan-out
-  (`OutputPreviewLabel.svelte:19-27`; `output.ts:699-703`).
+  (`OutputPreviewLabel.svelte:19-27`; `output.ts:699-703`). `observed`
+  (2026-11-12): "always active" — its title-bar button offered no output lock
+  (`buttonTitle:""`) and clicking it left it active (see Observed). The fan-out
+  exclusion is still `code`: the run observed the stage mirroring its source
+  output, not the exclusion mechanism itself.
 - A stage layout's "Current output" item names which output it mirrors, defaulting
   to the first enabled output (`output.ts:1001-1016`; `doc` at
   `source/docs/stage.md:37`).
@@ -150,3 +217,12 @@ and sends nothing (`output.ts:151-155`; `resolveOutputIds` at `:85-88`).
 - How two outputs that are both bound to the same slide behave when one is
   locked is `unknown` (the locked one is not active, so `setOutput` skips it, but
   `out.slide` for it may still hold the old slide).
+
+## Changelog
+
+- `2026-11-12` — relabelled the multi-output present/fan-out/select/disable path
+  and the stage-window path `observed` from the `stage-multi-output` run; added
+  the Observed section and the per-bullet `observed` annotations. No claim was
+  corrected (the `code` claims were confirmed, not contradicted), so no audit
+  entry. Bindings (`out.multiple.specific`), the layout editor and the stage web
+  client remain `code`/`doc`.
