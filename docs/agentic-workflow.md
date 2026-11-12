@@ -121,38 +121,18 @@ is not a code change to match the page, and it is not a silent edit to the page.
    implementer's account of the fix.
 5. Orchestrator accepts or sends back.
 
-## Models per stage
+## Vision delegate
 
-One response is one model, so the Pro/Flash split lives at agent boundaries, not
-inside a turn (D14). The orchestrator runs on `deepseek-v4-pro`; work is delegated
-to `deepseek-v4.1-flash#high`.
-
-| Stage | Agent | Model |
-| --- | --- | --- |
-| 2 Contract, 7 Accept | Orchestrator | `opencode-go/deepseek-v4-pro` |
-| 1 Read | `reader` | `opencode-go/deepseek-v4-pro` |
-| 3 Scenario | `scenario-author` | `opencode-go/deepseek-v4-pro` |
-| 4 Harness | `harness-engineer` | `opencode-go/deepseek-v4.1-flash#high` |
-| 5 Implement | `implementer` | `opencode-go/deepseek-v4.1-flash#high` |
-| 6 Verify | `verifier` | `opencode-go/deepseek-v4-pro` |
-
-### Vision delegate
-
-Neither the orchestrator nor the Pro agents can read images. A dedicated
-`vision-reader` agent (`.opencode/agents/vision-reader.md`) runs on
-`opencode-go/qwen3.7-plus` and does one thing: read a screenshot or frame and
-report what it shows. The orchestrator spawns it whenever a step needs "look at
-the image" — `AGENTS.md`'s "never say a UI is correct from the DOM alone" rule is
-satisfied through this delegate, not by switching the orchestrator to a vision
-model. It is read-only (no edit, no shell, no subagents). It is not one of the
-seven stages; it is a cross-cutting helper any stage may call.
-
-The split is a cost decision, not a relaxation of any gate. A Flash implementer's
-candidate is still only "ready" until a Pro verifier passes the exact SHA.
+A dedicated `vision-reader` agent (`.opencode/agents/vision-reader.md`) does one
+thing: read a screenshot or frame and report what it shows. The orchestrator
+spawns it whenever a step needs "look at the image" — `AGENTS.md`'s "never say a
+UI is correct from the DOM alone" rule is satisfied through this delegate. It is
+read-only (no edit, no shell, no subagents). It is not one of the seven stages; it
+is a cross-cutting helper any stage may call.
 
 Code edits belong to stage 5, so the orchestrator does not edit `crates/`,
 `apps/` or the harness itself. It writes contracts, acceptance records,
-`docs/status.md` and `EVIDENCE.md`, and hands the rest to the pinned agent.
+`docs/status.md` and `EVIDENCE.md`, and hands the rest to the stage's agent.
 
 Stages 5 and 6 keep D13's separate-session, separate-worktree rule: a subagent
 shares the orchestrator's working directory, so launching the implementer as a

@@ -1,7 +1,6 @@
 ---
 description: Independently checks a candidate commit against its contract and scenarios. Reports only; never edits code or acceptance criteria
 mode: all
-model: opencode-go/deepseek-v4-pro
 permissions:
   - action: edit
     resource: "*"

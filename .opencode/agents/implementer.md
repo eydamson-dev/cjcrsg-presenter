@@ -1,7 +1,6 @@
 ---
 description: Implements approved contracts in crates/ and apps/, with unit tests and implementation evidence. Cannot accept its own work
 mode: all
-model: opencode-go/deepseek-v4.1-flash#high
 permissions:
   - action: edit
     resource: "*"

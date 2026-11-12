@@ -30,14 +30,11 @@ drive it with `computer-use-linux`:
 [`docs/computer-use-linux.md`](computer-use-linux.md). Prefer the workspace for
 anything isolatable; use this only when the task must touch the live desktop.
 
-Orchestration runs on `deepseek-v4-pro`; code and harness edits are delegated to
-`deepseek-v4.1-flash#high` agents. The orchestrator does not edit `crates/`, `apps/` or
-the harness itself. See *Models per stage* in
-[`docs/agentic-workflow.md`](agentic-workflow.md) and D14.
+The orchestrator does not edit `crates/`, `apps/` or the harness itself. See the
+stage split in [`docs/agentic-workflow.md`](agentic-workflow.md).
 
-Visual inspection is delegated to the `vision-reader` agent on
-`opencode-go/qwen3.7-plus`; the orchestrator and the Pro agents have no image
-input, so "look at the screenshot" goes through that delegate.
+Visual inspection is delegated to the `vision-reader` agent; "look at the
+screenshot" goes through that delegate.
 
 ## What works end to end
 

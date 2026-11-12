@@ -1,7 +1,6 @@
 ---
 description: Reads FreeShow behaviour and records it as labelled feature entries. Never implements or decides correctness
 mode: all
-model: opencode-go/deepseek-v4-pro
 permissions:
   - action: edit
     resource: "*"
