@@ -1,6 +1,7 @@
 ---
 description: Builds and maintains the parity harness (adapters, normaliser, runner, comparison tools). Never changes product code or acceptance criteria
 mode: all
+model: opencode-go/claude-haiku-5-5
 permissions:
   - action: edit
     resource: "*"

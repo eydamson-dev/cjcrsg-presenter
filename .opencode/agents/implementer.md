@@ -1,6 +1,7 @@
 ---
 description: Implements approved contracts in crates/ and apps/, with unit tests and implementation evidence. Cannot accept its own work
 mode: all
+model: opencode-go/claude-haiku-5-5
 permissions:
   - action: edit
     resource: "*"

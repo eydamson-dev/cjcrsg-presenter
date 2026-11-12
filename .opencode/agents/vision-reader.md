@@ -1,6 +1,7 @@
 ---
 description: Reads screenshots and images and reports what they show. Read-only visual inspection for the parity workflow.
 mode: all
+model: opencode-go/deepseek-v4.1-flash
 permissions:
   - action: edit
     resource: "*"

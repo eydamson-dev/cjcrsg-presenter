@@ -27,6 +27,11 @@ mapping cannot drift apart.
 A feature moves through the agentic workflow (`docs/agentic-workflow.md`) before it
 counts as delivered:
 
+0. **Alternatives considered.** The researcher looks for a credible alternative to
+   the feature's FreeShow behaviour. If it finds none, the contract uses FreeShow's
+   behaviour. If it finds one, the orchestrator decides which to use, implements it,
+   and logs it as an `IMP-nnn` in `docs/improvements.md` (D16). The contract names
+   the option chosen.
 1. **Observed.** The reader runs the reference and records at least one `observed`
    claim on the feature's page. A feature with only `code` claims cannot be
    accepted; the verifier records "not yet exercised".
@@ -218,6 +223,8 @@ Tier 2 features: `drawer.search`, `show.views.simple`, `show.views.list`,
 - [x] Project browser — `proj.list`, `proj.navigate`
 - [x] At end: advance / stop control — `nav.bounds.next-at-end`
 - [ ] Shortcuts observed and matched — `drawer.shortcuts`
+- [ ] Alternatives for the centre column (live preview vs. slide grid) decided
+  decided by the AI and logged — gate 0 for `show.views.simple`, in `docs/decision-log.md`
 
 **Exit criteria met for the shell.** The comparison is in
 `parity/reports/ui-shell-2026-11-09.md`. What remains is information architecture —
@@ -246,6 +253,8 @@ not the shell.
   presentation app's fidelity.
 - Mobile native apps — responsive web/PWA until a concrete need appears.
 - Rewriting vendor SDKs in Rust — no value, real risk.
-- A new project file format — read and write FreeShow's, always.
+- Replacing our native `.cjcp`/`.cjcs` format with FreeShow's. We import FreeShow's
+  files (Tier 1 `data`); our format is D5. A change to the native format needs a
+  decision-log entry and a migration.
 - Tier 3 features (`docs/freeshow-reference/tiers.md`) — scheduled only on a
   written request from the user.

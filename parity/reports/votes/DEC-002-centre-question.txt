@@ -1,0 +1,15 @@
+Question: For the controller's centre column, which should the app show?
+Options:
+A. Live preview of the live slide, plus focus mode (the current implementation).
+B. An editable slide grid of the current show, as FreeShow's centre column does.
+Facts for A:
+- The live output is already controlled from the controller, and the preview shows exactly what is on the output.
+- Operators see the live slide and the next slide during a service without extra navigation.
+- The current implementation is built and tested.
+- It needs no slide-editor design, which is not yet done (DEV-013).
+Facts for B:
+- FreeShow's centre column is an editable slide grid, so operators familiar with FreeShow expect it.
+- A grid shows the whole show at once, so an operator can jump to any slide by sight.
+- The grid is not built or tested, so it carries untested risk in a live service.
+- It needs a slide-editor design, which is not yet done (DEV-013).
+Context: The app is a presentation tool for a church service. The output windows and engine are built (docs/architecture.md). The project catalogue is not yet built. Phase 7 is the controller UI.

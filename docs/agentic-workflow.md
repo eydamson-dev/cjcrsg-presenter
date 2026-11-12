@@ -22,7 +22,9 @@ does the work is never the one that grades it.
 
 ## Gates
 
-- A contract is approved by the user before stage 3 starts.
+- A contract is decided before stage 3 starts: the orchestrator drafts it, and a
+  decided by the AI and logged in `docs/decision-log.md` (D16).
+  Acceptance of a milestone still needs a verifier pass on the exact SHA.
 - Before stage 5 writes any code, the implementer reads the feature's reference
   pages and writes an understanding note (see *Understanding before building*).
 - A candidate is ready when stage 5 reports `scripts/check.sh` exit code 0, with
@@ -34,6 +36,9 @@ does the work is never the one that grades it.
 - A feature gets at most three rework rounds. After the third failed verdict, the
   orchestrator stops the loop and reports to the user: the open defects, and
   whether the spec, the reference page or the code is the thing that is wrong.
+- A change to a behaviour that FreeShow already has needs either parity evidence or
+  an accepted proposal. "Our way is nicer" without an `IMP` row is a deviation
+  pretending to be a design, and it is rejected.
 
 ## The feature reference
 
@@ -94,7 +99,7 @@ is not a code change to match the page, and it is not a silent edit to the page.
 - The FreeShow reference is behaviour, not code. Record what it does, not how it is
   written, and cite the upstream file (`docs/provenance.md`).
 - `observed` behaviour can become a requirement. `inferred` and `unknown` cannot,
-  until more evidence is recorded or the user approves a provisional contract.
+  until more evidence is recorded or the AI decides a provisional contract and logs it.
 - Nothing is changed to make a failing check pass: not a scenario, a baseline, a
   tolerance or a contract.
 - Only the orchestrator records acceptance. No agent marks its own work accepted.
@@ -114,12 +119,47 @@ is not a code change to match the page, and it is not a silent edit to the page.
 
 1. Start the orchestrator session in this repository.
 2. Reader, then contract with the user, then scenario author, then harness. Harness
-   work may run in parallel with scenario work once the contract is approved.
+   work may run in parallel with scenario work once the contract is decided.
 3. Implementer, in a worktree on a branch of its own.
 4. Verifier, in a second worktree checked out at the candidate's exact SHA, in a
    separate session. It gets the commit, contract, scenarios and evidence, not the
    implementer's account of the fix.
 5. Orchestrator accepts or sends back.
+
+## Research delegate
+
+A `researcher` agent (`.opencode/agents/researcher.md`) answers *how does FreeShow
+do this, and is there a better way for us?* It is a cross-cutting helper like the
+vision delegate, not one of the seven stages: any stage may ask for it, and the
+orchestrator decides what gets adopted. It reads the reference pages, the web (when
+a claim needs current facts) and, within the permission in `AGENTS.md`, the ChatGPT
+project `cjcrsg-presenter`.
+
+It answers two kinds of question, and the caller says which one it asked:
+
+- **Gap research** — why a behaviour is missing or unclear. Feeds stages 1–3, and
+  may end as a `DEV-nnn` in `docs/deviations.md`.
+- **Alternative research** — a different or better way than FreeShow's. This is the
+  point of the role: FreeShow is the baseline, not the target. It ends as a proposal
+  in `docs/proposals/`.
+
+A proposal is written to `docs/proposals/IMP-nnn-slug.md` from
+`docs/proposals/TEMPLATE.md`. It states the FreeShow behaviour with reference
+labels, the alternative, what it buys, what it costs, and what was measured.
+
+**Adoption is the orchestrator's call, not the researcher's.** The orchestrator
+decides whether to adopt the proposal, implements it, and records it as a row in
+`docs/improvements.md` marked "adopted, pending review", with a decision-log entry.
+A rejected one stays in `docs/proposals/` with the reason, so it is not re-proposed
+from scratch.
+
+`docs/improvements.md` is a different list from `docs/deviations.md` on purpose. A
+deviation is something we owe to parity and have not done. An improvement is
+something we chose. Parity work reads the improvements list before changing a
+behaviour; a scenario that fails because of an `IMP` means the scenario is wrong,
+recorded in `docs/freeshow-reference/audit.md` as a deliberate difference with the
+`IMP` ID. The decisions in `docs/decisions.md` still outrank both, and an
+improvement that would change a D-entry changes it in the same change.
 
 ## Vision delegate
 
@@ -140,7 +180,10 @@ subagent from the main checkout would put both roles in one tree.
 
 ## Status
 
-The agent files exist under `.opencode/agents/`, and OpenCode lists all five.
+The agent files exist under `.opencode/agents/`. OpenCode lists the five stage
+agents (`reader`, `scenario-author`, `harness-engineer`, `implementer`,
+`verifier`) and the two cross-cutting helpers (`vision-reader`, `researcher`),
+confirmed with `opencode debug agents` on 2026-11-12.
 The first full run (controller drawer, 2026-11-09) used reader →
 scenario-author → implementer (worktree `dev-013-drawer`) → verifier (separate
 worktree at the candidate SHA), with one failed verdict sent back and a second

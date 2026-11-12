@@ -187,6 +187,52 @@ produced the second is `parity/tools/observe_reference.mjs`.
 answered faster by reading it. The parity work is behavioural, which Craft
 Anything does not produce.
 
+## Improving on FreeShow, not copying it
+
+D14. FreeShow is the baseline, not the ceiling. A deliberate difference we keep is
+an `IMP-nnn` in `docs/improvements.md`, argued in a proposal under
+`docs/proposals/`, decided by the AI and logged for review (D16); `DEV-nnn` stays for what we still owe
+to parity. Both lists exist so parity work can tell "we have not done this yet"
+from "we chose not to".
+
+The `researcher` agent does the "how does FreeShow do this, and is there a better
+way?" work, and is the only non-orchestrator role allowed to write to the ChatGPT
+project `cjcrsg-presenter` under the permission in `AGENTS.md`. Writes and their
+chat URLs are logged in `docs/chatgpt-log.md`. Both files are new as of
+2026-11-12 and neither has been exercised yet: no proposal and no chat write has
+happened, so the loop is set up but unproven.
+
+## How decisions are made now
+
+D16. The AI decides features, contracts, improvements and acceptance without asking
+the user. It logs each decision in `docs/decision-log.md`, and each alternative or
+improvement as "adopted, pending review" in `docs/improvements.md`. The user reviews
+those later. The stop list in `AGENTS.md` still applies.
+
+Voting was tried and scrapped (D15 superseded by D16). The trial files are in
+`parity/reports/votes/`.
+
+## Working models
+
+- **Orchestrator:** `opencode-go/claude-haiku-5-5`, the default in
+  `~/projects/dotfiles/packages/opencode/opencode.base.json`, rendered to
+  `~/.config/opencode/opencode.json`. Chosen over DeepSeek because it is cheaper per
+  token on the pay-as-you-go list. Quality as orchestrator is not yet measured, so
+  judge it on the first full feature in the log.
+- **Researcher:** `opencode-go/deepseek-v4.1-flash`, pinned in
+  `.opencode/agents/researcher.md`. Kept by decision (DEC-010). A cheaper model was
+  considered and not tested.
+- **Subagents (DEC-011):** the implementer, harness-engineer and scenario-author run on
+  Haiku. The verifier, reader, vision-reader, explore and plan run on DeepSeek. The
+  verifier is deliberately on a different model from the implementer. The researcher
+  is on DeepSeek. `general` and the title, summary and compaction helpers stay on the
+  default.
+- **Paid calls go through the OpenCode Go subscription.** Pay-as-you-go paid models
+  are not used. The OpenCode free-tier usage limit is account-wide and has been
+  reached; nothing in the workflow depends on the free models now.
+- **Iceman** (`opencode-go/iceman-contributor-free`) answers since the privacy
+  setting was enabled. It is not used, because its price is not public.
+
 ## Known deviations
 
 `docs/deviations.md` — one entry, each with an impact and a way to close it.

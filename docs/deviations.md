@@ -15,6 +15,9 @@ deviation is closed, delete the entry rather than marking it done.
 ## Rules
 
 - A new deviation gets the next ID, an impact, and a way to close it.
+- A difference we chose on purpose is not a deviation: it is an `IMP-nnn` in
+  `docs/improvements.md` (D14). Using a `DEV` for a design choice loses the reason
+  and invites a later session to "fix" it.
 - Anything user-visible needs a screenshot in `EVIDENCE.md` showing what we do
   instead, not just a line in this table.
 - Deviations referenced from a report should cite the ID.

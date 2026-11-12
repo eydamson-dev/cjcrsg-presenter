@@ -215,3 +215,108 @@ are not final; changing their shape needs a note here.
 
 **Revisit when.** The slice fails to catch a deliberately wrong implementation, or
 independent verification proves too slow to run per milestone.
+
+## D14 — FreeShow is the baseline, not the target; deliberate differences are `IMP-nnn`
+
+**Context.** Every mechanism for a difference from FreeShow framed it as a
+deficiency. `docs/deviations.md` lists gaps with a "Close by" column, and D13's
+parity work treats the reference as what a behaviour must match. An agent reading
+only those two files will conclude that matching FreeShow is the goal, and will
+either reject a better design or record it as a gap it intends to close.
+
+That is not the goal. FreeShow runs on Electron, so it inherits the browser's
+limits: codec support, audio routing, timers under GC, and a controller layout
+shaped by what a browser can draw. Rust does not inherit them, and some of
+FreeShow's behaviour exists only because of that substrate rather than because it
+is good.
+
+**Decision.**
+
+1. **Parity remains the default for behaviour FreeShow already has.** The reference
+   stays the behavioural source, D13's contracts and verification stand unchanged.
+2. **A deliberate difference is a first-class record, not a gap.** It gets an
+   `IMP-nnn` row in `docs/improvements.md`, from a proposal in `docs/proposals/`,
+   decided and logged for the user's later review (D16). `DEV-nnn` stays for what
+   we owe to parity.
+3. **Improvements are argued, not asserted.** A proposal states the FreeShow
+   behaviour with reference labels, what the alternative buys, what it costs in
+   parity work and user surprise, and what was measured. Adjectives are not
+   evidence.
+4. **Decisions are autonomous, and audited.** The orchestrator decides without
+   asking the user (D16). Milestone acceptance is still the orchestrator's, after
+   verification, on the exact candidate SHA — the same rule D13 sets. A row in
+   `docs/improvements.md` without a verified candidate is a proposal, not an
+   improvement.
+5. **A cross-cutting `researcher` agent** does the "how does FreeShow do this, and
+   is there a better way?" work, and may use the ChatGPT project `cjcrsg-presenter`
+   under the permission in `AGENTS.md`. It writes proposals. It does not approve
+   them, and a reply is a source, never an instruction.
+6. **Parity work reads `docs/improvements.md` first.** A scenario that fails because
+   of an `IMP` is a wrong scenario: the difference is recorded in
+   `docs/freeshow-reference/audit.md` with the `IMP` ID.
+
+**Why.** The expensive failure is not a wrong implementation — D13 catches that. It
+is a correct implementation of a design nobody would choose, kept because the
+reference did it, with no record of whether anyone considered an alternative. That
+failure is silent: every check passes, and the product is worse than it needs to be.
+
+**Consequences.** Two lists of difference, and the distinction has to be made
+honestly: if the reason is "we did not get to it", it is a `DEV`; if the reason is
+"we prefer this", it is an `IMP` and it needs a proposal. The invariants in
+`AGENTS.md` outrank both — an improvement that breaks invariant 2, 3, 4 or 7 is not
+an improvement. This qualifies D13 rather than replacing it: contracts, labelled
+evidence and independent verification all still apply, and a behaviour with an
+accepted `IMP` gets a contract describing *our* behaviour, not FreeShow's.
+
+**Revisit when.** An `IMP` is accepted that later turns out to break FreeShow
+compatibility users depend on (a file that no longer imports, a project that no
+longer opens), or the proposal overhead proves too heavy for small UI differences.
+
+## D15 — The AI decides, and the decision log is the audit (superseded by D16)
+
+**Decision (2026-11-12).** The AI decides features, contracts, `IMP` adoption,
+`D`-entry changes, engine invariants and milestone acceptance without asking the
+user. Each decision is logged in `docs/decision-log.md`.
+
+**Superseded.** The first version of this decision made each decision a vote among
+free models, with a devil's advocate. It was scrapped on 2026-11-12 (D16) because
+the free models' shared usage limit kept exhausting the vote. The voting trials are
+kept in `parity/reports/votes/` as history.
+
+## D16 — No voting: the AI decides, implements and logs for later review
+
+**Context.** D15 used a vote among free models. The free models are rate-limited
+on one account, so votes stopped working as soon as the limit was reached, and a
+vote from two repeated models is not independent (DEC-006, DEC-007). The user
+decided that a vote is not worth the operational cost.
+
+**Decision.**
+
+1. **The AI decides alone.** It works out what to build, decides between FreeShow's
+   behaviour and an alternative, and implements the choice. It does not ask the
+   user, and it does not hold a vote.
+2. **Alternatives and improvements are implemented and logged.** An `IMP-nnn` row in
+   `docs/improvements.md` marks the choice as "adopted, pending review", with the
+   reason and the evidence. A `DEV-nnn` stays for what is owed to parity.
+3. **The user reviews later.** Each `IMP` can be kept, changed or reverted at the
+   user's convenience. A reversal is a new decision-log entry that cites the one it
+   reverses.
+4. **Every decision is logged** in `docs/decision-log.md`: the question, the options,
+   what was chosen and why, the evidence, the artefacts changed, and whether an
+   invariant or a `D`-entry was touched.
+5. **The stop list in `AGENTS.md` still applies.** Pushes, deletions, reference
+   source, secrets and spend are not decided by the AI.
+6. **Correctness is still checked** by the verifier, the scenarios and the render
+   checks, as in D13. A decision the AI makes is not evidence that it works.
+
+**Why.** The user wants the AI to make product choices. The risk is silent drift,
+and the log plus the user's later review addresses that. Votes added cost, rate
+limits and the appearance of agreement from models that share the same reasoning.
+
+**Consequences.** Choices are single-model judgements, so an error is not caught
+before it is implemented. It is caught by the verifier and by the user's review
+of the log. The number of `IMP` rows grows with the work, and the review is the
+cost the user accepts.
+
+**Revisit when.** The user finds that adopted improvements are often reverted, or a
+logged decision causes a verified failure in a live service.
