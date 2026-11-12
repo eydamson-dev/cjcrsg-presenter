@@ -189,6 +189,102 @@ change that fixed it.
 - **Fix:** added a post-run correction to the spec, keeping the old prediction
   visible, and recorded the observed statement on `outputs/styles.md`.
 
+## A-010 — The "Enable" button lives in `Icons.svelte`, not `Slide.svelte`
+
+- **Status:** corrected in `show/presenting.md` on 2026-11-12. Label stays `code`
+  for the citation; the marker's behaviour became `observed` in the same pass
+  from the `nav-disabled-slides` run.
+- **Where:** `show/presenting.md` said "disabled slides are dimmed to 0.2 in the
+  show view alongside an 'Enable' button
+  (`src/frontend/components/slide/Slide.svelte:287`, `562-568`)".
+- **Reference:** `src/frontend/components/slide/Slide.svelte:287` carries
+  `class:disabled={layoutSlide.disabled}` and `:566-568` is
+  `.slide.disabled { opacity: 0.2; }`; neither renders a button. The button is
+  `src/frontend/components/slide/Icons.svelte:112-119`, gated on
+  `layoutSlide.disabled`, titled with `translateText("actions.enable")` at `:115`
+  and calling `removeLayout("disabled")`.
+- **What actually happens:** the card class and the 0.2 opacity come from
+  `Slide.svelte`; the Enable control is part of the icon strip, which renders only
+  when `icons && !altKeyPressed && viewMode !== "simple" && !$focusMode`
+  (`Slide.svelte:282-284`). The 2026-11-12 run confirms both halves on the
+  controller: cards 0 and 3 carry `disabled`, compute `opacity: 0.2` and expose
+  the `Enable` button; cards 1/2/4 do neither
+  (`parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/05-disabled-markers.json`).
+- **Consequence:** a contract that reads the marker off `Slide.svelte` alone, or a
+  port that puts the button in the card body, would place it where the reference
+  does not. The button is also conditional in a way the class is not: in focus
+  mode, or with Alt held, the icon strip is not rendered while the card is still
+  dimmed, and in simple/list/lyrics view a disabled entry is filtered out
+  entirely (`Slides.svelte:523`), so there is neither a card nor a button.
+- **Fix:** cited `Icons.svelte:112-119` for the button and `Slide.svelte:287`,
+  `:566-568` for the class and opacity in `show/presenting.md`.
+
+## A-011 — A layer button's `red` is unconditional; content is signalled by `disabled`
+
+- **Status:** corrected in `outputs/output-window.md` on 2026-11-12. Label stays
+  `code` for the rendered colour; the enabled/disabled state and the titles
+  became `observed` in the same pass.
+- **Where:** `outputs/output-window.md` said "A layer button is red while the
+  layer has content and dark when the layer is clear
+  (`ClearButtons.svelte:144-205`, disabled styling at `:246-248`)."
+- **Reference:** every layer button receives the `red` prop unconditionally
+  (`src/frontend/components/output/preview/ClearButtons.svelte:144,159,175,188,202`).
+  What changes with content is `disabled={$outLocked || …cleared}` — Background
+  `:144`, Slide `:159`, Overlays `:175` (`overlayCleared && effectsCleared`),
+  Audio `:188`, Next timer `:202` — and a disabled button is repainted by
+  `.clear button:disabled { background-color: var(--primary) }` at `:246-248`.
+- **What actually happens:** the elements do not choose a colour; they set
+  `disabled`. The clear *title* is also not a content signal on three of the five:
+  Slide, Audio and Next timer carry theirs unconditionally, and Overlays drops its
+  title only when an overlay is `locked` (`lockedOverlay`, `:175`), not when the
+  layer is empty. Only Background drops its title when cleared or locked (`:144`).
+  Runs: with content in three layers all five groups are titled and the first
+  three enabled
+  (`parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/07-layer-buttons.json`);
+  with Overlays empty and Background empty, Overlays was still titled and
+  disabled while Background was untitled and disabled
+  (`parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/06-start-skips-disabled.json`).
+- **Consequence:** a port that keys "layer has content" off the title would
+  misreport Slide, Audio and Next timer (always titled) and Overlays (titled when
+  empty); keying it off `disabled` is the reference's rule. The colour is a CSS
+  consequence and must not be asserted without pixels.
+- **Fix:** replaced the wording in `outputs/output-window.md` with the
+  `disabled`/title rule, cited the per-button lines and the disabled styling, and
+  kept the rendered colour `code`.
+
+## A-012 — A bound slide reaches an inactive output, and a stale binding falls back
+
+- **Status:** corrected in `outputs/multiple-outputs.md` on 2026-11-12; the open
+  question it answered was closed in the same edit.
+- **Where:** `outputs/multiple-outputs.md`, in the page as it stood before this
+  edit (its old bindings section, `:149-151`): a binding list that names only
+  outputs which no longer exist "makes the slide unbindable from every output:
+  `setOutput` resolves to an empty target list and sends nothing"; and its old
+  Open questions (`:217-219`) asked how a slide bound to two outputs behaves when
+  one is locked, with the parenthetical "the locked one is not active, so
+  `setOutput` skips it, but `out.slide` for it may still hold the old slide".
+- **Reference:** `src/frontend/components/helpers/output.ts:151-155` —
+  `const resolvedBindings = bindings.length ? resolveOutputIds(bindings) : []`
+  then `const allOutputIds = resolvedBindings.length ? resolvedBindings :
+  getActiveOutputs(get(outputs), true, false, true)`. An unresolved binding list
+  is empty, so the *active* outputs are used; and in the bound branch the set is
+  used as-is, with no `active` check (`:699-714` filters `active` only for the
+  non-bound path). The write loop `:247-318` also has no `active` check.
+- **What actually happens:** with two active normal outputs, a slide bound to
+  `primary` alone reached `primary` and not `secondary`; a slide bound to
+  `["primary","Secondary"]` reached **both** pages even with `secondary`
+  deactivated (name struck); a slide bound to the nonexistent `ghost-output`
+  reached **both** active pages. Evidence:
+  `parity/reports/evidence/observe-nav-output-bindings-2026-11-12-xvfb/06-click-bound-slide.json`,
+  `09-bound-slide-to-inactive-output.json`, `11-stale-binding.json`.
+- **Consequence:** a contract written from the old page would assert that a stale
+  binding sends nothing and that a bound slide is withheld from a locked output;
+  both fail against the reference. A bound slide is an explicit override of the
+  active set, including the per-output lock.
+- **Fix:** rewrote the edge case and the open question with the run citations and
+  recorded that the bound branch ignores `active`; the binding *menus* and the
+  project-moved migration stay `code`.
+
 ## How to add an entry
 
 Use the next number, keep the five parts, and cite the pinned commit. If the

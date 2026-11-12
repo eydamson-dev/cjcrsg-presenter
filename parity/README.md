@@ -318,6 +318,67 @@ popup was dismissed, and every output capture failed there while the controller
 captures succeeded — the environment, not the scenario, decides whether an
 output frame is available.
 
+## Observing disabled slides, bindings, locks and layers
+
+Three more scenarios cover the observable remainder of the navigation/output-control
+group. Each seeds its own show **in memory** (`parity/fixtures/**` is untouched)
+and, where it needs two outputs, `primary` + `secondary` in `settings.json`.
+
+```bash
+node parity/tools/observe_reference.mjs /tmp/opencode/observe-nav-$(date +%F)     --scenario nav-disabled-slides
+node parity/tools/observe_reference.mjs /tmp/opencode/observe-bindings-$(date +%F) --scenario nav-output-bindings
+node parity/tools/observe_reference.mjs /tmp/opencode/observe-locks-$(date +%F)   --scenario lock-and-layers
+```
+
+- **`nav-disabled-slides`** — one default output (`default`, titled `Primary`) and
+  `Parity Nav`: five flat slides, entries 0 and 3 disabled. It reads the show
+  view's disabled marker per card (`#showArea .grid > .main > .slide`:
+  `class="… disabled"`, computed `opacity` 0.2, the `Enable` button), then proves
+  `Space` from an empty output skips entry 0, `Space`/`ArrowLeft` skip entry 3 in
+  both directions, and a click on a disabled card's **body** still plays it.
+  Records `show.slides.disabled`.
+- **`nav-output-bindings`** — two normal outputs and `Parity Bindings`: five flat
+  slides with an item bound to `primary`, slide bindings to `["primary"]`,
+  `["primary","Secondary"]` (id + name) and `["ghost-output"]` (stale). It proves
+  the item filter, the bound-target `setOutput`, and that an advance skips a slide
+  bound to another output. The last two steps are the **contradiction tests** from
+  the reader's spec: a slide bound to both outputs while one is inactive, and a
+  binding that names an output which does not exist. Both are recorded whatever
+  happens; a failed prediction is the finding, not a harness bug.
+- **`lock-and-layers`** — two normal outputs and `Parity Locks`: slide 0 has an
+  image background and two overlays, one with `placeUnderSlide: true`. It reads
+  the **presence and document order** of the layer containers in `.zoomed .slide`
+  (background `img.media` → `Underlay text` → `Layer one` → `Overlay text`) and the
+  per-layer clear buttons' `clearDisabled`/title, then proves the lock guards:
+  Ctrl+L blocks a slide click and **F3** (not F2, whose handler also returns when
+  something is selected), the per-output tile toggle still works under the global
+  lock, and `Clear all` empties the active output while the inactive one keeps its
+  slide, background and overlays.
+
+**How "did not change" is measured.** FreeShow's slide/item transitions are Svelte
+JS transitions, so `settlePage` (which reads `document.getAnimations()`) returns
+while the outgoing item is still mounted. Every "the output did not change"
+assertion therefore compares two stable reads **≥ 400 ms apart**
+(`stableOutputFingerprint`), and every "it never showed X" assertion is a claim
+about the samples collected while polling, not about one read after a fixed wait.
+No scenario asserts pixels.
+
+**Fixtures and read-back.** The show files are built in memory and written only
+into the scratch profile; the overlay store (`overlays.json`, the only new store
+file) is seeded beside `settings.json`. `seed.json`'s `nav` block records the
+fixture's layout entries (`disabled`, `bindings`, `background`, `overlays`, item
+bindings), the overlay records, the two output records and the generated media
+path, all read back from disk before launch — a seed that did not land fails
+before Electron starts.
+
+**Step-local readers.** `readShowSlides` and `readLayerTree` are per-step helpers,
+not new `readController`/`readOutput` fields, so the four committed scenarios'
+per-step records keep their shape (`seed.json` and `run.json` gain a `nav` key,
+which is `null` unless the scenario seeds one of these fixtures). The card
+selector is `#showArea .grid > .main > .slide`: a bare `.grid .slide` matches
+twice per card, because `Zoomed` renders its own `.slide` container inside the
+card.
+
 ## Not built yet
 
 - `tools/run.mjs` — the runner and gate.

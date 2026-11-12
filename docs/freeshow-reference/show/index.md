@@ -4,7 +4,8 @@
 - **Online docs:** <https://freeshow.app/docs/show-type>
 - **Pinned code:** ff784eb (`ff784eb388c7baef60d67e6d4e7c504f4322bca3`, 1.6.8-beta.3)
 - **Confidence:** `code` overall; `presenting.md` carries `observed` claims from
-  the 2026-11-09 end-of-show run and the 2026-11-11 `outputs-basic` run.
+  the 2026-11-09 end-of-show run, the 2026-11-11 `outputs-basic` run and the
+  2026-11-12 `nav-disabled-slides` run.
 
 ## Summary
 
@@ -170,3 +171,6 @@ arrangement):
 - `2026-11-11` — corrected the area confidence line: `presenting.md` is not all
   `code` (observed end-of-show claims since 2026-11-09, plus the 2026-11-11
   start/advance run). Audit `A-006`.
+- `2026-11-12` — the disabled-slide markers and navigation on `presenting.md` are
+  `observed` now (`nav-disabled-slides` run); named it in the confidence line and
+  corrected the Enable-button citation inside that page. Audit `A-010`.

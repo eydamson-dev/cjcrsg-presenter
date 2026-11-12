@@ -1,0 +1,317 @@
+{
+  "index": 9,
+  "step": "previous_skips_disabled",
+  "purpose": "ArrowLeft from entry 4 skips disabled entry 3 and lands on entry 2",
+  "status": "ok",
+  "startedAt": "2026-11-12T12:15:04.989Z",
+  "timestamp": "2026-11-12T12:15:05.887Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 958
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 11
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 3,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 21,
+        "width": 1440,
+        "height": 879
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "Choose screen\nCould not show output window on current display\nClick on the screen where you want to display the output window.\nCan't find the display? Click here to manually change the position.\n1\nFreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Nav\nParity Nav\n Nav one \n1\n-\n Nav two \n2\n-\n Nav three \n3\n-\n Nav four \n4\n-\n Nav five \n5\n-\nNew arrangement\n Nav three \nClear all\nParity Nav\n3/5\nGroups\nMetadata\n. 1\n. 2\n. 3\n. 4\n. 5\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n4\nUnlabeled\n4\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity Nav\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Nav\nCreated\nSunday, October 27, 2024\nModified\nThursday, November 12, 2026\nUsed\nThursday, November 12, 2026\nCategory\nNone\nSlides\n5\nWords\n10\nTemplate\nNone",
+    "textLength": 913,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": false,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Background",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity Nav"
+    ],
+    "activeProjectItems": [
+      "Parity Nav"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "default",
+          "name": "",
+          "titleBar": false,
+          "buttonTitle": null,
+          "indicatorTitle": null,
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": false,
+        "layer": "Slide",
+        "name": "Parity Nav\n3/5",
+        "buttons": [],
+        "muteTitle": null,
+        "muteDisabled": null,
+        "playPauseTitle": null,
+        "playPauseDisabled": null,
+        "loopTitle": null,
+        "loopDisabled": null
+      }
+    },
+    "mediaDrawer": {
+      "open": false,
+      "folders": [],
+      "cards": []
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Nav three",
+    "lines": [
+      "Nav three"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "default",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Nav three",
+      "lines": [
+        "Nav three"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [],
+      "images": [],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    }
+  ],
+  "observed": {
+    "default": [
+      "Nav five",
+      "Nav five \n Nav three"
+    ]
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the default output page is open"
+    },
+    {
+      "ok": true,
+      "check": "ArrowLeft skipped back over the disabled entry 3 to entry 2"
+    },
+    {
+      "ok": true,
+      "check": "the disabled entry's text is not on the output after going back"
+    },
+    {
+      "ok": true,
+      "check": "no read taken during the step ever showed the disabled entry"
+    }
+  ],
+  "screenshot": {
+    "controller": "09-previous-skips-disabled-controller.png",
+    "output": "09-previous-skips-disabled-output.png",
+    "outputMethod": "playwright",
+    "errors": []
+  },
+  "durationMs": 1320,
+  "finishedAt": "2026-11-12T12:15:06.309Z"
+}

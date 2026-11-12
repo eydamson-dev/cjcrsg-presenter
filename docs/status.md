@@ -132,8 +132,11 @@ cargo run -p cjcrsg-presenter -- render <f> out.html --layout stage
 | Reference `stage-multi-output`, observed: 14/14 steps; advance fans out to every active normal output, a plain title-bar click toggles an output's active state, the last active normal output snaps back and toasts, and a stage output renders the layout (current + next slide text) rather than the slide | `parity/reports/evidence/observe-stage-multi-output-2026-11-12-workspace/` |
 | Reference `media-behaviour`, observed: 14/14 steps; a seeded `{loop:true,muted:true}` background renders with `loop:true` and a finite 3.008 s duration; a drawer click plays/clears a background; the `Background`-layer strip's play/pause/loop/mute act on the live player, not the stored entry; play/pause/mute disable while locked; a looping clip with `nextAfterMedia` advances exactly once at its end (1616 ms remaining) | `parity/reports/evidence/observe-media-2026-11-12-xvfb/` |
 | Reference `styles-multi-output`, observed: 10/10 steps; a 4:3 style renders 1440×1080 at x=240 vs 1920×1080 for 16:9; `lines:2` shows two lines, `lines:0` the whole slide; one advance pages the 2-line output to lines 3–4 and keeps the presentation on slide 1; `layers:["slide","overlays"]` hides the background media but keeps the slide text | `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/` |
+| Reference `nav-disabled-slides`, observed: 12/12 steps; disabled cards carry `disabled` + `opacity 0.2` + Enable; Space-start lands on entry 1 not disabled 0; Space skips disabled 3 to `Nav five`; ArrowLeft skips it back; clicking a disabled card's body plays it and leaves it disabled | `parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/` |
+| Reference `nav-output-bindings`, observed: 11/11 steps; an item bound to `primary` appears only there; a slide bound to `primary` plays only there and an advance skips it elsewhere; a bound slide reaches an **inactive** output; a stale binding falls back to the active outputs (both contradict the page, `A-012`) | `parity/reports/evidence/observe-nav-output-bindings-2026-11-12-xvfb/` |
+| Reference `lock-and-layers`, observed: 14/14 steps; the global lock blocks a slide click and F3 (not the per-output tile toggle); Clear-all empties the active output and leaves an inactive one; layer containers render background → `placeUnderSlide` → slide → overlay (`A-011`) | `parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/` |
 
-| FreeShow reference: 225 features, 65 pages, 1,640 code citations, 30 screenshots, 197 claims `observed` | `docs/freeshow-reference/` |
+| FreeShow reference: 225 features, 65 pages, 1,653 code citations, 30 screenshots, 238 claims `observed` | `docs/freeshow-reference/` |
 
 Pictures and raw artefacts: `EVIDENCE.md`.
 
@@ -152,14 +155,18 @@ memory.
   architecture (IPC, servers, settings, persistence, API, stores, media, i18n,
   security, build).
 - Every behavioural claim is labelled `code`, `doc`, `unknown` or `observed`;
-  197 are `observed`. Five runs supply them: the end-of-show move (2026-11-09),
+  238 are `observed`. Seven runs supply them: the end-of-show move (2026-11-09),
   `outputs-basic` (2026-11-11: present, start, lock, Space while locked, unlock,
   next, clear), `stage-multi-output` (2026-11-12: multiple outputs, output
   selection, disable/enable, and a stage output rendering the layout),
   `media-behaviour` (2026-11-12: a background video's loop/mute state, the media
-  strip, lock, and a looping clip advancing exactly once on end), and
+  strip, lock, and a looping clip advancing exactly once on end),
   `styles-multi-output` (2026-11-12: per-output aspect, line window and shared
-  paging, and a style hiding the background layer).
+  paging, and a style hiding the background layer), `nav-disabled-slides`
+  (2026-11-12: disabled cards dimmed, skipped by next/previous/start, playable by
+  click), and `nav-output-bindings` + `lock-and-layers` (2026-11-12:
+  specific-output bindings, click/F3/per-output lock scopes, Clear skipping an
+  inactive output, and the output layer order).
   `USING-THIS.md` says what each label permits.
 - 30 screenshots of the running reference are in `screenshots/`, with the state and
   viewport of each in its README.
@@ -213,16 +220,18 @@ after `next_section`/`next_group`. A differential selection harness is still
 absent; the feature's acceptance used unit tests plus the observed reference run.
 
 0. **Tier 1 observation (gate for everything below).** Tier 1 has 63 features
-   (`docs/plan.md`, `docs/freeshow-reference/tiers.md`). Five slices are now
+   (`docs/plan.md`, `docs/freeshow-reference/tiers.md`). Seven slices are now
    `observed`, all through `parity/tools/observe_reference.mjs`: the end-of-show
-   move; output-window basics; stage + multiple outputs; media
-   (`media.play`/`media.background`/`media.controls`/`media.next-finished`); and
-   per-output styles (`out.styles`/`out.styles.aspect`/`out.styles.lines`/
-   `out.styles.layers`). The driver still covers no transitions, no layer
-   compositing (`out.layers`), no lock scopes, no specific-output bindings, no
-   disabled slides or background ghosting, and no remote/stage client. Those, and
-   most project/data/format features, still need a run before they can be
-   accepted; record the run before accepting anything in them.
+   move; output-window basics; stage + multiple outputs; media; per-output styles;
+   disabled slides; and specific-output bindings + lock scopes + layer order. What
+   remains needs either a different capture or a run: transitions
+   (`out.transitions`/`.priority`) and the ghost's appearance are Svelte JS
+   animations/visuals this DOM-state harness cannot see (pixels time out on
+   llvmpipe; needs a GPU capture or a style-sampling probe); bounds lock needs a
+   mapped window and a drag; the remote/stage web client needs a browser; and the
+   disabled/binding *menus*, timers, group propagation, number-key jumps, and most
+   project/data/format features still need a run before acceptance. Record the run
+   before accepting anything.
 1. **Controller information architecture, remainder** — DEV-013. The drawer,
    tab strip, clock and project browser are done. Behind the browser there is
    still no project catalogue (folders, create, rename, import), and the left

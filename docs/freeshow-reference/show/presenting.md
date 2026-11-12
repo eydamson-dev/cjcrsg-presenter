@@ -5,18 +5,22 @@
 - **Online docs:** <https://freeshow.app/docs/show-type>
 - **Pinned code:** ff784eb
 - **Confidence:** `code` overall; the end-of-show claims are `observed` from the
-  2026-11-09 run, and start/advance/lock through an unmapped output are
-  `observed` from the 2026-11-11 run.
+  2026-11-09 run, start/advance/lock through an unmapped output are `observed`
+  from the 2026-11-11 run, and the disabled-slide markers and navigation are
+  `observed` from the 2026-11-12 `nav-disabled-slides` run (see the Disabled
+  slides section).
 
 ## Summary
 
 Clicking a slide writes it to the output; the arrow keys advance the show that is
 currently on the output, while the spacebar re-targets the show that is active in the
 editor. A group's extra slides are stored as children and flattened into the layout for
-navigation. Disabled slides are skipped by sequential navigation, timers and start-show,
-but can still be played directly. A background dropped on a slide is inherited by later
-slides as a "ghost" until something clears it, and missing media is re-found by file name
-inside the media folders.
+navigation. Disabled slides are skipped by sequential navigation (both directions) and
+when Space starts a show on an empty output, but clicking a disabled card still plays it
+— all `observed` on 2026-11-12. Slide timers, `startShow`/double-click and number-key
+jumps skip them only in the source, not yet run. A background dropped on a slide is
+inherited by later slides as a "ghost" until something clears it, and missing media is
+re-found by file name inside the media folders.
 
 ## What the user sees
 
@@ -25,9 +29,21 @@ inside the media folders.
   (`src/frontend/components/show/Slides.svelte:96-160`).
 - Arrow left/right, space, PageUp/PageDown and Home/End drive the output
   (`src/frontend/utils/shortcuts.ts:394-445`).
-- The active output slide is outlined in the output's colour; slides after an `end`
-  marker are dimmed; disabled slides are dimmed to 0.2 in the show view alongside an
-  "Enable" button (`src/frontend/components/slide/Slide.svelte:287`, `562-568`).
+- **[code]** The active output slide is outlined in the output's colour, and slides
+  after an `end` marker are dimmed
+  (`src/frontend/components/slide/Slide.svelte:287`, `:563-565`).
+- **[observed, 2026-11-12]** In grid view (the mode the run used), a disabled
+  slide's card carries the `disabled` class, computes to `opacity: 0.2`, and
+  offers an "Enable" button; a non-disabled card has neither. The class is
+  `src/frontend/components/slide/Slide.svelte:287` and the opacity `:566-568`; the
+  button is `src/frontend/components/slide/Icons.svelte:112-119`, titled with the
+  dictionary's `actions.enable` and clearing the layout flag at `:115`. Evidence:
+  `parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/05-disabled-markers.json`
+  — of five cards, exactly the two seeded entries (0 and 3) are marked; 1, 2 and 4
+  are not. The older citation pointed the button at `Slide.svelte`; audit `A-010`.
+  The button is part of the icon strip, which the source hides in focus mode, with
+  Alt held, and in simple view; simple/list/lyrics views filter disabled entries
+  out entirely (`Slides.svelte:523`) — those modes were not run.
 - A slide that has no background of its own shows the previous background at 0.4 opacity
   as a ghost (`Slide.svelte:593-595`).
 - A missing background produces an error placeholder in the preview rather than a broken
@@ -158,6 +174,15 @@ window still displays the previous slide. The earlier `code` reading said space
   layout entry (`src/frontend/components/inputs/ShowButton.svelte:144-159`).
 - **[code]** The `startShow` action does the same: it walks past disabled entries before
   playing (`showActions.ts:561-582`, skip loop `:573`).
+- **[observed, 2026-11-12]** Starting a show from an **empty output** with one Space
+  also skips disabled entries: with entry 0 disabled, the output showed entry 1
+  (`Nav two`) and entry 0's text never appeared. This is the advance path —
+  `OutputHelper.getNextSlide` starting at `data.index = -1` and running the skip
+  loop (`src/frontend/components/helpers/OutputHelper.ts:348` and `:366-367`) — **not**
+  `startShow`'s loop above, which the double-click and the `start` action use. The
+  run proves the behaviour on the Space path only; `startShow` stays `code`.
+  Evidence:
+  `parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/06-start-skips-disabled.json`.
 - **[code]** Focus mode arrows prefer the outputted show while it can still advance, then
   move within the focused item list (`OutputHelper.ts:252`).
 
@@ -180,29 +205,63 @@ window still displays the previous slide. The earlier `code` reading said space
 
 ### Disabled slides — `show.slides.disabled`
 
+Run evidence for the `observed` items below:
+`parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/` — scenario
+`nav-disabled-slides`, 12/12 steps, `failed: []`, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`), one
+1920×1080 X11 display, controller viewport 1600×900, the single default output.
+Fixture `Parity Nav`: five flat slides `Nav one`…`Nav five`; layout entries 0 and 3
+`disabled` (`seed.json`).
+
 1. **[code]** Disable is an entry in a slide's right-click menu
    (`src/frontend/components/context/contextMenus.ts:383-384`,
-   label `actions.disable` = "Disable").
+   label `actions.disable` = "Disable"). The menu was **not driven**: the run seeded
+   the layout flag, so the menu itself stays `code`.
 2. **[code]** The flag lives on the **layout**, not on the slide: a parent sets
    `layouts[activeLayout].slides[i].disabled`, a child sets
    `layouts[activeLayout].slides[parentIndex].children[childId].disabled`
    (`src/frontend/components/context/menuClick.ts:1198-1233`). The same slide can
-   therefore be enabled in one arrangement and disabled in another.
+   therefore be enabled in one arrangement and disabled in another. Not exercised
+   (single layout).
 3. **[code]** In groups view, disabling a parent also disables all of its children
-   (`menuClick.ts:1204`, `1218-1221`).
-4. **[code]** Sequential navigation skips disabled entries (`OutputHelper.ts:414-425`),
-   start-show skips them (`showActions.ts:571-574`), and group navigation
-   (`playGroup`) skips them (`:629-630`).
-5. **[code]** Slide timers skip them too: the timer callback advances through
+   (`menuClick.ts:1204`, `1218-1221`). Not exercised.
+4. **[observed, 2026-11-12]** Sequential navigation skips disabled entries, in
+   **both directions**. From entry 2, one Space landed on entry 4 and the disabled
+   entry 3 (`Nav four`) never appeared; from entry 4, one ArrowLeft landed back on
+   entry 2, again never showing entry 3.
+   `src/frontend/components/helpers/OutputHelper.ts:414-425` is the single skip
+   rule, applied by the next loop at `:367` and the previous loop at `:399`.
+   Evidence: `08-next-skips-disabled.json`, `09-previous-skips-disabled.json`.
+5. **[observed, 2026-11-12]** Starting a show from an empty output skips them: with
+   entry 0 disabled, one Space put entry 1 (`Nav two`) on the output and entry 0
+   (`Nav one`) never appeared. The path is `OutputHelper.getNextSlide`
+   (`helpers/OutputHelper.ts:348` and `:366-367`), not `startShow` — see "Starting a
+   show". Evidence: `06-start-skips-disabled.json`.
+6. **[code]** The other start paths skip them too: `startShow`
+   (`showActions.ts:561-582`, skip loop `:573`), the show button's first
+   non-disabled entry (`inputs/ShowButton.svelte:144-159`), and group navigation
+   (`playGroup`, `showActions.ts:629-630`). None was driven.
+7. **[code]** Slide timers skip them too: the timer callback advances through
    `OutputHelper.advanceOutput(id, "", { playNext: true })`
    (`src/frontend/components/helpers/tick.ts:24-51`, call at `:50`), which uses the same
    `getNextSlide` skip loop. `playNext` keeps the advance on the outputted show
-   (`OutputHelper.ts:258`).
-6. **[code]** Clicking a disabled slide plays it, because the click path has no check
-   (`Slides.svelte:143-144`). Direct index jumps also bypass the check: number-key
-   navigation and slide/group shortcuts call `playSlideAtIndex`
-   (`src/frontend/components/output/preview/Preview.svelte:165-172`) with no disabled
-   filter.
+   (`OutputHelper.ts:258`). Not exercised.
+8. **[observed, 2026-11-12]** Clicking a disabled slide plays it, because the click
+   path has no disabled check. The only guard in `slideClick` is the output lock
+   and the Ctrl/Cmd/Shift modifiers (`src/frontend/components/show/Slides.svelte:98`);
+   it then writes the slide with `setOutput("slide", …)` and `updateOut`
+   (`:143-144`). Clicking the body of disabled card 3 put `Nav four` on the
+   output, and clicking disabled card 0 put `Nav one`. Both cards kept their
+   `disabled` class and 0.2 opacity, so playing does not enable them.
+   Evidence: `10-click-disabled-plays.json`,
+   `11-click-first-disabled-plays.json`.
+9. **[observed, 2026-11-12]** Playing a disabled slide does not wedge sequential
+   navigation: from the played disabled entry 0, one Space advanced normally to
+   entry 1 (`Nav two`). Evidence: `12-advance-from-disabled.json`.
+10. **[code]** Direct index jumps also bypass the check: number-key navigation and
+    slide/group shortcuts call `playSlideAtIndex`
+    (`src/frontend/components/output/preview/Preview.svelte:165-172`) with no disabled
+    filter. Not driven.
 
 ### Backgrounds — `show.backgrounds`
 
@@ -306,6 +365,7 @@ window still displays the previous slide. The earlier `code` reading said space
 - `src/frontend/components/helpers/dropActions.ts:697-770` — media drop → layout background or slide background.
 - `src/frontend/components/helpers/history.ts:110-142` — background media storage.
 - `src/frontend/components/slide/Slide.svelte:51-69` — preview ghost resolution.
+- `src/frontend/components/slide/Icons.svelte:112-119` — the disabled slide's Enable button.
 - `src/frontend/components/helpers/media.ts:184-277` — media lookup and location.
 - `src/electron/utils/files.ts:848-942` — filename search.
 - `src/frontend/components/helpers/get.ts:23-38` — layout flattening for indices.
@@ -337,9 +397,13 @@ window still displays the previous slide. The earlier `code` reading said space
   "Slide actions" submenu (`actionData.ts:34`, `contextMenus.ts:149,383`); the "Start
   action" grouping was not traced in this pass.
 - `doc` says "Keyboard navigation & slide timers will skip disabled slides" and "you can
-  still click it" (`show-type.md:136`) / code also skips at start-show and in group
-  navigation, and **number-key / shortcut jumps also play disabled slides**, which the
-  doc does not say (`Preview.svelte:165-172`).
+  still click it" (`show-type.md:136`) / **observed** 2026-11-12: keyboard
+  navigation (Space and ArrowLeft) skips disabled entries and a click still plays
+  them, so that part of the doc holds. The code also skips at show start and in
+  group navigation, and **number-key / shortcut jumps also play disabled slides**,
+  which the doc does not say (`Preview.svelte:165-172`); those three were not run.
+  Slide timers were not timed, so the timer half of the doc sentence is still
+  `code`.
 
 ## Open questions
 
@@ -381,3 +445,10 @@ Screenshot: `../screenshots/show-presenting.png` — not yet captured. Shot list
   existing behaviour claim was contradicted.
 - `2026-11-11` — corrected the shared output screenshot caption: it is a page
   screenshot, not evidence of a mapped window. Audit `A-007`.
+- `2026-11-12` — relabelled the disabled-slide markers and navigation `observed`
+  from the `nav-disabled-slides` run (controller marker, start/next/previous skip,
+  click-plays-disabled, advance-from-disabled); added the evidence block, the
+  boundary (menu, timers, group propagation, `startShow` and number-key jumps stay
+  `code`), and the note that Space starts a show through
+  `OutputHelper.getNextSlide`, not `startShow`. Corrected the "Enable" button
+  citation from `Slide.svelte` to `Icons.svelte`. Audit `A-010`.

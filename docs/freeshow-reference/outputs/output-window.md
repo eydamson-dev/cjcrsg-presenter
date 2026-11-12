@@ -7,7 +7,9 @@
 - **Online docs:** [Output](https://freeshow.app/docs/output)
 - **Pinned code:** ff784eb388c7baef60d67e6d4e7c504f4322bca3
 - **Confidence:** `code` overall; `observed` for the present/lock/advance/clear
-  path measured on 2026-11-11 (see Observed). Unobserved parts stay `code`.
+  path measured on 2026-11-11 and for the lock scopes (click, F3, per-output
+  toggle, clear skipping an inactive output) and the layer presence/order
+  measured on 2026-11-12 (see Observed). Unobserved parts stay `code`.
 
 ## Screenshot
 
@@ -109,6 +111,57 @@ media, audio, the stage layout, and any frame from a window that was actually
 mapped on a display. Nothing here says what a visible output looks like on a
 projector.
 
+## Observed — the `lock-and-layers` run
+
+Source: `parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/`.
+Scenario `lock-and-layers`, 2026-11-12, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`). Hidden X11
+agent workspace, one 1920×1080 display, controller viewport 1600×900. Two enabled
+normal outputs (`Primary`, `Secondary`). Show `Parity Locks`, 2 slides: slide 0 is
+`Layer one` with a `logo.png` background and two overlays, `Underlay text`
+(`placeUnderSlide: true`) and `Overlay text`; slide 1 is `Layer two`, with no
+background and no overlays. 14/14 steps, `failed: []` (`run.json`); seven page
+screenshot timeouts on the second window are recorded and are not step failures.
+An output is evidenced by its page DOM (`outputs[]`, `layerTrees`) plus the
+controller, not by an output PNG.
+
+1. **A layer container is present when its layer has content, in a fixed
+   document order.** On both pages, inside `.zoomed .slide`
+   (`src/frontend/components/slide/Zoomed.svelte:155-189`), the order of the four
+   content markers was: the background `<img class="media">` with the logo's src,
+   then `Underlay text`, then `Layer one`, then `Overlay text` — the
+   `placeUnderSlide` overlay below the slide, the ordinary overlay above it,
+   matching `Output.svelte:420-467`. Exactly one background media element appeared
+   (no style background was seeded) (`06-layer-order.json`).
+2. **The controller's per-layer buttons reflect that content.** The five groups
+   were `Background`, `Slide`, `Overlays`, `Audio`, `Next slide timer` in that
+   order; the first three `clearDisabled: false` and titled `Clear background
+   [F1]`, `Clear slide  [F2]`, `Clear overlays [F3]`; Audio and Next slide timer
+   `clearDisabled: true` (`07-layer-buttons.json`). The title/content rule is
+   corrected in `out.layers` below (audit `A-011`).
+3. **The global lock blocks the slide click.** With the lock on (title `Unlock
+   output [Ctrl+L]`), clicking another slide card changed neither page, stable
+   across two reads ≥400 ms apart (`09-lock-blocks-click.json`; `Slides.svelte:98`).
+4. **The global lock blocks the per-layer F-keys.** With the lock on, F3 left both
+   overlays on both pages (`10-lock-blocks-f3.json`); F3's guard is the lock alone
+   (`shortcuts.ts:378-383`).
+5. **The global lock does not guard the per-output lock.** With the lock on, a
+   click on `Primary`'s tile title bar deactivated and struck it while the global
+   lock title stayed `Unlock output [Ctrl+L]` (`11-lock-allows-output-lock.json`;
+   `OutputPreviewLabel.svelte:13-38` has no `outLocked` guard).
+6. **Clear skips an inactive output.** With `Primary` inactive and `Secondary`
+   active, one `Clear all` click emptied `Secondary` (slide, overlays, background)
+   and left `Primary` showing `Layer one` with its background and both overlays.
+   Reselecting `Primary` and replaying restored both pages, so the result is
+   attributable to `active` (`13-clear-skips-inactive-output.json`,
+   `14-reselect-and-play.json`; `clear.ts:87,124,145,164`).
+
+**Boundary this run does not cover.** Bounds lock (needs a mapped window, a
+window manager and a scripted drag), F1/F2/F4 and the per-layer clear buttons
+(only F3 was fired), scenes/audio/timers as output-page layers, and any rendered
+colour, z-index or opacity. The layer claim observed is presence and document
+order, not appearance.
+
 ## <a id="outwindow"></a>`out.window` — the output window
 
 **What the user sees.** A full-bleed picture with no title bar, no menu, no
@@ -178,8 +231,23 @@ Each layer button has a tiny expand control underneath for that layer's tools
 
 **How it behaves.**
 
-- A layer button is red while the layer has content and dark when the layer is
-  clear (`ClearButtons.svelte:144-205`, disabled styling at `:246-248`).
+- **Corrected 2026-11-12 (audit `A-011`).** Every layer button is passed `red`
+  unconditionally (`ClearButtons.svelte:144,159,175,188,202`); a *disabled* button
+  is painted `background-color: var(--primary)` by the `button:disabled` rule
+  (`:246-248`). "Red with content, dark when clear" therefore describes the look,
+  not the mechanism. Content is signalled by `disabled={$outLocked || …cleared}`:
+  Background `:144`, Slide `:159`, Overlays `:175` (`overlayCleared &&
+  effectsCleared`), Audio `:188`, Next timer `:202`. The clear *title* is not a
+  content signal on three of the five: Slide, Audio and Next timer carry theirs
+  unconditionally; Overlays drops its title only for a locked overlay
+  (`lockedOverlay`, `:175`), not for an empty layer; only Background drops its
+  title when it is cleared or the output is locked (`:144`). `observed`
+  (2026-11-12): with content in three layers all five groups are titled and the
+  first three enabled (`07-layer-buttons.json`), while in the `nav-disabled-slides`
+  run an **empty** Overlays group was still titled `Clear overlays [F3]` and
+  disabled, and Background was untitled and disabled
+  (`parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/06-start-skips-disabled.json`).
+  The rendered colour itself stays `code`.
 - **Clear all** clears background, slide, overlays, audio and timers
   (`clear.ts:29-34`). It returns immediately if the global lock is on (`:14`).
   It also caches the current `out` per active output first (`:24,36-57`).
@@ -213,6 +281,16 @@ immediately after the clear; the post-clear frame was byte-identical to the
 empty frame before `start`. Boundary: no background, overlay, audio or timer
 content existed, so the per-layer clear actions (F1–F4) themselves were not
 fired; only Clear all via Escape was.
+
+**Observed (2026-11-12).** With content in Background, Slide and Overlays, both
+output pages rendered the four markers in document order — background image, the
+`placeUnderSlide` underlay, the slide text, the ordinary overlay — and the
+controller listed the five groups with the first three enabled and titled and
+Audio/Next timer disabled (`06-layer-order.json`, `07-layer-buttons.json`). This
+settles the 2026-11-11 boundary ("no background, overlay, audio or timer content
+existed") for presence and order. Appearance — the rendered colour, z-index,
+opacity and filters, and the underlay's actual stacking on a projector — remains
+`code`; see the `lock-and-layers` section above.
 
 ## <a id="outenable"></a>`out.enable` — present and stop
 
@@ -284,13 +362,18 @@ so the five-button order above remains `code`, not `observed`.
 
 | Lock | Where | Effect |
 | --- | --- | --- |
-| Global (`outLocked`) | `stores.ts:391`; Ctrl+L (`shortcuts.ts:341`); padlock (`ShowActions.svelte:107`); API (`apiHelper.ts:332-337`) | Blocks slide advance (`helpers/OutputHelper.ts:30`), Clear all (`clear.ts:14`) and every per-layer clear button/F-key (`ClearButtons.svelte:45-47`; `shortcuts.ts:360,367,379,385`), media toggle (`shortcuts.ts:492`), scenes (`output.ts:514`), audio start/playlist/mic (`audioPlayer.ts:84`, `audioPlaylist.ts:61`, `audioMicrophone.ts:77`), remote commands (`remoteTalk.ts:109`) and the guarded API actions (`apiHelper.ts:69,243,299-335`). |
-| Per output (`active:false`) | Title bar click or Ctrl/Cmd+click (`OutputPreviewLabel.svelte:13-38`); API (`apiHelper.ts:338-361`) | Removes that output from `getActiveOutputs`, so `setOutput`, advance and clear skip it (`output.ts:699-714`; `output.ts:153`; `OutputHelper.ts:21`). Name is struck through (`OutputPreviewLabel.svelte:54`). The last active normal output cannot be locked (`OutputPreviewLabel.svelte:29-33`). |
+| Global (`outLocked`) | `stores.ts:391`; Ctrl+L (`shortcuts.ts:341`); padlock (`ShowActions.svelte:107`); API (`apiHelper.ts:332-337`) | Blocks slide advance (`helpers/OutputHelper.ts:30`), a slide-card click (`Slides.svelte:98`), Clear all (`clear.ts:14`) and every per-layer clear button/F-key (`ClearButtons.svelte:45-47`; `shortcuts.ts:360,367,379,385`), media toggle (`shortcuts.ts:492`), scenes (`output.ts:514`), audio start/playlist/mic (`audioPlayer.ts:84`, `audioPlaylist.ts:61`, `audioMicrophone.ts:77`), remote commands (`remoteTalk.ts:109`) and the guarded API actions (`apiHelper.ts:69,243,299-335`). |
+| Per output (`active:false`) | Title bar click or Ctrl/Cmd+click (`OutputPreviewLabel.svelte:13-38`); API (`apiHelper.ts:338-361`) | Removes that output from `getActiveOutputs`, so `setOutput`, advance and clear skip it (`output.ts:699-714`; `output.ts:153`; `OutputHelper.ts:21`; `clear.ts:87,124,145,164`). Name is struck through (`OutputPreviewLabel.svelte:54`). The last active normal output cannot be locked (`OutputPreviewLabel.svelte:29-33`). |
 | Bounds (`boundsLocked`) | Lock button in Choose screen (`Screens.svelte:143-152`) | Stops moving, resizing and auto-positioning the window (`OutputVisibility.ts:83`; `OutputLifecycle.ts:1582,1590,1601-1610`; `OutputBounds.ts:83`). |
 
 Not stopped by the global lock, as far as was traced: enabling/disabling
 outputs, toggling a per-output lock, and editing styles/settings
-(`output.ts:115-134`; `apiHelper.ts:347-361`; `Styles.svelte:23-39`).
+(`output.ts:115-134`; `apiHelper.ts:347-361`; `Styles.svelte:23-39`). The
+per-output toggle is now `observed` (2026-11-12): with the global lock on, a
+title-bar click deactivated and struck `Primary` and left the lock title
+`Unlock output [Ctrl+L]`
+(`parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/11-lock-allows-output-lock.json`).
+Enabling/disabling outputs and the style/settings editors were not run.
 
 **Observed (2026-11-11).** The single lock control flipped its title on Ctrl+L
 (`ShowActions.svelte:107`), and the captured output frame was byte-identical
@@ -300,6 +383,21 @@ locked left the output text and frame unchanged, matching the early return at
 while locked (`ClearButtons.svelte:133,159`); unlocking restored the title and
 still did not change the frame. Boundary: only the global lock on one output
 was exercised; per-output (`active:false`) and bounds locks were not.
+
+**Observed (2026-11-12).** With two outputs and an overlay on each page: the
+global lock blocked a click on another slide card (neither page changed across
+reads ≥400 ms apart) and blocked **F3** (both overlays stayed). F3's handler
+returns on the lock alone (`src/frontend/utils/shortcuts.ts:378-383`), unlike
+F2's, which also returns when something is selected (`:367`). The lock did
+**not** guard the per-output toggle. Clearing was per active output: with
+`Primary` inactive, `Clear all` emptied `Secondary` and left `Primary` showing
+its slide, background and overlays. Evidence:
+`09-lock-blocks-click.json`, `10-lock-blocks-f3.json`,
+`11-lock-allows-output-lock.json`, `13-clear-skips-inactive-output.json` in
+`parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/`. Boundary:
+bounds lock (needs a mapped window and a drag), F1/F2/F4, the media, scene,
+audio, remote and API rows, and the last-active guard (already observed
+2026-11-12) were not part of this run.
 
 ## <a id="outstatus"></a>`out.status` — the dot
 
@@ -458,7 +556,9 @@ output / Inactive (`OutputPreviewLabel.svelte:40-46`).
 - macOS behaviour of the creation-time `minimize()` (`OutputLifecycle.ts:279`)
   is `unknown`.
 - Which exact actions the global lock does *not* guard across the whole API
-  surface is not exhaustively traced; the list above is what was read.
+  surface is not exhaustively traced; the list above is what was read. One entry
+  was observed on 2026-11-12: the per-output lock toggle
+  (`11-lock-allows-output-lock.json`).
 - Whether a mapped output window shows the same frame as the hidden page
   capture, and how it behaves on a second display (focus, always-on-top,
   bounds), is `unknown`. A run with two displays and a screen capture of the
@@ -471,3 +571,11 @@ output / Inactive (`OutputPreviewLabel.svelte:40-46`).
   corrected the present/visibility edge case and the screenshot caption; added
   the caveat that an output window can be created without being shown. Audit
   `A-005`, `A-007`.
+- `2026-11-12` — added the `lock-and-layers` observed section and relabelled the
+  global lock's click guard, the F3 guard, the unguarded per-output toggle and
+  Clear-all skipping an inactive output `observed`; relabelled layer presence and
+  document order (background → underlay → slide → overlay) and the controller's
+  per-layer enabled state `observed`. **Corrected** the layer-button wording: the
+  `red` prop is unconditional, content is signalled by `disabled`, and only
+  Background drops its clear title when empty. Audit `A-011`. Appearance, bounds
+  lock, F1/F2/F4 and the media/scene/audio/remote lock rows stay `code`.

@@ -682,20 +682,20 @@ Report: `parity/reports/windows-packaging-2026-11-09.md`.
 
 The written reference of the pinned FreeShow (`ff784eb`, 1.6.8-beta.3) lives in
 `docs/freeshow-reference/`: 225 features with stable IDs, 65 detail pages, and
-1,640 `src/...:line` citations, all checked against the checkout.
+1,653 `src/...:line` citations, all checked against the checkout.
 
 ![FreeShow 1.6.8-beta.3 at rest](docs/freeshow-reference/screenshots/main-show-view.png)
 
 - 30 screenshots of the running reference, captured under Playwright, not by
   desktop screenshot tools. `docs/freeshow-reference/screenshots/README.md` names
   the state and viewport of each.
-- `scripts/check_freeshow_refs.py` — 1,640 references, 0 failed.
+- `scripts/check_freeshow_refs.py` — 1,653 references, 0 failed.
 - `scripts/check_freeshow_coverage.py` — 225 of 225 IDs mentioned by a page.
 - Upstream docs mirror: 54 pages and 34 images at `8d875b5`, refreshed with
   `scripts/fetch_freeshow_docs.sh`.
 
-The pages label every claim `code`, `doc`, `unknown` or `observed`; 197 claims are
-now `observed` from runs, 1,477 `code`, 467 `doc`, 186 `unknown`. A page becomes
+The pages label every claim `code`, `doc`, `unknown` or `observed`; 238 claims are
+now `observed` from runs, 1,492 `code`, 469 `doc`, 186 `unknown`. A page becomes
 a contract only through a scenario, and `code` still needs a run before it counts
 as one.
 
@@ -809,6 +809,66 @@ The `lines:0` page does **not** switch to "lines 3–4" on advance — its windo
 `null/null` and the page index does not change what it renders; this corrects an
 error in the pre-run observation spec (`audit.md` `A-009`). The Styles settings UI
 and live `refreshOut()` on edit were not exercised (styles were seeded).
+
+### Disabled slides, observed
+
+The fifth scenario, `nav-disabled-slides`, ran 12/12 steps on 2026-11-12 against a
+seeded five-slide show with entries 0 and 3 disabled.
+
+| | |
+| --- | --- |
+| Full record | `parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/` |
+| Reference pages updated | `docs/freeshow-reference/show/presenting.md`, `audit.md` `A-010` |
+
+Disable is a layout-entry flag. The controller marks the two disabled cards with
+`disabled`, computed `opacity: 0.2` and an Enable button. Space from an empty
+output lands on entry 1 (not the disabled 0); a further Space skips disabled entry
+3 to `Nav five`; ArrowLeft skips it back to `Nav three`; and clicking a disabled
+card's body plays it anyway (`Nav four`), leaving it disabled. This run also
+corrected the Enable-button citation (it is `Icons.svelte`, not `Slide.svelte`,
+`A-010`).
+
+### Specific-output bindings, observed
+
+The sixth scenario, `nav-output-bindings`, ran 11/11 steps on 2026-11-12 with two
+normal outputs and five slides carrying seeded slide/item bindings.
+
+| | |
+| --- | --- |
+| Full record | `parity/reports/evidence/observe-nav-output-bindings-2026-11-12-xvfb/` |
+| Reference pages updated | `docs/freeshow-reference/outputs/multiple-outputs.md`, `audit.md` `A-012` |
+
+An unbound slide reaches both outputs; an item bound to `primary` appears only on
+`primary`; a slide bound to `primary` plays only there; an advance skips it for
+the other output. Two source-vs-page contradictions were settled **against the
+page**: a slide bound to two outputs still reaches the one that is inactive (the
+bound branch ignores `active`), and a binding to a nonexistent output falls back
+to the active outputs rather than "sending nothing" (`audit.md` `A-012`).
+
+### Lock scopes and layer order, observed
+
+The seventh scenario, `lock-and-layers`, ran 14/14 steps on 2026-11-12 with two
+outputs and a slide carrying a background image plus a `placeUnderSlide` overlay
+and a normal overlay.
+
+| | |
+| --- | --- |
+| Full record | `parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/` |
+| Reference pages updated | `docs/freeshow-reference/outputs/output-window.md`, `audit.md` `A-011` |
+
+The global lock blocks a slide-card click and the per-layer F3 clear (F3's guard
+is the lock alone), but does **not** guard the per-output tile toggle. Clear-all
+empties the active output and leaves an inactive one intact. The output page's
+layer containers render, in document order, background → `placeUnderSlide` overlay
+→ slide → ordinary overlay (the underlay slot sits below the slide). This run also
+corrected the layer-button wording: only Background computes its clear title from
+content, and content is otherwise signalled by `disabled` alone (`audit.md`
+`A-011`).
+
+Bounds lock stays `code` (it acts on the OS window frame, and the output window is
+hidden on this one display). Transitions and the ghost's appearance stay `code`:
+FreeShow's transitions are Svelte JS (rAF) transitions, invisible to
+`document.getAnimations()`, and pixel capture times out on llvmpipe.
 
 ## Verification
 

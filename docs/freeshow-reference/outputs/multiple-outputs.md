@@ -8,8 +8,10 @@
 - **Pinned code:** ff784eb388c7baef60d67e6d4e7c504f4322bca3
 - **Confidence:** `code` (one `doc` claim, see Doc vs code); `observed` for the
   multi-output present/fan-out/select/disable path and the stage-window path
-  measured 2026-11-12 (see Observed). Unobserved parts — slide/textbox bindings,
-  the stage layout editor, the stage web client — stay `code`/`doc`.
+  measured 2026-11-12 (see Observed), and for the slide/textbox binding path from
+  the 2026-11-12 `nav-output-bindings` run (see Observed). Unobserved parts — the
+  binding menus, stage bindings, the stage layout editor, the stage web client —
+  stay `code`/`doc`.
 
 ## Screenshot
 
@@ -74,6 +76,53 @@ show").
 bindings), the stage web client and `stage.url`, the stage layout editor, and any
 mapped output frame.
 
+## Observed — the `nav-output-bindings` run
+
+Source: `parity/reports/evidence/observe-nav-output-bindings-2026-11-12-xvfb/`.
+Scenario `nav-output-bindings`, 2026-11-12, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`). Hidden X11
+agent workspace, one 1920×1080 display, controller viewport 1600×900. Two enabled
+normal outputs: `Primary` (id `primary`) and `Secondary` (id `secondary`). Show
+`Parity Bindings` (5 flat slides): entry 0 has two items, the second bound to
+`primary` alone; entry 1 is bound to `["primary"]`; entry 3 to
+`["primary","Secondary"]` (an id and a **name**); entry 4 to `["ghost-output"]`, an
+id that does not exist (`seed.json`). 11/11 steps, `failed: []` (`run.json`); five
+page-screenshot timeouts on the second window are recorded and are not step
+failures, so an output is evidenced by its page text (`outputs[]`) plus the
+controller screenshot, not by an output PNG (see the run's README).
+
+1. **An unbound slide reaches both active outputs; a bound item is filtered per
+   output.** One Space put `Bind one` on both pages, and only `primary` rendered
+   the second item `Bind one, primary only` (`05-start.json`; the per-output item
+   filter at `output.ts:1958-1964`).
+2. **A slide bound to one output goes only there.** Clicking entry 1
+   (`bindings: ["primary"]`) put `Bind two` on `primary` and left `secondary` on
+   `Bind one`, stable across two reads ≥400 ms apart
+   (`06-click-bound-slide.json`; `output.ts:151-155`).
+3. **Advance skips a slide bound elsewhere.** From that state one Space moved
+   `primary` from entry 1 to entry 2 and `secondary` from entry 0 to entry 2 in a
+   single press; `secondary` never showed `Bind two`
+   (`07-advance-skips-bound.json`; `OutputHelper.ts:414-425`).
+4. **Two findings against the page** (both filed as audit `A-012`):
+   - **A bound slide reaches an inactive output.** With `secondary` deactivated
+     (name struck), clicking entry 3 put `Bind four` on **both** pages, so the
+     bound branch does not consult `active` (`09-bound-slide-to-inactive-output.json`;
+     `output.ts:151-155` against the active filter at `:699-714`). This answers the
+     page's open question; its parenthetical had assumed the inactive output would
+     be skipped.
+   - **A stale binding falls back to the active outputs.** Clicking entry 4
+     (bound to the nonexistent `ghost-output`) put `Bind five` on **both** pages:
+     `resolveOutputIds` returns an empty list and `setOutput` falls back to
+     `getActiveOutputs(...)` (`11-stale-binding.json`; `output.ts:152-153`). The
+     page said it "sends nothing".
+
+   Step 4 also shows a stored **name** as binding identity: the list mixed the id
+   `primary` with the name `Secondary`, and both outputs received the slide.
+
+**Boundary this run does not cover.** The binding menus (`bind_to` / `bind_item`;
+the fields were seeded), textbox bindings through the UI, bindings on a stage
+output, a third output, and the project-moved migration beyond the stale-id case.
+
 ## <a id="outmultiple"></a>`out.multiple` — several outputs at once
 
 - Every output is a normal `outputs` entry; there is no fixed count. Adding is
@@ -98,8 +147,9 @@ mapped output frame.
   Stage outputs are excluded from all of these (`output.ts:648-653,699-703`).
   `observed` (2026-11-12): start and advance fan out to all *active normal*
   outputs and skip both inactive normal outputs and the stage output (see
-  Observed). The bound-output branch (`out.multiple.specific`) was not exercised
-  and stays `code`.
+  Observed). The bound-output branch (`out.multiple.specific`) is `observed` from
+  the `nav-output-bindings` run (a bound slide reaches only its bound outputs,
+  and the bound set overrides `active`); the binding *menus* stay `code`.
 - `doc` says "as many outputs as you would like" (`source/docs/outputs.md:12`).
   No cap was found in the frontend, but absence of a cap is not proof of none;
   it is recorded as `doc`.
@@ -130,25 +180,43 @@ Two separate binding mechanisms, both labelled **Specific outputs** in the UI
 (`public/lang/en.json:769`):
 
 **Slide bindings.** `bindSlidesToOutput` adds or removes the output id in the
-slide's `data.bindings` (`helpers/show.ts:435-453`). When playing a bound slide,
-`setOutput` targets exactly the bound outputs instead of the active set
-(`output.ts:151-155`). Advancing skips a slide that is bound to other outputs:
+slide's `data.bindings` (`helpers/show.ts:435-453`; the menu itself was not
+driven). When playing a bound slide, `setOutput` targets exactly the bound
+outputs instead of the active set (`output.ts:151-155`). `observed` (2026-11-12):
+with two active normal outputs, a slide bound `["primary"]` reached `primary` and
+not `secondary`, and `secondary` stayed on its previous slide across two reads
+(`06-click-bound-slide.json`). The bound set also overrides the per-output lock —
+see Open questions. Advancing skips a slide that is bound to other outputs:
 `slideCannotBeOutputted` returns true when `bindings` is non-empty and the
-current output is not in it (`helpers/OutputHelper.ts:414-425`).
+current output is not in it (`helpers/OutputHelper.ts:414-425`). `observed`
+(2026-11-12): one Space carried the unbound output from entry 0 to entry 2 and it
+never showed the slide bound to its sibling (`07-advance-skips-bound.json`).
 
 **Textbox bindings.** `bind_item` toggles the output id in the item's `bindings`
-(`menuClick.ts:1916-1968`). When an output style is applied, items are filtered
-per output with `isOutputBound` (`output.ts:1928-1964`); a template's own
-`bindings` also override the slide item's (`:1485-1489`).
+(`menuClick.ts:1916-1968`; the menu itself was not driven). When an output style
+is applied, items are filtered per output with `isOutputBound`
+(`output.ts:1928-1964`, the filter at `:1958-1964`); a template's own
+`bindings` also override the slide item's (`:1485-1489`). `observed` (2026-11-12)
+for the filter: an item seeded with `bindings: ["primary"]` rendered only on
+`primary`, while the unbound item on the same slide reached both pages
+(`05-start.json`).
 
 **Resolution rules.** `isOutputBound` treats an empty/absent list as "all
 outputs", compares ids directly, and also accepts a *stored output name* by
-resolving it to an id (`output.ts:74-95`). This matters after a project move:
-bindings store a name as a fallback identity.
+resolving it to an id (`output.ts:74-95`; the id/name `resolveOutputIds` path at
+`:85-88`). `observed` (2026-11-12) for the bound-target path: a binding list
+seeded as `["primary","Secondary"]` — one id and one name — reached both outputs,
+so the name resolved to the `secondary` id
+(`09-bound-slide-to-inactive-output.json`). This matters after a project move:
+bindings store a name as a fallback identity. The `isOutputBound` name branch,
+which the advance skip uses, was not isolated by a step and stays `code`.
 
-**Edge case.** A binding list that names outputs which no longer exist makes the
-slide unbindable from every output: `setOutput` resolves to an empty target list
-and sends nothing (`output.ts:151-155`; `resolveOutputIds` at `:85-88`).
+**Edge case (corrected 2026-11-12).** A binding list that names only outputs
+which no longer exist does **not** make the slide send nothing: `resolveOutputIds`
+returns an empty list, and `setOutput` then falls back to
+`getActiveOutputs(...)` (`output.ts:152-153`). `observed`: a slide bound to
+`["ghost-output"]` reached **both** active outputs (`11-stale-binding.json`). The
+page previously said it "sends nothing"; audit `A-012`.
 
 ## <a id="outstage-window"></a>`out.stage-window` — stage as an output
 
@@ -214,9 +282,15 @@ and sends nothing (`output.ts:151-155`; `resolveOutputIds` at `:85-88`).
 
 - Whether there is any practical output cap (GPU, capture pool, NDI) was not
   traced; only the absence of a frontend check is known.
-- How two outputs that are both bound to the same slide behave when one is
-  locked is `unknown` (the locked one is not active, so `setOutput` skips it, but
-  `out.slide` for it may still hold the old slide).
+- ~~How two outputs that are both bound to the same slide behave when one is
+  locked is `unknown`~~ **Answered 2026-11-12.** The old parenthetical ("the
+  locked one is not active, so `setOutput` skips it") was wrong: the bound branch
+  never consults `active`, so a bound slide is written to an inactive (per-output
+  locked) output like any other. `observed` in
+  `09-bound-slide-to-inactive-output.json`; `output.ts:151-155` against the active
+  filter at `:699-714`; audit `A-012`. The inactive output's page was read and did
+  paint the bound slide, so the follow-on "may still hold the old slide" is also
+  answered for this path.
 
 ## Changelog
 
@@ -226,3 +300,10 @@ and sends nothing (`output.ts:151-155`; `resolveOutputIds` at `:85-88`).
   corrected (the `code` claims were confirmed, not contradicted), so no audit
   entry. Bindings (`out.multiple.specific`), the layout editor and the stage web
   client remain `code`/`doc`.
+- `2026-11-12` — relabelled the binding path `observed` from the
+  `nav-output-bindings` run (bound target, advance skip, item filter, name
+  identity), added its Observed section, and **corrected two claims**: a stale
+  binding falls back to the active outputs rather than "sending nothing", and a
+  bound slide reaches an inactive output because the bound branch ignores
+  `active`. Audit `A-012`; the open question is answered. The binding menus,
+  stage bindings and the project-moved migration stay `code`.

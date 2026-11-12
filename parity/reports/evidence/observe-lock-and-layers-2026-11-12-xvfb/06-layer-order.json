@@ -1,0 +1,940 @@
+{
+  "index": 6,
+  "step": "layer_order",
+  "purpose": "each page renders background, placeUnderSlide overlay, slide, overlay in that document order",
+  "status": "ok",
+  "startedAt": "2026-11-12T12:12:23.273Z",
+  "timestamp": "2026-11-12T12:12:23.378Z",
+  "windowCount": 3,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 1009
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 42
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 42
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Secondary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 3,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 21,
+        "width": 1440,
+        "height": 879
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "Graphics acceleration is unavailable\nRendering is running on the CPU (high usage, choppy playback).\nInstalling or updating your graphics drivers may fix this.\nFreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Locks\nParity Locks\n2\n Underlay text \n Layer one \n Overlay text \n1\n-\n Layer two \n2\n-\nNew arrangement\nPrimary\n Underlay text \n Layer one \n Overlay text \nSecondary\n Underlay text \n Layer one \n Overlay text \nClear all\nUnderlay\nOverlay\nGroups\nMetadata\nMedia\n. 1\n. 2\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n4\nUnlabeled\n4\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity Locks\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Locks\nCreated\nSunday, October 27, 2024\nModified\nThursday, November 12, 2026\nUsed\nThursday, November 12, 2026\nCategory\nNone\nSlides\n2\nWords\n4\nTemplate\nNone",
+    "textLength": 961,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": false,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Clear background [F1]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Background",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "Clear background [F1]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity Locks"
+    ],
+    "activeProjectItems": [
+      "Parity Locks"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        },
+        {
+          "id": "secondary",
+          "name": "Secondary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": false,
+        "layer": "Overlays",
+        "name": "Underlay\nOverlay",
+        "buttons": [
+          {
+            "title": "",
+            "disabled": false
+          },
+          {
+            "title": "",
+            "disabled": false
+          }
+        ],
+        "muteTitle": null,
+        "muteDisabled": null,
+        "playPauseTitle": null,
+        "playPauseDisabled": null,
+        "loopTitle": null,
+        "loopDisabled": null
+      }
+    },
+    "mediaDrawer": {
+      "open": false,
+      "folders": [],
+      "cards": []
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Underlay text \n Layer one \n Overlay text",
+    "lines": [
+      "Underlay text",
+      "Layer one",
+      "Overlay text"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "primary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Underlay text \n Layer one \n Overlay text",
+      "lines": [
+        "Underlay text",
+        "Layer one",
+        "Overlay text"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [],
+      "images": [
+        "file:///tmp/opencode/media/logo.png"
+      ],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    },
+    {
+      "id": "secondary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Underlay text \n Layer one \n Overlay text",
+      "lines": [
+        "Underlay text",
+        "Layer one",
+        "Overlay text"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [],
+      "images": [
+        "file:///tmp/opencode/media/logo.png"
+      ],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    }
+  ],
+  "layerTrees": {
+    "primary": {
+      "root": true,
+      "markers": [
+        {
+          "kind": "media",
+          "tag": "img",
+          "src": "file:///tmp/opencode/media/logo.png"
+        },
+        {
+          "kind": "item",
+          "text": "Underlay text"
+        },
+        {
+          "kind": "item",
+          "text": "Layer one"
+        },
+        {
+          "kind": "item",
+          "text": "Overlay text"
+        }
+      ],
+      "tree": [
+        {
+          "depth": 1,
+          "tag": "span",
+          "class": "zoom",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "media svelte-1yarrst",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "media svelte-1yarrst",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "image svelte-5jqd5i",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "img",
+          "class": "media svelte-12mh73p",
+          "text": null,
+          "src": "file:///tmp/opencode/media/logo.png"
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "item svelte-1gcc25w noTransition",
+          "text": "Underlay text",
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "item svelte-1gcc25w",
+          "text": "Layer one",
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "textTransitionContainer svelte-1gcc25w",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 9,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "item svelte-1gcc25w noTransition",
+          "text": "Overlay text",
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "canvas",
+          "class": "svelte-xfn3dn",
+          "text": null,
+          "src": null
+        }
+      ],
+      "treeTruncated": false,
+      "counts": {
+        "items": 3,
+        "media": 1,
+        "mediaWrappers": 2,
+        "elements": 30
+      }
+    },
+    "secondary": {
+      "root": true,
+      "markers": [
+        {
+          "kind": "media",
+          "tag": "img",
+          "src": "file:///tmp/opencode/media/logo.png"
+        },
+        {
+          "kind": "item",
+          "text": "Underlay text"
+        },
+        {
+          "kind": "item",
+          "text": "Layer one"
+        },
+        {
+          "kind": "item",
+          "text": "Overlay text"
+        }
+      ],
+      "tree": [
+        {
+          "depth": 1,
+          "tag": "span",
+          "class": "zoom",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "media svelte-1yarrst",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "media svelte-1yarrst",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "image svelte-5jqd5i",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "img",
+          "class": "media svelte-12mh73p",
+          "text": null,
+          "src": "file:///tmp/opencode/media/logo.png"
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "item svelte-1gcc25w noTransition",
+          "text": "Underlay text",
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "item svelte-1gcc25w",
+          "text": "Layer one",
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "textTransitionContainer svelte-1gcc25w",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 9,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "div",
+          "class": "",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 3,
+          "tag": "div",
+          "class": "transitioner svelte-bi5k76",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 4,
+          "tag": "div",
+          "class": "item svelte-1gcc25w noTransition",
+          "text": "Overlay text",
+          "src": null
+        },
+        {
+          "depth": 5,
+          "tag": "div",
+          "class": "align svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 6,
+          "tag": "div",
+          "class": "lines svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 7,
+          "tag": "div",
+          "class": "break svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 8,
+          "tag": "span",
+          "class": "textContainer svelte-1fmqjnh",
+          "text": null,
+          "src": null
+        },
+        {
+          "depth": 2,
+          "tag": "canvas",
+          "class": "svelte-xfn3dn",
+          "text": null,
+          "src": null
+        }
+      ],
+      "treeTruncated": false,
+      "counts": {
+        "items": 3,
+        "media": 1,
+        "mediaWrappers": 2,
+        "elements": 30
+      }
+    }
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output1": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output1 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders the output's slide container (.zoomed .slide)"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders the slide's background image (logo.png)"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders the placeUnderSlide overlay's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders the slide layer's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders the ordinary overlay's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page renders exactly one background media element (no style background was seeded)"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page draws the underlay after the background"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page draws the slide after the placeUnderSlide overlay (the underlay slot is below the slide)"
+    },
+    {
+      "ok": true,
+      "check": "the \"primary\" page draws the ordinary overlay after the slide"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders the output's slide container (.zoomed .slide)"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders the slide's background image (logo.png)"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders the placeUnderSlide overlay's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders the slide layer's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders the ordinary overlay's text"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page renders exactly one background media element (no style background was seeded)"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page draws the underlay after the background"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page draws the slide after the placeUnderSlide overlay (the underlay slot is below the slide)"
+    },
+    {
+      "ok": true,
+      "check": "the \"secondary\" page draws the ordinary overlay after the slide"
+    }
+  ],
+  "screenshot": {
+    "controller": "06-layer-order-controller.png",
+    "output": "06-layer-order-output.png",
+    "outputMethod": "playwright",
+    "errors": [],
+    "otherOutputs": [
+      {
+        "file": "06-layer-order-output-2.png",
+        "ok": true,
+        "method": "playwright",
+        "error": null
+      }
+    ]
+  },
+  "durationMs": 576,
+  "finishedAt": "2026-11-12T12:12:23.849Z"
+}

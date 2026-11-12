@@ -1,0 +1,284 @@
+{
+  "seededAt": "2026-11-12T12:11:44.277Z",
+  "store": "/tmp/opencode/fs-store",
+  "dataPath": "/tmp/opencode/fs-data",
+  "settings": {
+    "initialized": true,
+    "disabledServers": {
+      "remote": false,
+      "stage": false,
+      "controller": false,
+      "output_stream": false
+    },
+    "outLocked": false,
+    "outputs": {
+      "primary": {
+        "enabled": true,
+        "active": true,
+        "name": "Primary",
+        "color": "#F0008C",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "screen": null,
+        "style": "default",
+        "show": {}
+      },
+      "secondary": {
+        "enabled": true,
+        "active": true,
+        "name": "Secondary",
+        "color": "#0A84FF",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "screen": null,
+        "style": "default",
+        "show": {}
+      }
+    }
+  },
+  "project": {
+    "id": "parity",
+    "name": "Parity Project",
+    "shows": [
+      {
+        "id": "fx-show"
+      },
+      {
+        "id": "fx-notes"
+      },
+      {
+        "id": "tx-show"
+      },
+      {
+        "id": "fx-locks"
+      }
+    ]
+  },
+  "projectCheck": {
+    "projectCount": 1
+  },
+  "shows": [
+    {
+      "file": "parity-three-slides.show",
+      "id": "fx-show",
+      "name": "Parity Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-with-notes.show",
+      "id": "fx-notes",
+      "name": "Parity With Notes",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-transitions.show",
+      "id": "tx-show",
+      "name": "Transition Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "tx-2",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "tx-3",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "(built in memory)",
+      "id": "fx-locks",
+      "name": "Parity Locks",
+      "slides": 2,
+      "mediaPaths": [
+        "/tmp/opencode/media/logo.png"
+      ],
+      "groupRepairs": []
+    }
+  ],
+  "showFiles": [
+    "Parity Fixture.show",
+    "Parity Locks.show",
+    "Parity With Notes.show",
+    "Transition Fixture.show"
+  ],
+  "skipped": [
+    {
+      "file": "parity-with-media.show",
+      "reason": "missing media: /srv/freeshow/media/background.mp4, /srv/freeshow/media/logo.png"
+    }
+  ],
+  "multiOutput": null,
+  "media": null,
+  "mediaFiles": {
+    "dir": "/tmp/opencode/media",
+    "duration": 3,
+    "files": [
+      {
+        "name": "video-bg.webm",
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "bytes": 36343,
+        "wrote": false,
+        "existedBefore": true
+      },
+      {
+        "name": "logo.png",
+        "path": "/tmp/opencode/media/logo.png",
+        "bytes": 649,
+        "wrote": false,
+        "existedBefore": true
+      }
+    ]
+  },
+  "styles": null,
+  "nav": {
+    "kind": "locks",
+    "show": {
+      "id": "fx-locks",
+      "name": "Parity Locks",
+      "file": "(built in memory)"
+    },
+    "layoutId": "lay-locks",
+    "entries": [
+      {
+        "index": 0,
+        "id": "lock-1",
+        "text": "Layer one",
+        "disabled": false,
+        "bindings": null,
+        "background": "l-bg",
+        "overlays": [
+          "ov-under",
+          "ov-over"
+        ],
+        "itemBindings": [
+          null
+        ]
+      },
+      {
+        "index": 1,
+        "id": "lock-2",
+        "text": "Layer two",
+        "disabled": false,
+        "bindings": null,
+        "background": null,
+        "overlays": null,
+        "itemBindings": [
+          null
+        ]
+      }
+    ],
+    "overlays": {
+      "ov-under": {
+        "name": "Underlay",
+        "color": null,
+        "category": null,
+        "items": [
+          {
+            "style": "top:0;left:0;width:100%;height:100%;",
+            "align": "text-align: center;",
+            "lines": [
+              {
+                "align": "",
+                "text": [
+                  {
+                    "value": "Underlay text",
+                    "style": ""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "placeUnderSlide": true
+      },
+      "ov-over": {
+        "name": "Overlay",
+        "color": null,
+        "category": null,
+        "items": [
+          {
+            "style": "top:0;left:0;width:100%;height:100%;",
+            "align": "text-align: center;",
+            "lines": [
+              {
+                "align": "",
+                "text": [
+                  {
+                    "value": "Overlay text",
+                    "style": ""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "placeUnderSlide": false
+      }
+    },
+    "media": {
+      "id": "l-bg",
+      "path": "/tmp/opencode/media/logo.png"
+    },
+    "outputs": [
+      {
+        "id": "primary",
+        "name": "Primary",
+        "enabled": true,
+        "active": true,
+        "style": "default"
+      },
+      {
+        "id": "secondary",
+        "name": "Secondary",
+        "enabled": true,
+        "active": true,
+        "style": "default"
+      }
+    ],
+    "itemOnlyPrimary": null
+  },
+  "targetShow": {
+    "name": "Parity Locks",
+    "id": "fx-locks",
+    "file": "(built in memory)"
+  }
+}

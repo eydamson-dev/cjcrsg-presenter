@@ -1,0 +1,380 @@
+{
+  "status": "passed",
+  "scenario": "nav-disabled-slides",
+  "startedAt": "2026-11-12T12:14:54.313Z",
+  "finishedAt": "2026-11-12T12:15:11.083Z",
+  "reference": {
+    "path": "/home/eydamson/projects/reference/freeshow",
+    "version": "1.6.8-beta.3",
+    "commit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "commitMatchesPin": true,
+    "pinnedCommit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "built": true
+  },
+  "profile": {
+    "store": "/tmp/opencode/fs-store",
+    "dataPath": "/tmp/opencode/fs-data",
+    "project": {
+      "id": "parity",
+      "name": "Parity Project",
+      "shows": [
+        {
+          "id": "fx-show"
+        },
+        {
+          "id": "fx-notes"
+        },
+        {
+          "id": "tx-show"
+        },
+        {
+          "id": "fx-nav"
+        }
+      ]
+    },
+    "shows": [
+      {
+        "file": "parity-three-slides.show",
+        "id": "fx-show",
+        "name": "Parity Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-with-notes.show",
+        "id": "fx-notes",
+        "name": "Parity With Notes",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-transitions.show",
+        "id": "tx-show",
+        "name": "Transition Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "tx-2",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "tx-3",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "(built in memory)",
+        "id": "fx-nav",
+        "name": "Parity Nav",
+        "slides": 5,
+        "mediaPaths": [],
+        "groupRepairs": []
+      }
+    ],
+    "skipped": [
+      {
+        "file": "parity-with-media.show",
+        "reason": "missing media: /srv/freeshow/media/background.mp4, /srv/freeshow/media/logo.png"
+      }
+    ],
+    "multiOutput": null,
+    "media": null,
+    "mediaFiles": null,
+    "styles": null,
+    "nav": {
+      "kind": "disabled",
+      "show": {
+        "id": "fx-nav",
+        "name": "Parity Nav",
+        "file": "(built in memory)"
+      },
+      "layoutId": "lay-nav",
+      "entries": [
+        {
+          "index": 0,
+          "id": "nav-1",
+          "text": "Nav one",
+          "disabled": true,
+          "bindings": null,
+          "background": null,
+          "overlays": null,
+          "itemBindings": [
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "id": "nav-2",
+          "text": "Nav two",
+          "disabled": false,
+          "bindings": null,
+          "background": null,
+          "overlays": null,
+          "itemBindings": [
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "id": "nav-3",
+          "text": "Nav three",
+          "disabled": false,
+          "bindings": null,
+          "background": null,
+          "overlays": null,
+          "itemBindings": [
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "id": "nav-4",
+          "text": "Nav four",
+          "disabled": true,
+          "bindings": null,
+          "background": null,
+          "overlays": null,
+          "itemBindings": [
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "id": "nav-5",
+          "text": "Nav five",
+          "disabled": false,
+          "bindings": null,
+          "background": null,
+          "overlays": null,
+          "itemBindings": [
+            null
+          ]
+        }
+      ],
+      "overlays": null,
+      "media": null,
+      "outputs": null,
+      "itemOnlyPrimary": null
+    }
+  },
+  "harness": {
+    "script": "parity/tools/observe_reference.mjs",
+    "node": "v24.21.0",
+    "platform": "linux",
+    "playwright": "/home/eydamson/projects/cjcrsg-presenter/parity/tools/node_modules/playwright/index.js",
+    "display": ":90",
+    "waylandDisplay": null,
+    "locale": "en-PH"
+  },
+  "controller": {
+    "viewport": {
+      "innerWidth": 1600,
+      "innerHeight": 900,
+      "devicePixelRatio": 1
+    },
+    "displays": {
+      "primary": {
+        "accelerometerSupport": "unknown",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "colorDepth": 24,
+        "colorSpace": "{primaries:BT709, transfer:SRGB, matrix:RGB, range:FULL}",
+        "depthPerComponent": 8,
+        "detected": true,
+        "displayFrequency": 0,
+        "id": 60,
+        "internal": false,
+        "label": "",
+        "maximumCursorSize": {
+          "width": 0,
+          "height": 0
+        },
+        "monochrome": false,
+        "nativeOrigin": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scaleFactor": 1,
+        "size": {
+          "width": 1440,
+          "height": 900
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "workAreaSize": {
+          "width": 1440,
+          "height": 900
+        },
+        "touchSupport": "unknown"
+      },
+      "all": [
+        {
+          "accelerometerSupport": "unknown",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900
+          },
+          "colorDepth": 24,
+          "colorSpace": "{primaries:BT709, transfer:SRGB, matrix:RGB, range:FULL}",
+          "depthPerComponent": 8,
+          "detected": true,
+          "displayFrequency": 0,
+          "id": 60,
+          "internal": false,
+          "label": "",
+          "maximumCursorSize": {
+            "width": 0,
+            "height": 0
+          },
+          "monochrome": false,
+          "nativeOrigin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scaleFactor": 1,
+          "size": {
+            "width": 1440,
+            "height": 900
+          },
+          "workArea": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900
+          },
+          "workAreaSize": {
+            "width": 1440,
+            "height": 900
+          },
+          "touchSupport": "unknown"
+        }
+      ]
+    },
+    "fonts": {
+      "status": "loaded",
+      "families": [
+        "CMGSans",
+        "NotoColorEmojiLimited"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "index": 1,
+      "step": "ready",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 2,
+      "step": "open_project",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 3,
+      "step": "open_show",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 4,
+      "step": "present",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 5,
+      "step": "disabled_markers",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 6,
+      "step": "start_skips_disabled",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 7,
+      "step": "next",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 8,
+      "step": "next_skips_disabled",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 9,
+      "step": "previous_skips_disabled",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 10,
+      "step": "click_disabled_plays",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 11,
+      "step": "click_first_disabled_plays",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 12,
+      "step": "advance_from_disabled",
+      "status": "ok",
+      "error": null
+    }
+  ],
+  "screenshots": {
+    "written": 21,
+    "problems": []
+  },
+  "failed": []
+}

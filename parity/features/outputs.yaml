@@ -1,8 +1,9 @@
 # Outputs: present, window visibility, lock, clear, styles
 
 Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the `outputs-basic`
-run of 2026-11-11, the `stage-multi-output` run of 2026-11-12 and the
-`styles-multi-output` run of 2026-11-12. Labels follow
+run of 2026-11-11, the `stage-multi-output` run of 2026-11-12, the
+`styles-multi-output` run of 2026-11-12, the `nav-output-bindings` run of
+2026-11-12 and the `lock-and-layers` run of 2026-11-12. Labels follow
 `docs/freeshow-reference/USING-THIS.md`: `label: observed` means a recorded run
 at the pin, `code` means read from the pinned source only.
 
@@ -25,6 +26,22 @@ Run evidence for every `observed` note below:
   `aspectRatio 4:3`, `Tertiary` `layers:["slide","overlays"]`. Evidence is the
   per-output DOM/geometry state (`text`, `lines`, `contentBox`, `images[]`) plus
   four output PNGs (steps 07–10, primary only).
+- `parity/reports/evidence/observe-nav-output-bindings-2026-11-12-xvfb/` —
+  scenario `nav-output-bindings`, 11/11 steps, `failed: []`, one 1920×1080
+  virtual display, two normal outputs (`Primary` id `primary`, `Secondary` id
+  `secondary`). Show `Parity Bindings` (5 flat slides): an item bound to
+  `primary` on entry 0, slide bindings `["primary"]` (entry 1),
+  `["primary","Secondary"]` id + name (entry 3) and `["ghost-output"]` stale
+  (entry 4). The fields were seeded in memory; `seed.json` records the read-back.
+  Content is each page's DOM text (`outputs[]`); five second-window page
+  screenshots timed out and are not step failures.
+- `parity/reports/evidence/observe-lock-and-layers-2026-11-12-xvfb/` —
+  scenario `lock-and-layers`, 14/14 steps, `failed: []`, one 1920×1080 virtual
+  display, two normal outputs. Show `Parity Locks`: slide 0 is `Layer one` with a
+  `logo.png` background and two overlays (`Underlay text` with
+  `placeUnderSlide: true`, `Overlay text`); slide 1 is `Layer two`. Evidence is
+  the page DOM (`outputs[]`, `layerTrees`) plus the controller; seven second-window
+  page screenshots timed out and are not step failures.
 
 ---
 
@@ -142,15 +159,22 @@ notes: >
 ```yaml
 id: out.lock
 area: outputs
-title: Ctrl+L locks the output; a locked output does not advance or clear
+title: Ctrl+L locks the output; the global lock blocks advance, clicks and F-keys, not the per-output lock
 ui: true
 reference:
   commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
   evidence:
     - src/frontend/components/helpers/OutputHelper.ts:20-32
-    - src/frontend/components/output/ShowActions.svelte:107
-    - src/frontend/components/output/preview/ClearButtons.svelte:133,159
+    - src/frontend/components/show/Slides.svelte:96-98
     - src/frontend/utils/shortcuts.ts:341
+    - src/frontend/utils/shortcuts.ts:378-383
+    - src/frontend/components/output/ShowActions.svelte:107
+    - src/frontend/components/output/preview/ClearButtons.svelte:45-47
+    - src/frontend/components/output/preview/OutputPreviewLabel.svelte:13-38
+    - src/frontend/components/output/clear.ts:87
+    - src/frontend/components/output/clear.ts:124
+    - src/frontend/components/output/clear.ts:145
+    - src/frontend/components/output/clear.ts:164
   read_by: reader
 label: observed
 confidence: high
@@ -158,19 +182,29 @@ scenarios: []
 status: planned
 deviations: []
 notes: >
-  Observed: Ctrl+L locked and unlocked the single output. The captured frame
-  was byte-identical before and after locking (md5 0acc002ff1ed99999da5a5778e848294).
-  Space while locked left the output text and frame unchanged, matching the
-  early return at helpers/OutputHelper.ts:30. While locked, "Clear all" and
-  "Clear slide" became disabled (ClearButtons.svelte:133,159). Boundary: the
-  per-output (active:false) lock and the bounds lock were not exercised, and
-  the full list of guarded API actions was not measured.
+  Observed (outputs-basic, 2026-11-11): Ctrl+L locked and unlocked the single
+  output; the captured frame was byte-identical before and after locking (md5
+  0acc002ff1ed99999da5a5778e848294); Space while locked did not advance; "Clear
+  all" and "Clear slide" became disabled. Observed (lock-and-layers, 2026-11-12,
+  two outputs, an overlay on each page): with the lock on, clicking another slide
+  card changed neither page (stable across reads >= 400 ms apart)
+  (09-lock-blocks-click.json; Slides.svelte:98); F3 left both overlays on both
+  pages (10-lock-blocks-f3.json; F3's guard is the lock alone, unlike F2's
+  selection guard at shortcuts.ts:367); a title-bar click still deactivated and
+  struck Primary while the global lock title stayed "Unlock output [Ctrl+L]"
+  (11-lock-allows-output-lock.json; OutputPreviewLabel.svelte:13-38 has no
+  outLocked guard); with Primary inactive, one "Clear all" emptied Secondary and
+  left Primary's slide, overlays and background (13-clear-skips-inactive-output.json;
+  14-reselect-and-play.json restored both). Boundary: bounds lock (needs a mapped
+  window and a drag), F1/F2/F4 and the per-layer clear buttons (only F3 was
+  fired), the media/scene/audio/remote/API rows, and the full guarded-API list
+  stay code/unknown.
 ```
 
 ```yaml
 id: out.layers
 area: outputs
-title: Inline per-layer clear controls, and Escape clears all
+title: Per-layer clear controls, layer presence and the output page's layer order
 ui: true
 reference:
   commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
@@ -178,6 +212,8 @@ reference:
     - src/frontend/components/output/preview/ClearButtons.svelte:114-215
     - src/frontend/components/output/clear.ts:13-34
     - src/frontend/utils/shortcuts.ts:351-355
+    - src/frontend/components/output/Output.svelte:408-485
+    - src/frontend/components/slide/Zoomed.svelte:155-189
   read_by: reader
 label: observed
 confidence: high
@@ -185,16 +221,28 @@ scenarios: []
 status: planned
 deviations: []
 notes: >
-  Observed: with one slide showing, the inline clear list was, top to bottom,
-  "Clear all [esc]" (enabled), then five layer groups: "Background" (no clear
-  title, disabled), "Clear slide  [F2]" (enabled; two spaces), "Clear overlays
-  [F3]" (disabled), "Clear audio [F4]" (disabled), "Clear next slide timer"
-  (disabled). Escape emptied the output: text "", frame byte-identical to the
-  empty frame before start (md5 a695902316f25b356d8a3862f6f6f782), and
-  "Clear all" was replaced by "Restore output", still disabled immediately after
-  the clear (the 1 s delay at ClearButtons.svelte:22-28). Boundary: no
-  background, overlay, audio or timer content existed, so F1–F4 per-layer clears
-  were not fired; only Clear all via Escape was measured.
+  Observed (outputs-basic, 2026-11-11): with one slide showing, the inline clear
+  list was, top to bottom, "Clear all [esc]" (enabled), then five layer groups:
+  "Background" (no clear title, disabled), "Clear slide  [F2]" (enabled; two
+  spaces), "Clear overlays [F3]" (disabled), "Clear audio [F4]" (disabled),
+  "Clear next slide timer" (disabled). Escape emptied the output and replaced
+  "Clear all" with "Restore output", still disabled immediately after the clear
+  (the 1 s delay at ClearButtons.svelte:22-28).
+  Observed (lock-and-layers, 2026-11-12): with content in Background, Slide and
+  Overlays, both output pages' layer tree showed, in document order inside
+  .zoomed .slide, the background <img class="media"> (logo.png), then "Underlay
+  text" (the placeUnderSlide overlay), then "Layer one", then "Overlay text";
+  exactly one background media element (06-layer-order.json; Output.svelte:420-467,
+  Zoomed.svelte:155-189). The controller listed Background, Slide, Overlays,
+  Audio, Next slide timer in that order with the first three clearDisabled:false
+  and titled, Audio and Next timer clearDisabled:true (07-layer-buttons.json).
+  Corrected at the same time (audit A-011): the `red` prop is unconditional and
+  content is signalled by `disabled`; only Background drops its clear title when
+  empty, while Overlays drops it only for a locked overlay (ClearButtons.svelte:
+  144,159,175,188,202,246-248). Boundary: the rendered colour, z-index, opacity
+  and filters stay code (no pixels); only F3 was fired, not F1/F2/F4 or the
+  per-layer buttons; scene/audio/timer as output-page layers are not observable
+  this way.
 ```
 
 ```yaml
@@ -223,8 +271,9 @@ notes: >
   (Secondary kept its slide byte-for-byte). Disabling Secondary from
   Settings > Outputs removed its page and OS window while Primary kept its slide
   and Parity Stage its layout; re-enabling recreated both and left the other two
-  unchanged. Boundary: out.multiple.specific bindings were not exercised, so the
-  bound-output branch stays code.
+  unchanged. The bound-output branch (out.multiple.specific) is observed from the
+  separate nav-output-bindings run of the same date; the binding menus stay code.
+  Boundary: stage bindings and the stage layout editor were not exercised.
 ```
 
 ```yaml
@@ -251,6 +300,45 @@ notes: >
   toast "You have to have at least one active output!" appeared. Boundary:
   Ctrl/Cmd-click (select one) and the title-bar context menu were not exercised,
   so those stay code.
+```
+
+```yaml
+id: out.multiple.specific
+area: outputs
+title: A slide or textbox bound to specific outputs reaches only those outputs
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/helpers/output.ts:74-95
+    - src/frontend/components/helpers/output.ts:151-155
+    - src/frontend/components/helpers/OutputHelper.ts:414-425
+    - src/frontend/components/helpers/output.ts:1928-1964
+    - src/frontend/components/helpers/show.ts:435-453
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (nav-output-bindings, 2026-11-12; two active normal outputs, binding
+  fields seeded in memory): a slide bound ["primary"] reached primary and not
+  secondary, with secondary stable across two reads >= 400 ms apart
+  (06-click-bound-slide.json). One Space then advanced primary from entry 1 to
+  entry 2 while secondary jumped entry 0 -> 2, never showing the slide bound to
+  its sibling (07-advance-skips-bound.json; OutputHelper.ts:414-425). An item
+  seeded bindings:["primary"] rendered only on primary while the unbound item on
+  the same slide reached both pages (05-start.json; the filter at output.ts:1958-1964).
+  A list mixing an id and a stored NAME (["primary","Secondary"]) reached both,
+  so the name resolved to the secondary id (09-bound-slide-to-inactive-output.json).
+  Two findings against the old page (audit A-012): the bound branch does NOT
+  consult `active`, so a bound slide reached a deactivated output too; and a
+  stale binding (["ghost-output"]) fell back to the active outputs and reached
+  both pages rather than "sending nothing" (output.ts:152-153). Boundary: the
+  binding menus (bind_to / bind_item) and textbox bindings through the UI were
+  not driven, the fields were seeded; stage-output bindings, a third output and
+  the project-moved migration beyond the stale-id case stay code.
 ```
 
 ```yaml

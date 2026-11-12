@@ -1,0 +1,214 @@
+{
+  "index": 3,
+  "step": "open_show",
+  "purpose": "select the Parity Bindings show",
+  "status": "ok",
+  "startedAt": "2026-11-12T12:09:44.414Z",
+  "timestamp": "2026-11-12T12:09:45.308Z",
+  "windowCount": 1,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 760
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 21,
+        "width": 1440,
+        "height": 879
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Bindings\nParity Bindings\n Bind one \n Bind one, primary only \n1\n-\nPrimary\n Bind two \n2\n-\n Bind three \n3\n-\n2\n Bind four \n4\n-\n Bind five \n5\n-\nNew arrangement\nPrimary\nSecondary\nClear all\nGroups\nMetadata\n. 1\n. 2\n. 3\n. 4\n. 5\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n4\nUnlabeled\n4\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Bindings\nOct 27, 2024\nParity Fixture\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Bindings\nCreated\nSunday, October 27, 2024\nModified\n—\nUsed\n—\nCategory\nNone\nSlides\n5\nWords\n14\nTemplate\nNone",
+    "textLength": 715,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": true,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        },
+        {
+          "layer": "",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": null
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity Bindings"
+    ],
+    "activeProjectItems": [
+      "Parity Bindings"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        },
+        {
+          "id": "secondary",
+          "name": "Secondary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": false,
+        "layer": null,
+        "name": "",
+        "buttons": [],
+        "muteTitle": null,
+        "muteDisabled": null,
+        "playPauseTitle": null,
+        "playPauseDisabled": null,
+        "loopTitle": null,
+        "loopDisabled": null
+      }
+    },
+    "mediaDrawer": {
+      "open": false,
+      "folders": [],
+      "cards": []
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": false,
+    "text": null,
+    "lines": []
+  },
+  "outputs": [],
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the project is still open"
+    },
+    {
+      "ok": true,
+      "check": "\"Parity Bindings\" is the active project item"
+    }
+  ],
+  "screenshot": {
+    "controller": "03-open-show-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": []
+  },
+  "durationMs": 1162,
+  "finishedAt": "2026-11-12T12:09:45.576Z"
+}

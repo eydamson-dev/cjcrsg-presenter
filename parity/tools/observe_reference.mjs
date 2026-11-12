@@ -11,7 +11,8 @@
 //   cd parity/tools && node observe_reference.mjs <outdir> [--scenario <id>]
 //
 // Scenarios: outputs-basic, stage-multi-output, media-behaviour,
-// styles-multi-output.
+// styles-multi-output, nav-disabled-slides, nav-output-bindings,
+// lock-and-layers.
 //
 // The scratch profile is deleted and reseeded on every run. The reference
 // checkout is only read: its package.json and built public/index.html are
@@ -102,6 +103,64 @@ const STYLE_DEFINITIONS = {
 const STYLES_SLIDE_1 = ["Slide one, line one", "Slide one, line two", "Slide one, line three", "Slide one, line four"]
 const STYLES_SLIDE_2 = ["Slide two, line one", "Slide two, line two"]
 const OUTPUT_TERTIARY = { id: "tertiary", name: "Tertiary", color: "#30D158" }
+
+// The navigation/output-control slice: disabled slides (show.slides.disabled),
+// specific-output bindings (out.multiple.specific), output lock (out.lock) and
+// layer order/presence (out.layers). Every fixture below is built in memory and
+// written only into the scratch profile; parity/fixtures is never edited.
+//
+// Every slide is its own group (`group: "."`) so FreeShow's loader keeps it: a
+// `group: null` slide that no parent lists in `children` is deleted on load
+// (converters/importHelpers.ts:268-290), and a layout that lists a parent *and*
+// its children indexes the children twice (helpers/shows.ts:427-458). The
+// seeded flags live on the *layout entry* (`layouts[layout].slides[i]`), which
+// is what `getLayoutRef` exposes as `ref[i].data` (helpers/shows.ts:426) and
+// what `slideCannotBeOutputted` / `setOutput` read.
+const NAV_SHOW_ID = "fx-nav"
+const NAV_SHOW_NAME = "Parity Nav"
+const NAV_LAYOUT_ID = "lay-nav"
+const NAV_SLIDE_TEXTS = ["Nav one", "Nav two", "Nav three", "Nav four", "Nav five"]
+const NAV_DISABLED_INDICES = [0, 3]
+
+const BIND_SHOW_ID = "fx-bind"
+const BIND_SHOW_NAME = "Parity Bindings"
+const BIND_LAYOUT_ID = "lay-bind"
+const BIND_SLIDE_TEXTS = ["Bind one", "Bind two", "Bind three", "Bind four", "Bind five"]
+const BIND_ITEM_ONLY_PRIMARY = "Bind one, primary only"
+// Index 3 binds one output by id and the other by its *name*, which exercises
+// `resolveOutputId`'s name fallback (helpers/output.ts:74-95). Index 4 binds an
+// output that does not exist, which is the page's "sends nothing" edge case
+// (multiple-outputs.md:149-151) against the code's active-output fallback
+// (helpers/output.ts:151-153).
+const BIND_SLIDE_BINDINGS = {
+    1: [OUTPUT_PRIMARY.id],
+    3: [OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.name],
+    4: ["ghost-output"]
+}
+
+const LOCKS_SHOW_ID = "fx-locks"
+const LOCKS_SHOW_NAME = "Parity Locks"
+const LOCKS_LAYOUT_ID = "lay-locks"
+const LOCKS_SLIDE_ONE = "Layer one"
+const LOCKS_SLIDE_TWO = "Layer two"
+const LOCKS_BACKGROUND_MEDIA_ID = "l-bg"
+const OVERLAY_UNDER_ID = "ov-under"
+const OVERLAY_OVER_ID = "ov-over"
+const OVERLAY_UNDER_TEXT = "Underlay text"
+const OVERLAY_OVER_TEXT = "Overlay text"
+
+// The two normal outputs the bindings and lock scenarios seed. A stage output is
+// deliberately absent: it changes the fan-out (output.ts:699-703) and adds a
+// third page to every assertion.
+const TWO_OUTPUT_IDS = [OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.id]
+const TWO_OUTPUT_NAMES = [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name]
+// A scenario with no `outputs` key gets the reference's own default output
+// (electron/data/defaults.ts:19-30): id "default", name "Primary".
+const DEFAULT_OUTPUT_ID = "default"
+
+// The English titles the reference gives the show view's disabled-slide control
+// (Icons.svelte:115 -> translateText("actions.enable"), public/lang/en.json:715).
+const TITLE_ENABLE_SLIDE = "Enable"
 
 // The English titles the reference gives its own controls. They are the
 // observable for state that is not in the DOM (`$dictionary` loaded from
@@ -506,6 +565,135 @@ function seedStylesOutputs() {
     }
 }
 
+// A flat show built in memory: one layout, every slide its own group
+// (`group: "."`), so the layout index in a scenario is the array index here.
+function createFlatShow({ id, name, layoutId, slides, entries, media }) {
+    const show = {
+        name,
+        private: false,
+        category: null,
+        settings: { activeLayout: layoutId, template: null },
+        timestamps: { created: 1730000000000, modified: null, used: null },
+        quickAccess: {},
+        meta: {},
+        media: media || {},
+        slides,
+        layouts: { [layoutId]: { name: "Default", notes: "", slides: entries } }
+    }
+    const mediaPaths = Object.values(show.media)
+        .map((entry) => entry && entry.path)
+        .filter(Boolean)
+    return { file: "(built in memory)", path: null, id, name, show, mediaPaths, built: true }
+}
+
+// `textItem` fills the whole slide; two items on one slide would sit on top of
+// each other. The scenario's assertions read text, not pixels, but a bounded
+// height keeps the recorded item boxes meaningful.
+function textItemAt(lines, style) {
+    return { ...textItem(lines), style }
+}
+
+// `Parity Nav`: five flat slides, entries 0 and 3 disabled. Entry 0 makes one
+// Space from an empty output test the skip; entry 3 sits between two normal
+// entries so "skip" cannot be confused with "end of show".
+function createNavFixture() {
+    const slides = {}
+    const entries = NAV_SLIDE_TEXTS.map((text, index) => {
+        const id = `nav-${index + 1}`
+        slides[id] = { group: ".", color: "", settings: {}, notes: "", items: [textItem([text])] }
+        const entry = { id }
+        if (NAV_DISABLED_INDICES.includes(index)) entry.disabled = true
+        return entry
+    })
+    return createFlatShow({ id: NAV_SHOW_ID, name: NAV_SHOW_NAME, layoutId: NAV_LAYOUT_ID, slides, entries })
+}
+
+// `Parity Bindings`: five flat slides. Index 0 carries an item bound to
+// `primary` beside an unbound one (the item filter, output.ts:1958-1964);
+// indices 1/3/4 carry slide-level bindings (id, id+name, stale id).
+function createBindingsFixture() {
+    const slides = {}
+    const entries = BIND_SLIDE_TEXTS.map((text, index) => {
+        const id = `bind-${index + 1}`
+        const items =
+            index === 0
+                ? [
+                      textItemAt([text], "top:0;left:0;width:100%;height:45%;"),
+                      {
+                          ...textItemAt([BIND_ITEM_ONLY_PRIMARY], "top:50%;left:0;width:100%;height:45%;"),
+                          bindings: [OUTPUT_PRIMARY.id]
+                      }
+                  ]
+                : [textItemAt([text], "top:0;left:0;width:100%;height:100%;")]
+        slides[id] = { group: ".", color: "", settings: {}, notes: "", items }
+        const entry = { id }
+        if (BIND_SLIDE_BINDINGS[index]) entry.bindings = [...BIND_SLIDE_BINDINGS[index]]
+        return entry
+    })
+    return createFlatShow({ id: BIND_SHOW_ID, name: BIND_SHOW_NAME, layoutId: BIND_LAYOUT_ID, slides, entries })
+}
+
+// `Parity Locks`: slide 0 has an image background and two overlays (one of them
+// `placeUnderSlide`), slide 1 has neither. Everything the layer-order assertion
+// needs is on slide 0; slide 1 is the "a locked click must not put this on the
+// output" target.
+function createLocksFixture() {
+    const slides = {
+        "lock-1": { group: ".", color: "", settings: {}, notes: "", items: [textItem([LOCKS_SLIDE_ONE])] },
+        "lock-2": { group: ".", color: "", settings: {}, notes: "", items: [textItem([LOCKS_SLIDE_TWO])] }
+    }
+    const entries = [
+        { id: "lock-1", background: LOCKS_BACKGROUND_MEDIA_ID, overlays: [OVERLAY_UNDER_ID, OVERLAY_OVER_ID] },
+        { id: "lock-2" }
+    ]
+    const media = { [LOCKS_BACKGROUND_MEDIA_ID]: { path: MEDIA_LOGO, name: "logo", type: "image" } }
+    return createFlatShow({ id: LOCKS_SHOW_ID, name: LOCKS_SHOW_NAME, layoutId: LOCKS_LAYOUT_ID, slides, entries, media })
+}
+
+// The overlay store (`overlays.json`, portable, src/electron/data/store.ts:39).
+// A slide carries its overlays through the *layout entry*: showActions.ts:461-470
+// re-sends the overlay store and then `setOutput("overlays", data.overlays, …,
+// add = true)` 200 ms after the slide is played. `placeUnderSlide` is
+// types/Show.ts:544; it splits the rendered overlays across the underlay and
+// overlay slots in Output.svelte:175-176, 434-438 vs 463-467.
+function overlayStore() {
+    return {
+        [OVERLAY_UNDER_ID]: {
+            name: "Underlay",
+            color: null,
+            category: null,
+            items: [textItemAt([OVERLAY_UNDER_TEXT], "top:0;left:0;width:100%;height:100%;")],
+            placeUnderSlide: true
+        },
+        [OVERLAY_OVER_ID]: {
+            name: "Overlay",
+            color: null,
+            category: null,
+            items: [textItemAt([OVERLAY_OVER_TEXT], "top:0;left:0;width:100%;height:100%;")],
+            placeUnderSlide: false
+        }
+    }
+}
+
+// Two normal outputs, both enabled and active. The shape is seedMultiOutput's
+// without the stage entry.
+function seedTwoOutputs() {
+    const outputs = {}
+    for (const { id, name, color } of [OUTPUT_PRIMARY, OUTPUT_SECONDARY]) {
+        outputs[id] = {
+            enabled: true,
+            active: true,
+            name,
+            color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: "default",
+            show: {}
+        }
+    }
+    return outputs
+}
+
 function seedProfile(options) {
     const store = assertScratchPath("--store", options.store)
     const dataPath = assertScratchPath("--data", options.dataPath)
@@ -575,6 +763,15 @@ function seedProfile(options) {
         }
     }
 
+    // Navigation/output-control slice: one in-memory fixture per scenario, so the
+    // committed fixtures keep their shape and the indices are explicit.
+    let navFixture = null
+    if (plan.nav === "disabled") navFixture = createNavFixture()
+    else if (plan.nav === "bindings") navFixture = createBindingsFixture()
+    else if (plan.nav === "locks") navFixture = createLocksFixture()
+    else if (plan.nav) throw new Error(`unknown nav seed "${plan.nav}"; known: disabled, bindings, locks`)
+    if (navFixture) fixtures.push(navFixture)
+
     const names = new Set()
     const groupRepairs = {}
     for (const fixture of fixtures) {
@@ -631,6 +828,7 @@ function seedProfile(options) {
     const multiOutput = plan.outputs === "stage" ? seedMultiOutput(store) : null
     if (multiOutput) settings.outputs = multiOutput.outputs
     if (plan.outputs === "styles") settings.outputs = seedStylesOutputs()
+    if (plan.outputs === "two") settings.outputs = seedTwoOutputs()
 
     // The Media drawer lists the files in `settings.mediaFolders` (folder shape
     // from `dropActions.ts:608-622`; listing through `Main.READ_FOLDER`).
@@ -650,6 +848,9 @@ function seedProfile(options) {
     // `styles` is a synced setting (`defaultSyncedSettings.styles`,
     // `electron/data/defaults.ts:108`) persisted in settings_synced.json.
     if (plan.styles) writeJson(join(store, "settings_synced.json"), { styles: STYLE_DEFINITIONS })
+    // The overlay store the locks fixture's overlays are copied from
+    // (`src/electron/data/store.ts:39`, portable).
+    if (plan.nav === "locks") writeJson(join(store, "overlays.json"), overlayStore())
 
     const target = fixtures.find((fixture) => fixture.name === targetShowName)
     if (!target) throw new Error(`fixture named "${targetShowName}" was not seeded`)
@@ -745,6 +946,119 @@ function seedProfile(options) {
         }
     }
 
+    // The navigation slice reads its fixture back from disk too: a layout flag
+    // that did not land would turn every later assertion into a statement about
+    // an empty profile.
+    let navRecord = null
+    if (navFixture) {
+        const showOnDisk = JSON.parse(readFileSync(join(dataPath, "Shows", `${navFixture.name}.show`), "utf8"))[1]
+        const layoutId = showOnDisk.settings && showOnDisk.settings.activeLayout
+        const layoutOnDisk = showOnDisk.layouts && showOnDisk.layouts[layoutId]
+        if (!layoutOnDisk || !Array.isArray(layoutOnDisk.slides)) {
+            throw new Error(`the nav fixture's layout did not land: ${JSON.stringify({ layoutId, layouts: Object.keys(showOnDisk.layouts || {}) })}`)
+        }
+        const entries = layoutOnDisk.slides.map((slide, index) => ({
+            index,
+            id: slide.id,
+            text: ((showOnDisk.slides[slide.id] || {}).items || [])
+                .map((item) => (item.lines || []).map((line) => (line.text || []).map((part) => part.value).join("")).join(" "))
+                .join(" | "),
+            disabled: slide.disabled === true,
+            bindings: slide.bindings || null,
+            background: slide.background === undefined ? null : slide.background,
+            overlays: slide.overlays || null,
+            itemBindings: ((showOnDisk.slides[slide.id] || {}).items || []).map((item) => item.bindings || null)
+        }))
+
+        const expectedCount = plan.nav === "locks" ? 2 : 5
+        if (entries.length !== expectedCount) {
+            throw new Error(`the nav fixture has ${entries.length} layout entries, expected ${expectedCount}: ${JSON.stringify(entries.map((entry) => entry.id))}`)
+        }
+        if (plan.nav === "disabled") {
+            for (const index of NAV_DISABLED_INDICES) {
+                if (entries[index].disabled !== true) throw new Error(`slide ${index} did not land disabled: ${JSON.stringify(entries[index])}`)
+            }
+            for (const index of [1, 2, 4]) {
+                if (entries[index].disabled !== false) throw new Error(`slide ${index} is unexpectedly disabled: ${JSON.stringify(entries[index])}`)
+            }
+        }
+        if (plan.nav === "bindings") {
+            for (const [index, bindings] of Object.entries(BIND_SLIDE_BINDINGS)) {
+                const entry = entries[Number(index)]
+                if (JSON.stringify(entry.bindings) !== JSON.stringify(bindings)) {
+                    throw new Error(`slide ${index} did not keep its bindings: ${JSON.stringify(entry)}`)
+                }
+            }
+            if (entries[0].bindings !== null) throw new Error(`slide 0 must have no slide-level bindings: ${JSON.stringify(entries[0])}`)
+            if (JSON.stringify(entries[0].itemBindings[1]) !== JSON.stringify([OUTPUT_PRIMARY.id])) {
+                throw new Error(`slide 0's second item did not keep its item binding: ${JSON.stringify(entries[0].itemBindings)}`)
+            }
+        }
+        if (plan.nav === "locks") {
+            if (entries[0].background !== LOCKS_BACKGROUND_MEDIA_ID) {
+                throw new Error(`slide 0's background did not land: ${JSON.stringify(entries[0])}`)
+            }
+            if (JSON.stringify(entries[0].overlays) !== JSON.stringify([OVERLAY_UNDER_ID, OVERLAY_OVER_ID])) {
+                throw new Error(`slide 0's overlays did not land: ${JSON.stringify(entries[0])}`)
+            }
+            if (entries[1].background !== null || entries[1].overlays !== null) {
+                throw new Error(`slide 1 must have no background and no overlays: ${JSON.stringify(entries[1])}`)
+            }
+            const storedMedia = (showOnDisk.media || {})[LOCKS_BACKGROUND_MEDIA_ID]
+            if (!storedMedia || storedMedia.path !== MEDIA_LOGO) {
+                throw new Error(`the background media entry did not land: ${JSON.stringify(storedMedia)}`)
+            }
+            if (!existsSync(MEDIA_LOGO)) {
+                throw new Error(`the background image the locks fixture points at does not exist: ${MEDIA_LOGO}`)
+            }
+        }
+
+        let overlaysOnDisk = null
+        if (plan.nav === "locks") {
+            overlaysOnDisk = JSON.parse(readFileSync(join(store, "overlays.json"), "utf8"))
+            if (!overlaysOnDisk[OVERLAY_UNDER_ID] || overlaysOnDisk[OVERLAY_UNDER_ID].placeUnderSlide !== true) {
+                throw new Error(`the underlay did not land: ${JSON.stringify(overlaysOnDisk)}`)
+            }
+            if (!overlaysOnDisk[OVERLAY_OVER_ID] || overlaysOnDisk[OVERLAY_OVER_ID].placeUnderSlide === true) {
+                throw new Error(`the overlay did not land without placeUnderSlide: ${JSON.stringify(overlaysOnDisk)}`)
+            }
+        }
+
+        let outputsOnDisk = null
+        if (plan.outputs === "two") {
+            outputsOnDisk = JSON.parse(readFileSync(join(store, "settings.json"), "utf8")).outputs || {}
+            const ids = Object.keys(outputsOnDisk)
+            if (JSON.stringify(sortedNames(ids)) !== JSON.stringify(sortedNames(TWO_OUTPUT_IDS))) {
+                throw new Error(`the two-output seed did not land: ${JSON.stringify(ids)}`)
+            }
+            for (const id of TWO_OUTPUT_IDS) {
+                const output = outputsOnDisk[id]
+                if (output.enabled !== true || output.active !== true || output.style !== "default") {
+                    throw new Error(`output "${id}" is not enabled/active/default: ${JSON.stringify(output)}`)
+                }
+            }
+        }
+
+        navRecord = {
+            kind: plan.nav,
+            show: { id: navFixture.id, name: navFixture.name, file: navFixture.file },
+            layoutId,
+            entries,
+            overlays: overlaysOnDisk,
+            media: plan.nav === "locks" ? { id: LOCKS_BACKGROUND_MEDIA_ID, path: MEDIA_LOGO } : null,
+            outputs: outputsOnDisk
+                ? Object.entries(outputsOnDisk).map(([id, output]) => ({
+                      id,
+                      name: output.name,
+                      enabled: output.enabled === true,
+                      active: output.active === true,
+                      style: output.style || null
+                  }))
+                : null,
+            itemOnlyPrimary: plan.nav === "bindings" ? BIND_ITEM_ONLY_PRIMARY : null
+        }
+    }
+
     const seededShows = fixtures.map((fixture) => ({
         file: fixture.file,
         id: fixture.id,
@@ -768,6 +1082,7 @@ function seedProfile(options) {
         media: mediaRecord,
         mediaFiles: mediaFiles ? { dir: mediaFiles.dir, duration: mediaFiles.duration, files: mediaFiles.files } : null,
         styles: stylesRecord,
+        nav: navRecord,
         targetShow: { name: targetShowName, id: target.id, file: target.file }
     }
 }
@@ -1112,6 +1427,125 @@ function readOutput(page) {
             // so its box is where a 4:3 style is visible without pixels.
             contentBox: box(document.querySelector(".zoomed .slide")),
             viewportBox: box(document.querySelector(".zoomed"))
+        }
+    })
+}
+
+// The show view's slide cards. `#showArea .grid` is the grid
+// (show/Slides.svelte:517-543) and each card is a `Slide`, whose content div
+// carries `class:disabled` (slide/Slide.svelte:287) and the CSS `opacity: 0.2`
+// (Slide.svelte:566-568). The card is `.main > .slide` — NOT any `.slide`, because
+// `Zoomed` (slide/Zoomed.svelte:171) renders its own `.slide` container inside the
+// card, so a bare `.grid .slide` matches twice per slide. The icon strip is a
+// sibling of the content div inside `div.main` (Slide.svelte:276-287) and its
+// "Enable" button is Icons.svelte:112-120, which is why the button titles are
+// read from the wrapper.
+//
+// A step-local reader: the controller record stays as the four committed
+// scenarios left it.
+const SHOW_SLIDE_CARD_SELECTOR = "#showArea .grid > .main > .slide"
+
+function readShowSlides(page) {
+    return page.evaluate(() => {
+        const clean = (value) =>
+            String(value || "")
+                .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+                .replace(/\u00a0/g, " ")
+                .replace(/[ \t]+/g, " ")
+                .replace(/\s*\n\s*/g, " ")
+                .trim()
+
+        const area = document.querySelector("#showArea")
+        if (!area) return { root: false, grid: false, gridChildCount: 0, cards: [] }
+        const grid = area.querySelector(".grid")
+        const wrappers = grid ? [...grid.querySelectorAll(":scope > .main")] : []
+        const cards = wrappers.map((wrapper, index) => {
+            const card = wrapper.querySelector(":scope > .slide")
+            const buttons = [...wrapper.querySelectorAll("button[data-title]")].map((button) => button.getAttribute("data-title") || "")
+            if (!card) {
+                return { index, present: false, classes: "", disabled: null, opacity: null, text: "", hasEnableButton: false, buttons, box: null }
+            }
+            const rect = card.getBoundingClientRect()
+            const style = getComputedStyle(card)
+            return {
+                index,
+                present: true,
+                classes: [...card.classList].join(" "),
+                disabled: card.classList.contains("disabled"),
+                opacity: style.opacity,
+                text: clean(card.innerText).slice(0, 200),
+                hasEnableButton: buttons.includes("Enable"),
+                buttons,
+                box: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) }
+            }
+        })
+
+        return { root: true, grid: !!grid, gridChildCount: grid ? grid.children.length : 0, cards }
+    })
+}
+
+// The output page's layer containers, in document order. `Zoomed` renders one
+// `.slide` (slide/Zoomed.svelte:166-188) and `Output.svelte:408-485` puts the
+// layers inside it: style background, background, effects-under, underlays,
+// slide, metadata, effects-over, overlays, attribution, draw. The only stable
+// discriminators are the media `src` and the item text (Background.svelte:152
+// renders `div.media`, Overlays.svelte:66-71 an unclassed div, and slide and
+// overlay items are both `div.item`, Textbox.svelte:815). So this records the
+// whole child tree and the ordered marker list; an assertion compares the
+// relative order of known markers rather than class names.
+function readLayerTree(page) {
+    return page.evaluate(() => {
+        const clean = (value) =>
+            String(value || "")
+                .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+                .replace(/\u00a0/g, " ")
+                .replace(/[ \t]+/g, " ")
+                .replace(/\s*\n\s*/g, " ")
+                .trim()
+
+        const zoomed = document.querySelector(".zoomed")
+        const slide = zoomed ? zoomed.querySelector(".slide") : null
+        if (!slide) {
+            return { root: false, markers: [], tree: [], treeTruncated: false, counts: { items: 0, media: 0, mediaWrappers: 0, elements: 0 } }
+        }
+
+        const markers = []
+        const tree = []
+        let elements = 0
+
+        const visit = (element, depth) => {
+            if (elements > 400) return
+            elements++
+            const tag = element.tagName.toLowerCase()
+            const classList = element.classList ? [...element.classList] : []
+            const entry = { depth, tag, class: classList.join(" "), text: null, src: null }
+            if (tag === "img" || tag === "video") entry.src = element.currentSrc || element.getAttribute("src") || null
+            if (classList.includes("item")) entry.text = clean(element.innerText).slice(0, 120)
+            if (depth > 0) tree.push(entry)
+
+            if ((tag === "img" || tag === "video") && classList.includes("media")) {
+                markers.push({ kind: "media", tag, src: entry.src })
+            }
+            if (classList.includes("item")) markers.push({ kind: "item", text: entry.text })
+
+            for (const child of element.children) visit(child, depth + 1)
+        }
+
+        visit(slide, 0)
+
+        return {
+            root: true,
+            markers,
+            tree: tree.slice(0, 240),
+            treeTruncated: elements > 400,
+            counts: {
+                items: markers.filter((marker) => marker.kind === "item").length,
+                media: markers.filter((marker) => marker.kind === "media").length,
+                // Background.svelte nests its wrapper and its fading layers in
+                // `div.media`, so this count is not the number of backgrounds.
+                mediaWrappers: slide.querySelectorAll("div.media").length,
+                elements
+            }
         }
     })
 }
@@ -3194,6 +3628,839 @@ function verifyStylesSummary(state, ctx) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Navigation, output bindings, lock and layers
+// (show.slides.disabled, out.multiple.specific, out.lock, out.layers)
+///////////////////////////////////////////////////////////////////////////////
+
+function snapshotOf(list, id) {
+    return (list || []).find((entry) => entry.id === id) || null
+}
+
+// `waitForOutputs` returns its samples keyed by output id; a step may also
+// record a plain array. Both shapes are readable here so "the output never
+// showed X" cannot silently become an assertion about `undefined`.
+function observedTexts(state, id) {
+    const observed = state.observed
+    if (!observed) return []
+    if (Array.isArray(observed)) return observed
+    return observed[id] || []
+}
+
+// What "the output did not change" is measured on. The controller's media strip
+// and the reference's slide timers are not part of it; text, the rendered
+// background and the player's own flags are. `currentTime` is excluded because a
+// playing clip would never hold still.
+function outputFingerprint(output) {
+    return {
+        text: output.text || "",
+        lines: output.lines || [],
+        images: output.images || [],
+        videos: (output.videos || []).map((video) => ({ src: video.src, paused: video.paused === true }))
+    }
+}
+
+async function readOutputPageById(ctx, id, what) {
+    const found = await findPages(ctx.app)
+    for (const page of found.outputs) {
+        const state = await readOutput(page).catch(() => null)
+        if (state && state.outputId === id) return { page, state }
+    }
+    throw new StepFailure(`the "${id}" output page was not found${what ? ` while ${what}` : ""} (open pages: ${found.outputs.length})`)
+}
+
+// `settlePage` only sees Web Animations. FreeShow's slide/item transitions are
+// Svelte JS transitions that write inline styles from rAF callbacks, so it
+// returns while the old and new item are both mounted (transitions.ts imports
+// fade/fly/scale/blur/spin from svelte/transition). "Nothing changed" therefore
+// has to be *measured*: two equal reads at least `gap` ms apart (>= 300 ms, as
+// docs/parity-workflow.md §6 and the reader's spec require).
+async function stableOutputFingerprint(ctx, id, what, { timeout = 20000, gap = 400, interval = 120 } = {}) {
+    const deadline = Date.now() + timeout
+    let anchor = null
+    while (Date.now() < deadline) {
+        const { state } = await readOutputPageById(ctx, id, `waiting for a stable read (${what})`)
+        const value = outputFingerprint(state)
+        const json = JSON.stringify(value)
+        const now = Date.now()
+        if (!anchor || anchor.json !== json) {
+            anchor = { json, value, at: now }
+        } else if (now - anchor.at >= gap) {
+            return { stable: true, value, heldForMs: now - anchor.at }
+        }
+        await wait(interval)
+    }
+    throw new StepFailure(
+        `the "${id}" output never held still for ${gap} ms (${what}); last text ${JSON.stringify(anchor && anchor.value.text)}`
+    )
+}
+
+async function stableOutputs(ctx, ids, what, options) {
+    const result = {}
+    for (const id of ids) result[id] = await stableOutputFingerprint(ctx, id, what, options)
+    return result
+}
+
+function checkOutputUnchanged(before, after, id, what) {
+    const a = (before || {})[id]
+    const b = (after || {})[id]
+    check(!!a && !!b, `the "${id}" output was readable before and after (${what})`, { before: !!a, after: !!b })
+    if (!a || !b) return
+    check(a.stable === true && b.stable === true, `both "${id}" reads were stable across two reads >= 400 ms apart (${what})`, {
+        beforeHeldForMs: a.heldForMs,
+        afterHeldForMs: b.heldForMs
+    })
+    check(JSON.stringify(a.value) === JSON.stringify(b.value), `${what}: the "${id}" output did not change`, { before: a.value, after: b.value })
+}
+
+// Poll every output until `predicate(id, text)` holds for all of them, keeping
+// the texts seen so "it never showed X" is a claim about the run, not about one
+// sample taken after a fixed wait.
+async function waitForOutputs(ctx, ids, predicate, what, timeout = 30000) {
+    const deadline = Date.now() + timeout
+    const samples = {}
+    for (const id of ids) samples[id] = []
+    let last = {}
+    while (Date.now() < deadline) {
+        const snapshot = await readOutputSnapshot(ctx)
+        last = {}
+        let ok = true
+        for (const id of ids) {
+            const output = snapshotOf(snapshot, id)
+            const text = output ? output.text || "" : ""
+            last[id] = text
+            if (!samples[id].length || samples[id][samples[id].length - 1] !== text) samples[id].push(text.slice(0, 200))
+            if (samples[id].length > 20) samples[id].shift()
+            if (!predicate(id, text)) ok = false
+        }
+        if (ok) return { texts: last, samples }
+        await wait(150)
+    }
+    throw new StepFailure(`${what} did not happen within ${timeout} ms (last output text: ${JSON.stringify(last)})`)
+}
+
+function waitForOutputsText(ctx, ids, needles, what, timeout = 30000) {
+    // `needles` is one string for every output, or a map of output id -> string.
+    const byId = typeof needles === "string" ? Object.fromEntries(ids.map((id) => [id, needles])) : needles
+    return waitForOutputs(ctx, ids, (id, text) => text.includes(byId[id]), what, timeout)
+}
+
+// The complement: the previous slide's text must have left the output before a
+// "the output no longer shows X" assertion is made from a single read. Svelte's
+// outro transition keeps the outgoing item mounted for a moment, and settlePage
+// cannot see it.
+function waitForOutputsWithout(ctx, ids, needle, what, timeout = 15000) {
+    return waitForOutputs(ctx, ids, (id, text) => !text.includes(needle), what, timeout)
+}
+
+// Pointer steps must not run with a modal over the controller: a startup popup
+// ("Graphics acceleration is unavailable") swallows pointer clicks while
+// keyboard steps still reach the page, and the screen picker is a `.popup`.
+async function preparePointer(ctx) {
+    const startup = await dismissStartupPopups(ctx.win, ctx.log)
+    if (startup) ctx.popupsSeen = (ctx.popupsSeen || 0) + startup.dismissed.length
+    const overlays = await dismissOverlayPopups(ctx)
+    return { startupPopups: startup, overlayPopups: overlays }
+}
+
+// Click a slide card's *body*, never its icon strip: the icons sit at the top of
+// the card and their buttons bubble to the card's own click handler
+// (inputs/Button.svelte:15 does not stop propagation), so a click there would
+// both act on the icon and play the slide. The icons only render in grid mode
+// without Alt and outside focus mode (slide/Slide.svelte:282), which is also why
+// the card count is asserted here: a different view mode renders fewer cards.
+async function clickSlideCard(ctx, index, expectedCount, expectedText) {
+    const pointers = await preparePointer(ctx)
+    const cards = ctx.win.locator(SHOW_SLIDE_CARD_SELECTOR)
+    const count = await cards.count()
+    if (count !== expectedCount) {
+        throw new StepFailure(
+            `the show view draws ${count} slide cards, expected ${expectedCount}; the scenario assumes the default grid view (slidesOptions.mode "grid", columns 4)`
+        )
+    }
+    if (index >= count) throw new StepFailure(`card ${index} does not exist (the show view draws ${count})`)
+    const card = cards.nth(index)
+    const box = await card.boundingBox()
+    if (!box) throw new StepFailure(`card ${index} has no box on screen`)
+    const text = await card.innerText().catch(() => "")
+    if (expectedText && !String(text).includes(expectedText)) {
+        throw new StepFailure(`card ${index} does not show ${JSON.stringify(expectedText)} before the click: ${JSON.stringify(String(text).slice(0, 200))}`)
+    }
+    await card.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height * 0.78) }, timeout: 20000 })
+    return { index, expectedText: expectedText || null, pointers, box: { width: Math.round(box.width), height: Math.round(box.height) } }
+}
+
+async function clickOutputTile(ctx, name, what) {
+    const pointers = await preparePointer(ctx)
+    const tile = tileLocator(ctx, name)
+    const button = await waitForLocator(tile.locator(".outputTitle button"), `the "${name}" output title bar (${what})`, 15000)
+    await button.click({ timeout: 20000 })
+    await wait(400)
+    return { pointers }
+}
+
+async function stepLayerOrder(ctx) {
+    const trees = {}
+    for (const id of TWO_OUTPUT_IDS) {
+        const { page } = await readOutputPageById(ctx, id, "reading the output's layer containers")
+        trees[id] = await readLayerTree(page)
+    }
+    return { layerTrees: trees }
+}
+
+// The per-layer clear buttons come from `readController` — this step changes
+// nothing and records the controller state the presence claim is read from.
+async function stepLayerButtons(ctx) {
+    return { note: "read the per-layer clear buttons beside the preview" }
+}
+
+// The marker sequence an output page renders for the locks fixture, in document
+// order: the background image, then the `placeUnderSlide` overlay, then the
+// slide's own text, then the ordinary overlay. `Output.svelte:408-485` puts the
+// underlay slot before the slide and the overlay slot after it.
+function checkLayerOrder(tree, id) {
+    check(!!tree && tree.root === true, `the "${id}" page renders the output's slide container (.zoomed .slide)`, tree && tree.root)
+    if (!tree || !tree.root) return
+    const markers = tree.markers || []
+    const indexOf = (predicate) => markers.findIndex(predicate)
+    const background = indexOf((marker) => marker.kind === "media" && String(marker.src || "").endsWith(MEDIA_LOGO_NAME))
+    const underlay = indexOf((marker) => marker.kind === "item" && marker.text === OVERLAY_UNDER_TEXT)
+    const slide = indexOf((marker) => marker.kind === "item" && marker.text === LOCKS_SLIDE_ONE)
+    const overlay = indexOf((marker) => marker.kind === "item" && marker.text === OVERLAY_OVER_TEXT)
+    const detail = { markers, counts: tree.counts }
+
+    check(background >= 0, `the "${id}" page renders the slide's background image (${MEDIA_LOGO_NAME})`, detail)
+    check(underlay >= 0, `the "${id}" page renders the placeUnderSlide overlay's text`, detail)
+    check(slide >= 0, `the "${id}" page renders the slide layer's text`, detail)
+    check(overlay >= 0, `the "${id}" page renders the ordinary overlay's text`, detail)
+    check(tree.counts.media === 1, `the "${id}" page renders exactly one background media element (no style background was seeded)`, detail)
+    if (background < 0 || underlay < 0 || slide < 0 || overlay < 0) return
+
+    check(underlay > background, `the "${id}" page draws the underlay after the background`, { order: { background, underlay, slide, overlay }, markers })
+    check(slide > underlay, `the "${id}" page draws the slide after the placeUnderSlide overlay (the underlay slot is below the slide)`, {
+        order: { background, underlay, slide, overlay },
+        markers
+    })
+    check(overlay > slide, `the "${id}" page draws the ordinary overlay after the slide`, { order: { background, underlay, slide, overlay }, markers })
+}
+
+function clearGroupByName(groups, layer) {
+    return (groups || []).find((group) => group.layer === layer) || null
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// A. nav-disabled-slides (show.slides.disabled)
+///////////////////////////////////////////////////////////////////////////////
+
+async function stepDisabledMarkers(ctx) {
+    // The show view mounts its cards through a lazy loader (show/Slides.svelte:361-455),
+    // so wait for the whole grid instead of reading a half-mounted one.
+    await waitFor(
+        "the show view to draw five slide cards",
+        async () => (await ctx.win.locator(SHOW_SLIDE_CARD_SELECTOR).count()) === 5,
+        20000
+    )
+    // The output page names itself only once MainOutput has mounted the slide
+    // (2 s after its own data arrives). Every later step reads by that id, so
+    // establish it here rather than fail obscurely later.
+    await waitFor(
+        "the output page to name the output it renders",
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            return snapshot.length === 1 && snapshot[0].id === DEFAULT_OUTPUT_ID
+        },
+        60000
+    )
+    return { showSlides: await readShowSlides(ctx.win) }
+}
+
+function verifyDisabledMarkers(state, ctx) {
+    const read = state.showSlides
+    check(!!read && read.root === true, "the show view is on screen (#showArea exists)", read && read.root)
+    if (!read || !read.root) return
+    check(state.outputs.length === 1 && state.outputs[0].id === DEFAULT_OUTPUT_ID, "the run uses the reference's single default output", state.outputs.map((output) => output.id))
+    check(read.grid === true, "the show view still uses its grid container", { grid: read.grid, gridChildCount: read.gridChildCount })
+    check(read.cards.length === 5, "the show view draws one card per layout entry", (read.cards || []).map((card) => card.index))
+    if (read.cards.length !== 5) return
+    check(
+        read.cards.every((card) => card.present === true),
+        "every grid entry has mounted its slide (no skeleton card is left)",
+        read.cards.map((card) => ({ index: card.index, present: card.present }))
+    )
+
+    read.cards.forEach((card, index) => {
+        check(card.text.includes(NAV_SLIDE_TEXTS[index]), `card ${index} holds the slide text "${NAV_SLIDE_TEXTS[index]}"`, card.text)
+    })
+    for (const index of NAV_DISABLED_INDICES) {
+        const card = read.cards[index]
+        check(card.disabled === true, `card ${index} carries the "disabled" class`, card)
+        check(
+            card.opacity !== "" && Math.abs(Number(card.opacity) - 0.2) < 0.001,
+            `card ${index} is dimmed to the .slide.disabled opacity 0.2`,
+            { opacity: card.opacity, classes: card.classes }
+        )
+        check(
+            card.hasEnableButton === true,
+            `card ${index} offers the Enable button the disabled-slide marker pairs with (its title is the dictionary's actions.enable label, ${JSON.stringify(TITLE_ENABLE_SLIDE)} in public/lang/en.json; the record keeps every button title)`,
+            card.buttons
+        )
+    }
+    for (const index of [1, 2, 4]) {
+        const card = read.cards[index]
+        check(card.disabled === false, `card ${index} is not marked disabled`, card)
+        check(card.hasEnableButton === false, `card ${index} offers no Enable button`, card.buttons)
+    }
+}
+
+async function stepNavStartSkipsDisabled(ctx) {
+    // Nothing is on the output yet, so this is the "start" path: getNextSlide
+    // begins at index -1 and skips every disabled entry it walks over
+    // (helpers/OutputHelper.ts:348, :366-368).
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav two", "one Space from an empty output", 30000)
+    return { observed: result.samples }
+}
+
+function verifyNavStartSkipsDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav two"), "one Space from an empty output put entry 1 on the output (entry 0 is disabled)", output.text)
+    check(!output.text.includes("Nav one"), "the disabled first entry's text is not on the output", output.text)
+    check(!observedTexts(state, DEFAULT_OUTPUT_ID).some((text) => text.includes("Nav one")), "no read taken during the step ever showed the disabled first entry", observedTexts(state, DEFAULT_OUTPUT_ID))
+}
+
+async function stepNavNext(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav three", "Space from entry 1", 30000)
+    await waitForOutputsWithout(ctx, [DEFAULT_OUTPUT_ID], "Nav two", "the previous slide's text to leave the output")
+    return { observed: result.samples }
+}
+
+function verifyNavNext(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav three"), "Space advanced to entry 2", output.text)
+    check(!output.text.includes("Nav two"), "the output left entry 1", output.text)
+}
+
+async function stepNavNextSkipsDisabled(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav five", "Space over the disabled entry 3", 30000)
+    return { observed: result.samples }
+}
+
+function verifyNavNextSkipsDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav five"), "one Space skipped the disabled entry 3 and landed on entry 4", output.text)
+    check(!output.text.includes("Nav four"), "the disabled entry's text is not on the output after the advance", output.text)
+    check(
+        !observedTexts(state, DEFAULT_OUTPUT_ID).some((text) => text.includes("Nav four")),
+        "no read taken during the step ever showed the disabled entry",
+        observedTexts(state, DEFAULT_OUTPUT_ID)
+    )
+}
+
+async function stepNavPreviousSkipsDisabled(ctx) {
+    await ctx.win.keyboard.press("ArrowLeft")
+    const result = await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav three", "ArrowLeft over the disabled entry 3", 30000)
+    return { observed: result.samples }
+}
+
+function verifyNavPreviousSkipsDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav three"), "ArrowLeft skipped back over the disabled entry 3 to entry 2", output.text)
+    check(!output.text.includes("Nav four"), "the disabled entry's text is not on the output after going back", output.text)
+    check(
+        !observedTexts(state, DEFAULT_OUTPUT_ID).some((text) => text.includes("Nav four")),
+        "no read taken during the step ever showed the disabled entry",
+        observedTexts(state, DEFAULT_OUTPUT_ID)
+    )
+}
+
+async function stepNavClickDisabled(ctx) {
+    const click = await clickSlideCard(ctx, 3, 5, "Nav four")
+    await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav four", "the click on the disabled card", 30000)
+    const showSlidesAfterClick = await readShowSlides(ctx.win)
+    return { click, showSlidesAfterClick }
+}
+
+function verifyNavClickDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav four"), "clicking the disabled card's body played it: the click path has no disabled check (show/Slides.svelte:96-145)", output.text)
+    const card = ((state.showSlidesAfterClick && state.showSlidesAfterClick.cards) || [])[3] || null
+    check(!!card, "the show view's cards are still readable after the click", state.showSlidesAfterClick)
+    if (card) check(card.disabled === true, "the card is still marked disabled after the click (playing it does not enable it)", card)
+}
+
+async function stepNavClickFirstDisabled(ctx) {
+    const click = await clickSlideCard(ctx, 0, 5, "Nav one")
+    await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav one", "the click on the first disabled card", 30000)
+    return { click }
+}
+
+function verifyNavClickFirstDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav one"), "clicking the disabled entry 0 played it, so the skip is not a rule about entry 0 only", output.text)
+}
+
+async function stepNavAdvanceFromDisabled(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, [DEFAULT_OUTPUT_ID], "Nav two", "Space from a disabled slide that is being played", 30000)
+    await waitForOutputsWithout(ctx, [DEFAULT_OUTPUT_ID], "Nav one", "the disabled slide's text to leave the output")
+    return { observed: result.samples }
+}
+
+function verifyNavAdvanceFromDisabled(state) {
+    const output = outputById(state, DEFAULT_OUTPUT_ID)
+    check(!!output, "the default output page is open", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes("Nav two"), "playing a disabled slide does not wedge navigation: Space moved on to entry 1", output.text)
+    check(!output.text.includes("Nav one"), "the output left the disabled entry 0", output.text)
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// B. nav-output-bindings (out.multiple.specific)
+///////////////////////////////////////////////////////////////////////////////
+
+async function stepNavPresentTwo(ctx) {
+    return presentOutputs(ctx, TWO_OUTPUT_NAMES)
+}
+
+function verifyTwoOutputsPresent(state) {
+    check(state.outputs.length === 2, "two output pages exist", state.outputs.map((output) => output.id))
+    const ids = sortedNames(state.outputs.map((output) => output.id))
+    check(
+        JSON.stringify(ids) === JSON.stringify(sortedNames(TWO_OUTPUT_IDS)),
+        "the pages render the two seeded outputs (each page names its own output id)",
+        ids
+    )
+    check(
+        state.outputs.every((output) => output.stageArea !== true),
+        "neither page renders a stage layout",
+        state.outputs.map((output) => output.stageArea)
+    )
+    const titles = outputTitles(state)
+    for (const name of TWO_OUTPUT_NAMES) check(titles.includes(name), `an OS window titled "${name}" exists`, titles)
+    const windows = (state.browserWindows || []).filter((window) => TWO_OUTPUT_NAMES.includes(window.title))
+    check(windows.length === 2, "each enabled output has its own OS window", windows.map((window) => window.title))
+    check(new Set(windows.map((window) => window.id)).size === 2, "the two output windows are distinct windows", windows.map((window) => window.id))
+    check(
+        windows.every((window) => window.offscreen === false),
+        "both outputs are real windows in the process, not offscreen surfaces",
+        windows.map((window) => ({ title: window.title, offscreen: window.offscreen, visible: window.visible }))
+    )
+    const tiles = state.controller.preview.tiles || []
+    check(tiles.length === 2, "the preview draws one tile per enabled output", tileNames(state))
+    check(
+        JSON.stringify(sortedNames(tileNames(state))) === JSON.stringify(sortedNames(TWO_OUTPUT_NAMES)),
+        "the tiles are named after the seeded outputs",
+        tileNames(state)
+    )
+    check(tiles.every((tile) => tile.titleBar), "both tiles have a title bar (the per-output lock)", tiles.map((tile) => ({ name: tile.name, titleBar: tile.titleBar })))
+    check(tiles.every((tile) => tile.active === true), "both outputs start active", tiles.map((tile) => ({ name: tile.name, active: tile.active })))
+}
+
+async function stepBindingsStart(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, TWO_OUTPUT_IDS, "Bind one", "one Space from an empty pair of outputs", 30000)
+    return { observed: result.samples }
+}
+
+function verifyBindingsStart(state) {
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        if (!output) continue
+        check(output.text.includes("Bind one"), `the unbound first slide reached "${id}"`, output.text)
+    }
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(
+        !!primary && primary.text.includes(BIND_ITEM_ONLY_PRIMARY),
+        "the output an item is bound to renders that item",
+        primary && primary.text
+    )
+    check(
+        !!secondary && !secondary.text.includes(BIND_ITEM_ONLY_PRIMARY),
+        "the other output does not render the item bound to its sibling (the per-output item filter)",
+        secondary && secondary.text
+    )
+    check(
+        !!secondary && secondary.text.includes("Bind one"),
+        "the unbound item on the same slide reaches both outputs, so the difference is attributable to the item binding",
+        secondary && secondary.text
+    )
+    check(
+        !observedTexts(state, OUTPUT_SECONDARY.id).some((text) => text.includes(BIND_ITEM_ONLY_PRIMARY)),
+        "the output the item is not bound to never showed it, at any read taken during the step",
+        observedTexts(state, OUTPUT_SECONDARY.id)
+    )
+}
+
+async function stepClickBoundSlide(ctx) {
+    const before = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before clicking a slide bound to one output")
+    const click = await clickSlideCard(ctx, 1, 5, "Bind two")
+    await waitForOutputsText(ctx, [OUTPUT_PRIMARY.id], "Bind two", "the click on the slide bound to primary", 30000)
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after clicking a slide bound to one output")
+    return { before, after, click }
+}
+
+function verifyClickBoundSlide(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both output pages are open", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+    check(primary.text.includes("Bind two"), "the output the slide is bound to played it", primary.text)
+    check(!secondary.text.includes("Bind two"), "the output the slide is not bound to never received it", secondary.text)
+    checkOutputUnchanged(state.before, state.after, OUTPUT_SECONDARY.id, "a slide bound to primary only")
+}
+
+async function stepAdvanceSkipsBound(ctx) {
+    const before = await readOutputSnapshot(ctx)
+    await ctx.win.keyboard.press("Space")
+    const result = await waitForOutputsText(ctx, TWO_OUTPUT_IDS, "Bind three", "one Space from the bound slide", 30000)
+    return { before, observed: result.samples }
+}
+
+function verifyAdvanceSkipsBound(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both output pages are open", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+    check(primary.text.includes("Bind three"), "the bound output advanced from entry 1 to entry 2", primary.text)
+    check(
+        secondary.text.includes("Bind three"),
+        "the unbound output jumped entry 0 -> 2: one advance skipped the slide bound to another output (OutputHelper.ts:414-425)",
+        secondary.text
+    )
+    check(!secondary.text.includes("Bind two"), "the unbound output never showed the slide bound to its sibling", secondary.text)
+    const beforeSecondary = snapshotOf(state.before, OUTPUT_SECONDARY.id)
+    check(!!beforeSecondary && beforeSecondary.text.includes("Bind one"), "the unbound output was on entry 0 before the advance", beforeSecondary && beforeSecondary.text)
+}
+
+async function stepDeactivateSecondary(ctx) {
+    const click = await clickOutputTile(ctx, OUTPUT_SECONDARY.name, "deactivate the second output")
+    await waitFor("the second output's tile to report itself inactive", async () => {
+        const controller = await readController(ctx.win).catch(() => null)
+        const tile = controller ? ((controller.preview && controller.preview.tiles) || []).find((entry) => entry.id === OUTPUT_SECONDARY.id) : null
+        return !!(tile && tile.active === false)
+    }, 15000)
+    return click
+}
+
+function verifyDeactivateSecondary(state) {
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    check(!!secondary && secondary.active === false, "a plain click on the tile deactivates that output", secondary)
+    check(!!primary && primary.active === true, "the other output stays active", primary)
+    check(state.outputs.length === 2, "deactivating an output does not close its window", state.outputs.map((entry) => entry.id))
+}
+
+async function stepBoundSlideToInactiveOutput(ctx) {
+    // The contradiction test: the slide is bound to both outputs and one of them
+    // is inactive. The page's parenthetical (multiple-outputs.md:217-219) says
+    // setOutput skips the locked one; the bound branch (output.ts:151-155) never
+    // consults `active`, so the prediction is that *both* pages change. Either
+    // outcome is a finding: the step records both pages and the assertion below
+    // names the claim being tested.
+    const before = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before playing a slide bound to both outputs")
+    const click = await clickSlideCard(ctx, 3, 5, "Bind four")
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after playing a slide bound to both outputs")
+    return { before, after, click }
+}
+
+function verifyBoundSlideToInactiveOutput(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both output pages are open", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+    check(primary.text.includes("Bind four"), "the active output the slide is bound to played it", primary.text)
+    check(
+        secondary.text.includes("Bind four"),
+        "the inactive output the slide is also bound to received it too: the bound branch does not consult `active` (output.ts:151-155 vs :699-714); if this failed, the page's parenthetical is right and the run is the finding",
+        {
+            before: (state.before || {})[OUTPUT_SECONDARY.id] || null,
+            after: (state.after || {})[OUTPUT_SECONDARY.id] || null,
+            text: secondary.text
+        }
+    )
+}
+
+async function stepBindingsReselectSecondary(ctx) {
+    const click = await clickOutputTile(ctx, OUTPUT_SECONDARY.name, "reactivate the second output")
+    await waitFor("the second output's tile to report itself active again", async () => {
+        const controller = await readController(ctx.win).catch(() => null)
+        const tile = controller ? ((controller.preview && controller.preview.tiles) || []).find((entry) => entry.id === OUTPUT_SECONDARY.id) : null
+        return !!(tile && tile.active === true)
+    }, 15000)
+    return click
+}
+
+function verifyBindingsReselectSecondary(state) {
+    check(tileById(state, OUTPUT_SECONDARY.id)?.active === true, "a second click activates the output again", tileById(state, OUTPUT_SECONDARY.id))
+    check(tileById(state, OUTPUT_PRIMARY.id)?.active === true, "the first output is still active", tileById(state, OUTPUT_PRIMARY.id))
+}
+
+async function stepStaleBinding(ctx) {
+    // Second contradiction test: bindings that name an output which does not
+    // exist. The page says setOutput then "sends nothing" (multiple-outputs.md:149-151);
+    // output.ts:152-153 falls back to the active outputs, so the prediction is
+    // that every active page takes the slide.
+    const before = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before playing a slide with a stale binding")
+    const click = await clickSlideCard(ctx, 4, 5, "Bind five")
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after playing a slide with a stale binding")
+    return { before, after, click }
+}
+
+function verifyStaleBinding(state) {
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        if (!output) continue
+        check(
+            output.text.includes("Bind five"),
+            `a stale binding fell back to the active outputs, so "${id}" received the slide (output.ts:152-153); if this failed, the page's "sends nothing" is right and the run is the finding`,
+            output.text
+        )
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// C. lock-and-layers (out.lock, out.layers)
+///////////////////////////////////////////////////////////////////////////////
+
+async function stepLocksStart(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const slide = await waitForOutputsText(ctx, TWO_OUTPUT_IDS, LOCKS_SLIDE_ONE, "one Space from an empty pair of outputs", 30000)
+    // The overlays arrive 200 ms after the slide (showActions.ts:461-470), so the
+    // slide text alone is not evidence that the layer tree is complete.
+    const overlays = await waitForOutputs(
+        ctx,
+        TWO_OUTPUT_IDS,
+        (id, text) => text.includes(OVERLAY_UNDER_TEXT) && text.includes(OVERLAY_OVER_TEXT),
+        "both overlays on both outputs",
+        30000
+    )
+    return { observed: overlays.samples, slideSamples: slide.samples }
+}
+
+function verifyLocksStart(state) {
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        if (!output) continue
+        check(output.text.includes(LOCKS_SLIDE_ONE), `the slide layer's text is on "${id}"`, output.text)
+        check(output.text.includes(OVERLAY_UNDER_TEXT), `the placeUnderSlide overlay's text reached "${id}" through the layout entry`, output.text)
+        check(output.text.includes(OVERLAY_OVER_TEXT), `the ordinary overlay's text reached "${id}" through the layout entry`, output.text)
+        check(!output.text.includes(LOCKS_SLIDE_TWO), `"${id}" is on the first slide only`, output.text)
+    }
+}
+
+function verifyLayerOrderStep(state) {
+    for (const id of TWO_OUTPUT_IDS) {
+        checkLayerOrder((state.layerTrees || {})[id], id)
+    }
+}
+
+function verifyLayerButtons(state) {
+    const groups = (state.controller.clear && state.controller.clear.groups) || []
+    const named = groups.filter((group) => !!group.layer)
+    const order = named.map((group) => group.layer)
+    check(order.length >= 5, "the clear controls still group one entry per layer", { groups, order })
+    for (const layer of ["Background", "Slide", "Overlays", "Audio", "Next slide timer"]) {
+        check(order.includes(layer), `the "${layer}" per-layer entry is present`, { order, groups })
+    }
+    const indexOf = (layer) => order.indexOf(layer)
+    if (order.includes("Background") && order.includes("Slide") && order.includes("Overlays") && order.includes("Audio") && order.includes("Next slide timer")) {
+        check(
+            indexOf("Background") < indexOf("Slide") &&
+                indexOf("Slide") < indexOf("Overlays") &&
+                indexOf("Overlays") < indexOf("Audio") &&
+                indexOf("Audio") < indexOf("Next slide timer"),
+            "the layer entries are listed Background, Slide, Overlays, Audio, Next slide timer (ClearButtons.svelte:141-213)",
+            order
+        )
+    }
+
+    // The observable is enabled + titled vs disabled. ClearButtons.svelte:144-205
+    // computes the title conditionally for Background/Slide/Overlays and
+    // unconditionally for Audio/Next slide timer, so "titled" is asserted for all
+    // five and the enabled/disabled flag is what carries the presence signal.
+    const expectations = [
+        { layer: "Background", disabled: false, title: "Clear background" },
+        { layer: "Slide", disabled: false, title: "Clear slide" },
+        { layer: "Overlays", disabled: false, title: "Clear overlays" },
+        { layer: "Audio", disabled: true, title: "Clear audio" },
+        { layer: "Next slide timer", disabled: true, title: "Clear next slide timer" }
+    ]
+    for (const expectation of expectations) {
+        const group = clearGroupByName(named, expectation.layer)
+        check(!!group, `the "${expectation.layer}" group is readable`, { order })
+        if (!group) continue
+        check(
+            group.clearDisabled === expectation.disabled,
+            `the "${expectation.layer}" clear button is ${expectation.disabled ? "disabled (the layer is empty)" : "enabled (the layer has content)"}`,
+            group
+        )
+        check(
+            String(group.clearTitle).startsWith(expectation.title),
+            `the "${expectation.layer}" clear button is titled ${JSON.stringify(expectation.title)}…`,
+            group
+        )
+    }
+}
+
+async function stepLockBlocksClick(ctx) {
+    const before = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before the locked click")
+    // Card 1 is a different slide, so a working click would change both pages.
+    // Two stable reads after the click are the measurement (settlePage cannot see
+    // Svelte's transitions).
+    const click = await clickSlideCard(ctx, 1, 2, LOCKS_SLIDE_TWO)
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after the locked click")
+    return { before, after, click }
+}
+
+function verifyLockBlocksClick(state) {
+    check(state.lockTitle === "Unlock output [Ctrl+L]", "the output is still locked after the click", state.lockTitle)
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        if (output) check(!output.text.includes(LOCKS_SLIDE_TWO), `the locked click did not put the other slide on "${id}"`, output.text)
+        checkOutputUnchanged(state.before, state.after, id, "a click on a slide card while the output is locked")
+    }
+}
+
+async function stepLockBlocksF3(ctx) {
+    const before = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before F3 while locked")
+    await ctx.win.keyboard.press("F3")
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after F3 while locked")
+    return { before, after }
+}
+
+function verifyLockBlocksF3(state) {
+    check(state.lockTitle === "Unlock output [Ctrl+L]", "the output is still locked after F3", state.lockTitle)
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        check(
+            !!output && output.text.includes(OVERLAY_OVER_TEXT),
+            `F3 did not clear the overlays while the output is locked (the F3 handler returns on outLocked alone, utils/shortcuts.ts:378-383) on "${id}"`,
+            output && output.text
+        )
+        checkOutputUnchanged(state.before, state.after, id, "F3 while the output is locked")
+    }
+}
+
+async function stepLockAllowsOutputLock(ctx) {
+    const click = await clickOutputTile(ctx, OUTPUT_PRIMARY.name, "toggle the first output's own lock while the global lock is on")
+    await waitFor("the first output's tile to report itself inactive", async () => {
+        const controller = await readController(ctx.win).catch(() => null)
+        const tile = controller ? ((controller.preview && controller.preview.tiles) || []).find((entry) => entry.id === OUTPUT_PRIMARY.id) : null
+        return !!(tile && tile.active === false)
+    }, 15000)
+    return click
+}
+
+function verifyLockAllowsOutputLock(state) {
+    const primary = tileById(state, OUTPUT_PRIMARY.id)
+    const secondary = tileById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && primary.active === false, "the per-output lock still works while the global lock is on (OutputPreviewLabel.svelte:13-38 has no outLocked guard)", primary)
+    check(!!primary && primary.struck === true, "the deactivated output's name is struck through", primary)
+    check(!!secondary && secondary.active === true, "the other output is still active", secondary)
+    check(state.lockTitle === "Unlock output [Ctrl+L]", "the global lock is untouched by the per-output toggle", state.lockTitle)
+}
+
+async function stepClearSkipsInactiveOutput(ctx) {
+    const pointers = await preparePointer(ctx)
+    const button = await waitForLocator(ctx.win.locator("#previewArea .clear .clearAll"), "the Clear all button in the preview column", 15000)
+    const before = await button.evaluate((element) => ({ disabled: element.disabled === true, title: element.getAttribute("data-title") || "" }))
+    if (before.disabled) throw new StepFailure(`Clear all is disabled before the click: ${JSON.stringify(before)}`)
+    if (!before.title.startsWith("Clear all")) {
+        throw new StepFailure(`the .clearAll button is not "Clear all": ${JSON.stringify(before)} (Restore output would mean the output was already clear)`)
+    }
+    const beforeState = await stableOutputs(ctx, TWO_OUTPUT_IDS, "before Clear all")
+    await clickInController(ctx, button)
+    // The active output empties; wait for that rather than for a fixed time.
+    await waitForOutputs(
+        ctx,
+        [OUTPUT_SECONDARY.id],
+        (id, text) => !text.includes(LOCKS_SLIDE_ONE) && !text.includes(OVERLAY_OVER_TEXT) && !text.includes(OVERLAY_UNDER_TEXT),
+        "the active output to be cleared",
+        20000
+    )
+    const after = await stableOutputs(ctx, TWO_OUTPUT_IDS, "after Clear all")
+    return { pointers, clearAll: before, before: beforeState, after }
+}
+
+function verifyClearSkipsInactiveOutput(state) {
+    const inactive = state.after && state.after[OUTPUT_PRIMARY.id]
+    const active = state.after && state.after[OUTPUT_SECONDARY.id]
+    check(!!inactive && !!active, "both output pages were readable after Clear all", { inactive: !!inactive, active: !!active })
+    if (!inactive || !active) return
+    // The step deactivated `primary` and left `secondary` active; assert that
+    // rather than trusting the narrative, so a wrong click cannot be read as a
+    // passing "clear skipped the inactive output".
+    check(tileById(state, OUTPUT_PRIMARY.id)?.active === false, "the first output is the inactive one", tileById(state, OUTPUT_PRIMARY.id))
+    check(tileById(state, OUTPUT_SECONDARY.id)?.active === true, "the second output is the active one", tileById(state, OUTPUT_SECONDARY.id))
+
+    // The inactive output keeps everything: it was removed from
+    // getAllActiveOutputs, which is what clearAll/clearBackground/clearSlide/
+    // clearOverlays iterate (clear.ts:13-34, :86-156).
+    check(inactive.value.text.includes(LOCKS_SLIDE_ONE), "the inactive output still shows the slide", inactive.value)
+    check(inactive.value.text.includes(OVERLAY_OVER_TEXT), "the inactive output still shows its overlays", inactive.value)
+    check(inactive.value.text.includes(OVERLAY_UNDER_TEXT), "the inactive output still shows its underlay", inactive.value)
+    check(
+        inactive.value.images.some((src) => String(src).endsWith(MEDIA_LOGO_NAME)),
+        "the inactive output still renders its background image",
+        inactive.value.images
+    )
+    checkOutputUnchanged(state.before, state.after, OUTPUT_PRIMARY.id, "Clear all while the output is inactive")
+
+    check(!active.value.text.includes(LOCKS_SLIDE_ONE), "the active output's slide was cleared", active.value)
+    check(!active.value.text.includes(OVERLAY_OVER_TEXT), "the active output's overlays were cleared", active.value)
+    check(!active.value.images.some((src) => String(src).endsWith(MEDIA_LOGO_NAME)), "the active output's background was cleared", active.value.images)
+}
+
+async function stepReselectAndPlay(ctx) {
+    const click = await clickOutputTile(ctx, OUTPUT_PRIMARY.name, "reactivate the first output")
+    await waitFor("the first output's tile to report itself active again", async () => {
+        const controller = await readController(ctx.win).catch(() => null)
+        const tile = controller ? ((controller.preview && controller.preview.tiles) || []).find((entry) => entry.id === OUTPUT_PRIMARY.id) : null
+        return !!(tile && tile.active === true)
+    }, 15000)
+    const card = await clickSlideCard(ctx, 0, 2, LOCKS_SLIDE_ONE)
+    await waitForOutputsText(ctx, TWO_OUTPUT_IDS, LOCKS_SLIDE_ONE, "playing the first slide after reactivating the output", 30000)
+    const overlays = await waitForOutputs(
+        ctx,
+        TWO_OUTPUT_IDS,
+        (id, text) => text.includes(OVERLAY_UNDER_TEXT) && text.includes(OVERLAY_OVER_TEXT),
+        "both overlays after replaying the slide",
+        30000
+    )
+    return { click, card, observed: overlays.samples }
+}
+
+function verifyReselectAndPlay(state) {
+    check(tileById(state, OUTPUT_PRIMARY.id)?.active === true, "the first output is active again", tileById(state, OUTPUT_PRIMARY.id))
+    for (const id of TWO_OUTPUT_IDS) {
+        const output = outputById(state, id)
+        check(!!output, `the "${id}" output page is open`, state.outputs.map((entry) => entry.id))
+        if (!output) continue
+        check(output.text.includes(LOCKS_SLIDE_ONE), `the fan-out is restored: "${id}" got the slide again`, output.text)
+        check(output.text.includes(OVERLAY_OVER_TEXT), `"${id}" got the overlays again`, output.text)
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Scenarios
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -3394,6 +4661,184 @@ const SCENARIOS = {
                 verify: verifyStylesSummary
             }
         ]
+    },
+    "nav-disabled-slides": {
+        description:
+            "One default output and a show built in memory whose entries 0 and 3 are disabled. Read the show view's disabled markers (class + opacity + Enable button), then prove sequential navigation skips a disabled entry in both directions and that a click on its card still plays it. Records show.slides.disabled.",
+        seed: { targetShow: NAV_SHOW_NAME, nav: "disabled" },
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            { name: "open_show", purpose: "select the Parity Nav show", run: stepOpenShow, verify: verifyOpenShow },
+            { name: "present", purpose: "open the single default output window", run: stepPresent, verify: verifyPresent },
+            {
+                name: "disabled_markers",
+                purpose: "the show view marks exactly entries 0 and 3 disabled (class, opacity 0.2, Enable button)",
+                run: stepDisabledMarkers,
+                verify: verifyDisabledMarkers
+            },
+            {
+                name: "start_skips_disabled",
+                purpose: "one Space from an empty output skips disabled entry 0 and lands on entry 1",
+                run: stepNavStartSkipsDisabled,
+                verify: verifyNavStartSkipsDisabled
+            },
+            { name: "next", purpose: "Space from entry 1 moves to entry 2", run: stepNavNext, verify: verifyNavNext },
+            {
+                name: "next_skips_disabled",
+                purpose: "Space from entry 2 skips disabled entry 3 and lands on entry 4",
+                run: stepNavNextSkipsDisabled,
+                verify: verifyNavNextSkipsDisabled
+            },
+            {
+                name: "previous_skips_disabled",
+                purpose: "ArrowLeft from entry 4 skips disabled entry 3 and lands on entry 2",
+                run: stepNavPreviousSkipsDisabled,
+                verify: verifyNavPreviousSkipsDisabled
+            },
+            {
+                name: "click_disabled_plays",
+                purpose: "clicking the disabled entry 3's card body puts its text on the output",
+                run: stepNavClickDisabled,
+                verify: verifyNavClickDisabled
+            },
+            {
+                name: "click_first_disabled_plays",
+                purpose: "clicking the disabled entry 0's card body puts its text on the output",
+                run: stepNavClickFirstDisabled,
+                verify: verifyNavClickFirstDisabled
+            },
+            {
+                name: "advance_from_disabled",
+                purpose: "Space from a disabled slide that is being played still advances normally",
+                run: stepNavAdvanceFromDisabled,
+                verify: verifyNavAdvanceFromDisabled
+            }
+        ]
+    },
+    "nav-output-bindings": {
+        description:
+            "Two enabled normal outputs and a show built in memory with slide-level and item-level bindings (id, id+name, and a stale id). Present both, start, then click a slide bound to one output, advance across a bound slide, and run the two contradiction steps the reader's spec names: a slide bound to both outputs while one is inactive, and a binding that names an output which does not exist. Records out.multiple.specific.",
+        seed: { targetShow: BIND_SHOW_NAME, nav: "bindings", outputs: "two" },
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            { name: "open_show", purpose: "select the Parity Bindings show", run: stepOpenShow, verify: verifyOpenShow },
+            {
+                name: "present_outputs",
+                purpose: "one Present click opens a window for each of the two seeded outputs",
+                run: stepNavPresentTwo,
+                verify: verifyTwoOutputsPresent
+            },
+            {
+                name: "start",
+                purpose: "an unbound slide fans out to both outputs; an item bound to primary reaches only primary",
+                run: stepBindingsStart,
+                verify: verifyBindingsStart
+            },
+            {
+                name: "click_bound_slide",
+                purpose: "clicking a slide bound to primary changes primary and leaves secondary untouched",
+                run: stepClickBoundSlide,
+                verify: verifyClickBoundSlide
+            },
+            {
+                name: "advance_skips_bound",
+                purpose: "one advance skips the slide bound to another output on the unbound output",
+                run: stepAdvanceSkipsBound,
+                verify: verifyAdvanceSkipsBound
+            },
+            {
+                name: "deactivate_secondary",
+                purpose: "deactivate the second output from its tile title bar",
+                run: stepDeactivateSecondary,
+                verify: verifyDeactivateSecondary
+            },
+            {
+                name: "bound_slide_to_inactive_output",
+                purpose: "contradiction test: a slide bound to both outputs, one inactive — does the inactive one still receive it?",
+                run: stepBoundSlideToInactiveOutput,
+                verify: verifyBoundSlideToInactiveOutput
+            },
+            {
+                name: "reselect_secondary",
+                purpose: "reactivate the second output",
+                run: stepBindingsReselectSecondary,
+                verify: verifyBindingsReselectSecondary
+            },
+            {
+                name: "stale_binding",
+                purpose: "contradiction test: a binding that names a nonexistent output — nothing, or the active outputs?",
+                run: stepStaleBinding,
+                verify: verifyStaleBinding
+            }
+        ]
+    },
+    "lock-and-layers": {
+        description:
+            "Two enabled normal outputs and a show built in memory whose first slide has an image background and two overlays (one placeUnderSlide). Start, read the layer containers' presence and document order, read the per-layer clear buttons, then prove the lock guards: Ctrl+L blocks a slide click and F3, the per-output lock still works under the global lock, and Clear all skips the inactive output. Records out.lock and out.layers.",
+        seed: { targetShow: LOCKS_SHOW_NAME, nav: "locks", outputs: "two", mediaFiles: true },
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            { name: "open_show", purpose: "select the Parity Locks show", run: stepOpenShow, verify: verifyOpenShow },
+            {
+                name: "present_outputs",
+                purpose: "one Present click opens a window for each of the two seeded outputs",
+                run: stepNavPresentTwo,
+                verify: verifyTwoOutputsPresent
+            },
+            {
+                name: "start",
+                purpose: "Space puts slide 0 on both outputs; the overlays arrive 200 ms later through the layout entry",
+                run: stepLocksStart,
+                verify: verifyLocksStart
+            },
+            {
+                name: "layer_order",
+                purpose: "each page renders background, placeUnderSlide overlay, slide, overlay in that document order",
+                run: stepLayerOrder,
+                verify: verifyLayerOrderStep
+            },
+            {
+                name: "layer_buttons",
+                purpose: "the controller lists the five layers in order and enables a clear button only for a layer with content",
+                run: stepLayerButtons,
+                verify: verifyLayerButtons
+            },
+            { name: "lock_global", purpose: "lock the output with Ctrl+L", run: stepLock, verify: verifyLock },
+            {
+                name: "lock_blocks_click",
+                purpose: "a locked output ignores a click on a different slide card",
+                run: stepLockBlocksClick,
+                verify: verifyLockBlocksClick
+            },
+            {
+                name: "lock_blocks_f3",
+                purpose: "a locked output ignores F3 (the per-layer clear whose only guard is outLocked)",
+                run: stepLockBlocksF3,
+                verify: verifyLockBlocksF3
+            },
+            {
+                name: "lock_allows_output_lock",
+                purpose: "the global lock does not guard the per-output lock toggle",
+                run: stepLockAllowsOutputLock,
+                verify: verifyLockAllowsOutputLock
+            },
+            { name: "unlock", purpose: "unlock the output with Ctrl+L", run: stepUnlock, verify: verifyUnlock },
+            {
+                name: "clear_skips_inactive_output",
+                purpose: "Clear all empties the active output and leaves the inactive one untouched",
+                run: stepClearSkipsInactiveOutput,
+                verify: verifyClearSkipsInactiveOutput
+            },
+            {
+                name: "reselect_and_play",
+                purpose: "reactivating the output and replaying the slide restores the fan-out",
+                run: stepReselectAndPlay,
+                verify: verifyReselectAndPlay
+            }
+        ]
     }
 }
 
@@ -3482,6 +4927,27 @@ async function main() {
                     .join(", ")}`
             )
             log(`seeded style bindings: ${seed.styles.bindings.map((binding) => `${binding.name}=${binding.style}`).join(", ")}`)
+        }
+        if (seed.nav) {
+            log(`seeded nav fixture (${seed.nav.kind}): ${seed.nav.show.name} [${seed.nav.show.id}], layout ${seed.nav.layoutId}`)
+            log(
+                `nav entries: ${seed.nav.entries
+                    .map(
+                        (entry) =>
+                            `${entry.index}:${entry.text || entry.id}${entry.disabled ? " disabled" : ""}${
+                                entry.bindings ? ` bindings=${JSON.stringify(entry.bindings)}` : ""
+                            }${entry.background ? ` background=${entry.background}` : ""}${entry.overlays ? ` overlays=${JSON.stringify(entry.overlays)}` : ""}`
+                    )
+                    .join(" | ")}`
+            )
+            if (seed.nav.overlays) {
+                log(
+                    `nav overlays: ${Object.entries(seed.nav.overlays)
+                        .map(([id, overlay]) => `${id} (${overlay.name}, placeUnderSlide=${overlay.placeUnderSlide === true})`)
+                        .join(", ")}`
+                )
+            }
+            if (seed.nav.outputs) log(`nav outputs: ${seed.nav.outputs.map((output) => `${output.name} (${output.id}, active=${output.active})`).join(", ")}`)
         }
         if (seed.skipped.length) log(`skipped fixtures: ${seed.skipped.map((item) => `${item.file} (${item.reason})`).join(", ")}`)
     } catch (err) {
@@ -3578,7 +5044,8 @@ async function main() {
                 multiOutput: seed.multiOutput,
                 media: seed.media ? { files: seed.media.files, folder: seed.media.folder, projectItem: seed.media.projectItem } : null,
                 mediaFiles: seed.mediaFiles ? seed.mediaFiles.files : null,
-                styles: seed.styles ? { styles: seed.styles.styles, bindings: seed.styles.bindings } : null
+                styles: seed.styles ? { styles: seed.styles.styles, bindings: seed.styles.bindings } : null,
+                nav: seed.nav || null
             },
             harness: {
                 script: "parity/tools/observe_reference.mjs",

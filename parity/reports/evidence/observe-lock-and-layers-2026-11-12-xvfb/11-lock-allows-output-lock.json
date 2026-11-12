@@ -1,0 +1,414 @@
+{
+  "index": 11,
+  "step": "lock_allows_output_lock",
+  "purpose": "the global lock does not guard the per-output lock toggle",
+  "status": "ok",
+  "startedAt": "2026-11-12T12:13:01.128Z",
+  "timestamp": "2026-11-12T12:13:02.190Z",
+  "windowCount": 3,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 845
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 42
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 42
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Secondary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 3,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 21,
+        "width": 1440,
+        "height": 879
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Unlock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity Locks\nParity Locks\n2\n Underlay text \n Layer one \n Overlay text \n1\n-\n Layer two \n2\n-\nNew arrangement\nPrimary\n Underlay text \n Layer one \n Overlay text \nSecondary\n Underlay text \n Layer one \n Overlay text \nClear all\nUnderlay\nOverlay\nGroups\nMetadata\nMedia\n. 1\n. 2\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n4\nUnlabeled\n4\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity Locks\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity Locks\nCreated\nSunday, October 27, 2024\nModified\nThursday, November 12, 2026\nUsed\nThursday, November 12, 2026\nCategory\nNone\nSlides\n2\nWords\n4\nTemplate\nNone",
+    "textLength": 802,
+    "textTruncated": false,
+    "lockTitles": [
+      "Unlock output [Ctrl+L]"
+    ],
+    "lockTitle": "Unlock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": true,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Background",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity Locks"
+    ],
+    "activeProjectItems": [
+      "Parity Locks"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "primary",
+          "name": "Primary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Locked",
+          "active": false,
+          "struck": true
+        },
+        {
+          "id": "secondary",
+          "name": "Secondary",
+          "titleBar": true,
+          "buttonTitle": "Toggle output lock",
+          "indicatorTitle": "Inactive",
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": false,
+        "layer": "Overlays",
+        "name": "Underlay\nOverlay",
+        "buttons": [
+          {
+            "title": "",
+            "disabled": true
+          },
+          {
+            "title": "",
+            "disabled": true
+          }
+        ],
+        "muteTitle": null,
+        "muteDisabled": null,
+        "playPauseTitle": null,
+        "playPauseDisabled": null,
+        "loopTitle": null,
+        "loopDisabled": null
+      }
+    },
+    "mediaDrawer": {
+      "open": false,
+      "folders": [],
+      "cards": []
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Underlay text \n Layer one \n Overlay text",
+    "lines": [
+      "Underlay text",
+      "Layer one",
+      "Overlay text"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "primary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Underlay text \n Layer one \n Overlay text",
+      "lines": [
+        "Underlay text",
+        "Layer one",
+        "Overlay text"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [],
+      "images": [
+        "file:///tmp/opencode/media/logo.png"
+      ],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    },
+    {
+      "id": "secondary",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Underlay text \n Layer one \n Overlay text",
+      "lines": [
+        "Underlay text",
+        "Layer one",
+        "Overlay text"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [],
+      "images": [
+        "file:///tmp/opencode/media/logo.png"
+      ],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    }
+  ],
+  "pointers": {
+    "startupPopups": null,
+    "overlayPopups": 0
+  },
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output1": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output1 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the per-output lock still works while the global lock is on (OutputPreviewLabel.svelte:13-38 has no outLocked guard)"
+    },
+    {
+      "ok": true,
+      "check": "the deactivated output's name is struck through"
+    },
+    {
+      "ok": true,
+      "check": "the other output is still active"
+    },
+    {
+      "ok": true,
+      "check": "the global lock is untouched by the per-output toggle"
+    }
+  ],
+  "screenshot": {
+    "controller": "11-lock-allows-output-lock-controller.png",
+    "output": "11-lock-allows-output-lock-output.png",
+    "outputMethod": "playwright",
+    "errors": [
+      "11-lock-allows-output-lock-output-2.png: page.screenshot: Timeout 15000ms exceeded."
+    ],
+    "otherOutputs": [
+      {
+        "file": "11-lock-allows-output-lock-output-2.png",
+        "ok": false,
+        "method": null,
+        "error": "page.screenshot: Timeout 15000ms exceeded."
+      }
+    ]
+  },
+  "durationMs": 16406,
+  "finishedAt": "2026-11-12T12:13:17.534Z"
+}

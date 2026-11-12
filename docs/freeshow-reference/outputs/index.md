@@ -32,9 +32,14 @@ are `observed` from the 2026-11-12 `stage-multi-output` run; see
 [multiple-outputs](multiple-outputs.md#observed--the-stage-multi-output-run).
 Per-output styles (attach, aspect, line window and shared paging, layers) are
 `observed` from the 2026-11-12 `styles-multi-output` run; see
-[styles](styles.md#observed--the-styles-multi-output-run). The rest of this area
-is still `code`, so a contract may rest only on the observed entries without a
-further run or explicit provisional approval (`docs/decisions.md:191-193`).
+[styles](styles.md#observed--the-styles-multi-output-run). The lock scopes and the
+layer presence/order are `observed` from the 2026-11-12 `lock-and-layers` run, and
+the slide/textbox binding path from the 2026-11-12 `nav-output-bindings` run; see
+[output-window](output-window.md#observed--the-lock-and-layers-run) and
+[multiple-outputs](multiple-outputs.md#observed--the-nav-output-bindings-run). The
+rest of this area is still `code`, so a contract may rest only on the observed
+entries without a further run or explicit provisional approval
+(`docs/decisions.md:191-193`).
 
 ## The output model
 
@@ -170,3 +175,7 @@ NDI/invisible), one locked (struck-through name), clear-button column visible,
   `multiple-outputs` observed section too.
 - `2026-11-12` — per-output styles are `observed` now (`styles-multi-output`
   run); pointed the "rest is still `code`" note at the `styles` observed section.
+- `2026-11-12` — the lock scopes and layer presence/order are `observed` now
+  (`lock-and-layers` run), and the slide/textbox binding path (`nav-output-bindings`
+  run); pointed the "rest is still `code`" note at both observed sections. Audits
+  `A-011`, `A-012`.

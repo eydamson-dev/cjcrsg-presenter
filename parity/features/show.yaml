@@ -1,0 +1,63 @@
+# Shows and slides: disabled slides
+
+Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the
+`nav-disabled-slides` run of 2026-11-12. Labels follow
+`docs/freeshow-reference/USING-THIS.md`: `label: observed` means a recorded run
+at the pin, `code` means read from the pinned source only. The behaviour page is
+`docs/freeshow-reference/show/presenting.md` ("Disabled slides").
+
+Run evidence for the `observed` note below:
+- `parity/reports/evidence/observe-nav-disabled-slides-2026-11-12-xvfb/` —
+  scenario `nav-disabled-slides`, 12/12 steps, `failed: []`, FreeShow
+  `1.6.8-beta.3` at `ff784eb388c7baef60d67e6d4e7c504f4322bca3`
+  (`commitMatchesPin: true`), one 1920×1080 X11 display, controller viewport
+  1600×900, the single default output. Fixture `Parity Nav`: five flat slides
+  `Nav one`…`Nav five`; layout entries 0 and 3 seeded `disabled` (the flag was
+  seeded, not written through the menu; `seed.json` records the read-back).
+  Evidence is each step's page DOM/text (`outputs[]`, `showSlides`) plus the
+  controller screenshot.
+
+---
+
+```yaml
+id: show.slides.disabled
+area: show
+title: Disabled slides are skipped by sequential navigation and start, but a click still plays them
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/helpers/OutputHelper.ts:414-425
+    - src/frontend/components/helpers/OutputHelper.ts:338-371
+    - src/frontend/components/show/Slides.svelte:96-160
+    - src/frontend/components/slide/Slide.svelte:287
+    - src/frontend/components/slide/Icons.svelte:112-119
+    - src/frontend/components/helpers/showActions.ts:561-582
+    - src/frontend/components/helpers/tick.ts:24-51
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (nav-disabled-slides, 2026-11-12): in grid view, exactly the two
+  seeded entries carry the `disabled` class, compute opacity 0.2 and expose an
+  "Enable" button; the other three do not (05-disabled-markers.json). One Space
+  from an empty output put entry 1 ("Nav two") on the output with entry 0
+  disabled, and entry 0 never appeared (06-start-skips-disabled.json) — this is
+  OutputHelper.getNextSlide (the advance path), NOT startShow. One Space from
+  entry 2 skipped disabled entry 3 to entry 4, and one ArrowLeft from entry 4
+  skipped back to entry 2, both never showing "Nav four"
+  (08-next-skips-disabled.json, 09-previous-skips-disabled.json;
+  OutputHelper.ts:414-425 applied at :367 and :399). Clicking the body of
+  disabled card 3 played "Nav four", and clicking disabled card 0 played
+  "Nav one"; both kept their disabled class and 0.2 opacity
+  (10-click-disabled-plays.json, 11-click-first-disabled-plays.json). One Space
+  from the played disabled entry 0 advanced normally to entry 1
+  (12-advance-from-disabled.json).
+  Boundary: the right-click Disable/Enable menu and the group parent->child
+  propagation were not driven (the flag was seeded); startShow, the show button,
+  group navigation, slide timers skipping disabled entries and number-key/direct
+  jumps stay code; per-arrangement enable/disable (two layouts) was not exercised.
+```
