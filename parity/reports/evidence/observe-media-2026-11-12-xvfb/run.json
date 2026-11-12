@@ -1,0 +1,469 @@
+{
+  "status": "passed",
+  "scenario": "media-behaviour",
+  "startedAt": "2026-11-12T11:08:26.585Z",
+  "finishedAt": "2026-11-12T11:15:11.932Z",
+  "reference": {
+    "path": "/home/eydamson/projects/reference/freeshow",
+    "version": "1.6.8-beta.3",
+    "commit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "commitMatchesPin": true,
+    "pinnedCommit": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+    "built": true
+  },
+  "profile": {
+    "store": "/tmp/opencode/fs-store",
+    "dataPath": "/tmp/opencode/fs-data",
+    "project": {
+      "id": "parity",
+      "name": "Parity Project",
+      "shows": [
+        {
+          "id": "fx-show"
+        },
+        {
+          "id": "fx-notes"
+        },
+        {
+          "id": "tx-show"
+        },
+        {
+          "id": "fx-media"
+        },
+        {
+          "id": "/tmp/opencode/media/video-bg.webm",
+          "name": "background",
+          "type": "video"
+        }
+      ]
+    },
+    "shows": [
+      {
+        "file": "parity-three-slides.show",
+        "id": "fx-show",
+        "name": "Parity Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-with-notes.show",
+        "id": "fx-notes",
+        "name": "Parity With Notes",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-transitions.show",
+        "id": "tx-show",
+        "name": "Transition Fixture",
+        "slides": 3,
+        "mediaPaths": [],
+        "groupRepairs": [
+          {
+            "child": "tx-2",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "tx-3",
+            "parent": "tx-1",
+            "action": "added to parent children"
+          }
+        ]
+      },
+      {
+        "file": "parity-with-media.show",
+        "id": "fx-media",
+        "name": "Parity With Media",
+        "slides": 3,
+        "mediaPaths": [
+          "/tmp/opencode/media/video-bg.webm",
+          "/tmp/opencode/media/logo.png"
+        ],
+        "groupRepairs": [
+          {
+            "child": "fx-2",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          },
+          {
+            "child": "fx-3",
+            "parent": "fx-1",
+            "action": "added to parent children"
+          }
+        ]
+      }
+    ],
+    "skipped": [],
+    "multiOutput": null,
+    "media": {
+      "files": [
+        {
+          "name": "video-bg.webm",
+          "path": "/tmp/opencode/media/video-bg.webm",
+          "bytes": 36343,
+          "wrote": false,
+          "existedBefore": true
+        },
+        {
+          "name": "logo.png",
+          "path": "/tmp/opencode/media/logo.png",
+          "bytes": 649,
+          "wrote": false,
+          "existedBefore": true
+        }
+      ],
+      "folder": {
+        "id": "parity-media",
+        "name": "Parity Media",
+        "path": "/tmp/opencode/media"
+      },
+      "projectItem": {
+        "id": "/tmp/opencode/media/video-bg.webm",
+        "name": "background",
+        "type": "video"
+      }
+    },
+    "mediaFiles": [
+      {
+        "name": "video-bg.webm",
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "bytes": 36343,
+        "wrote": false,
+        "existedBefore": true
+      },
+      {
+        "name": "logo.png",
+        "path": "/tmp/opencode/media/logo.png",
+        "bytes": 649,
+        "wrote": false,
+        "existedBefore": true
+      }
+    ],
+    "styles": null
+  },
+  "harness": {
+    "script": "parity/tools/observe_reference.mjs",
+    "node": "v24.21.0",
+    "platform": "linux",
+    "playwright": "/home/eydamson/projects/cjcrsg-presenter/parity/tools/node_modules/playwright/index.js",
+    "display": ":99",
+    "waylandDisplay": "wayland-1",
+    "locale": "en-PH"
+  },
+  "controller": {
+    "viewport": {
+      "innerWidth": 1600,
+      "innerHeight": 900,
+      "devicePixelRatio": 1
+    },
+    "displays": {
+      "primary": {
+        "accelerometerSupport": "unknown",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "colorDepth": 24,
+        "colorSpace": "{r:[0.6453, 0.3272], g:[0.2979, 0.5983], b:[0.1454, 0.0556], w:[0.3127, 0.3290]}, transfer:GAMMA22, matrix:RGB, range:FULL}",
+        "depthPerComponent": 8,
+        "detected": true,
+        "displayFrequency": 0,
+        "id": 65,
+        "internal": false,
+        "label": "Beihai Century Joint Innovation Technology Co.,Ltd 27G2R",
+        "maximumCursorSize": {
+          "width": 0,
+          "height": 0
+        },
+        "monochrome": false,
+        "nativeOrigin": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scaleFactor": 1,
+        "size": {
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workAreaSize": {
+          "width": 2560,
+          "height": 1440
+        },
+        "touchSupport": "unknown"
+      },
+      "all": [
+        {
+          "accelerometerSupport": "unknown",
+          "bounds": {
+            "x": 2560,
+            "y": 360,
+            "width": 1920,
+            "height": 1080
+          },
+          "colorDepth": 24,
+          "colorSpace": "{primaries:BT709, transfer:GAMMA22, matrix:RGB, range:FULL}",
+          "depthPerComponent": 8,
+          "detected": true,
+          "displayFrequency": 0,
+          "id": 64,
+          "internal": false,
+          "label": "GWD ARZOPA",
+          "maximumCursorSize": {
+            "width": 0,
+            "height": 0
+          },
+          "monochrome": false,
+          "nativeOrigin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scaleFactor": 1,
+          "size": {
+            "width": 1920,
+            "height": 1080
+          },
+          "workArea": {
+            "x": 2560,
+            "y": 360,
+            "width": 1920,
+            "height": 1080
+          },
+          "workAreaSize": {
+            "width": 1920,
+            "height": 1080
+          },
+          "touchSupport": "unknown"
+        },
+        {
+          "accelerometerSupport": "unknown",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 2560,
+            "height": 1440
+          },
+          "colorDepth": 24,
+          "colorSpace": "{r:[0.6453, 0.3272], g:[0.2979, 0.5983], b:[0.1454, 0.0556], w:[0.3127, 0.3290]}, transfer:GAMMA22, matrix:RGB, range:FULL}",
+          "depthPerComponent": 8,
+          "detected": true,
+          "displayFrequency": 0,
+          "id": 65,
+          "internal": false,
+          "label": "Beihai Century Joint Innovation Technology Co.,Ltd 27G2R",
+          "maximumCursorSize": {
+            "width": 0,
+            "height": 0
+          },
+          "monochrome": false,
+          "nativeOrigin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scaleFactor": 1,
+          "size": {
+            "width": 2560,
+            "height": 1440
+          },
+          "workArea": {
+            "x": 0,
+            "y": 0,
+            "width": 2560,
+            "height": 1440
+          },
+          "workAreaSize": {
+            "width": 2560,
+            "height": 1440
+          },
+          "touchSupport": "unknown"
+        }
+      ]
+    },
+    "fonts": {
+      "status": "loaded",
+      "families": [
+        "CMGSans",
+        "NotoColorEmojiLimited"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "index": 1,
+      "step": "ready",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 2,
+      "step": "present",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 3,
+      "step": "open_project",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 4,
+      "step": "open_show",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 5,
+      "step": "start",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 6,
+      "step": "media_background",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 7,
+      "step": "media_playpause",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 8,
+      "step": "media_loop_mute",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 9,
+      "step": "media_lock",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 10,
+      "step": "media_unlock",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 11,
+      "step": "media_next_finished",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 12,
+      "step": "media_drawer_play",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 13,
+      "step": "media_drawer_clear",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "index": 14,
+      "step": "media_project_item",
+      "status": "ok",
+      "error": null
+    }
+  ],
+  "screenshots": {
+    "written": 14,
+    "problems": [
+      {
+        "step": "present",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "open_project",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "open_show",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "start",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_background",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_playpause",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_loop_mute",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_lock",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_unlock",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_next_finished",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_drawer_play",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_drawer_clear",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      },
+      {
+        "step": "media_project_item",
+        "error": "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+      }
+    ]
+  },
+  "failed": []
+}

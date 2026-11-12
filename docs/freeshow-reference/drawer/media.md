@@ -3,11 +3,22 @@
 - **Area:** drawer / media
 - **Online docs:** <https://freeshow.app/docs/media>
 - **Pinned code:** ff784eb (FreeShow 1.6.8-beta.3)
-- **Confidence:** `code`
+- **Confidence:** `code`, except the `media-behaviour` run path measured
+  2026-11-12: the drawer click/clear and its no-type default (`media.play`), the
+  renderer honouring a seeded `{loop:true, muted:true}` slide background and the
+  project-item no-type default (`media.background`), the control strip's
+  presence/reveal, play/pause, loop, mute and lock behaviour (`media.controls`),
+  and the next-on-media-finished advance out of a looping clip
+  (`media.next-finished`) — see [Observed](#observed--the-media-behaviour-run).
+  Everything the run did not exercise stays `code`/`unknown`: foreground typing,
+  the drop action itself, ±10 s seek, the drawer search/arrow preview, the
+  foreground-video `nextAfterMedia` case, and the locked-click refusal.
 
-Twelve feature IDs, one section each. Claims are labelled `code` (read at the pinned
-commit), `doc` (online docs only) or `unknown` (not established; says what would establish
-it). Nothing here is `observed` — FreeShow was not exercised for behaviour; it was run only to capture the screenshots.
+Twelve feature IDs, one section each. Claims are labelled `observed` (seen in a
+recorded run at the pin), `code` (read at the pinned commit), `doc` (online docs
+only) or `unknown` (not established; says what would establish it). The observed
+set comes from one run, `media-behaviour` (2026-11-12); a page existing is still
+not a requirement.
 
 ---
 
@@ -16,6 +27,140 @@ it). Nothing here is `observed` — FreeShow was not exercised for behaviour; it
 ![The Media drawer with folders, filters and thumbnails.](../screenshots/drawer-media.png)
 
 Captured from the running reference (1.6.8-beta.3), 2026-11-09.
+
+
+## Observed — the `media-behaviour` run
+
+Source: `parity/reports/evidence/observe-media-2026-11-12-xvfb/`. Scenario
+`media-behaviour`, 2026-11-12, FreeShow `1.6.8-beta.3` at
+`ff784eb388c7baef60d67e6d4e7c504f4322bca3` (`commitMatchesPin: true`).
+`xvfb-run` virtual display (`:99`, 1920×1080), controller viewport 1600×900,
+**one** normal output (`default`). Show `Parity With Media`: layout slide `fx-1`
+seeded with the background `m-bg` (`{loop:true, muted:true}`) and
+`actions.nextAfterMedia:true`; slide `fx-2` is the advance target with an image
+background (`logo.png`). Media folder `/tmp/opencode/media` with `video-bg.webm`
+(VP9 + Opus, 3.008 s) and `logo.png`. 14/14 steps, `failed: []` (`run.json`,
+`steps.json`).
+
+The output window was created hidden and every output `page.screenshot` timed out
+on llvmpipe, so each output is evidenced by its DOM/player state
+(`NN-<step>.json` → `outputs[]` → `videos[]`, `images[]`) plus the strip read from
+the controller. The strip's buttons are the readable form of the player's muted
+and loop state; see the `muted` note below.
+
+### `media.play` — click to play, click again to clear
+
+1. **A plain single click on a drawer card plays it on the active output.** With
+   the no-type video card showing `Play`, one click put a `<video>` for
+   `video-bg.webm` on the output and the card's own title changed to `Clear`
+   (`12-media-drawer-play.json`). The scenario has one output, so this observes
+   "the one active output"; a fan-out to several outputs was not exercised
+   (`code`).
+2. **Clicking the same card again clears the background.** No `<video>` remained
+   on the output and the card's title returned to `Play`
+   (`13-media-drawer-clear.json`).
+3. **The drawer's no-type default is loop and unmuted.** The played video
+   reported `loop: true` and the strip's mute button read `Mute` (the player was
+   unmuted) on the same click (`12-media-drawer-play.json`), matching
+   `MediaCard.svelte:129-130`.
+4. **The card's `data-title` is the observable for "is it on an output".** `Play`
+   before, `Clear` while playing, `Play` after the clear (steps 12–13).
+
+Boundary: the early-return branches (Ctrl/Cmd/Shift held, a locked output, a
+pending double-click, an icon-button target), foreground typing, double-click to
+add to the project, the drawer search Enter and Ctrl/Cmd+Left/Right preview were
+**not** exercised and stay `code`. Playing a card while the output is locked was
+not clicked either, so "refused while locked" stays `code`.
+
+### `media.background` — what the player does with the stored defaults
+
+1. **The renderer honours a seeded layout-slide background of
+   `{loop:true, muted:true}`.** The seeded `m-bg` layout background rendered as a
+   `<video>` with `loop === true`, a finite 3.008 s duration, `readyState: 4` and
+   a decoded 1280×720 frame; the strip's mute button read `Unmute` (the player
+   was muted) (`06-media-background.json`; seed in `seed.json`,
+   `media.layoutSlides[0]`). **The drop that produces that object is not
+   observed** — the background was seeded directly — so the normalisation at
+   `dropActions.ts:710-711` stays `code`.
+2. **A project media item with no type plays without looping and unmuted.**
+   Selecting the seeded project item and pressing Space produced
+   `video.loop === false` and a strip mute button reading `Mute`
+   (`14-media-project-item.json`). The per-item `loop`/`muted` override
+   (`shortcuts.ts:531-542`) was not exercised — no flags were seeded — and stays
+   `code`; only the no-flag default is observed.
+3. **The drawer click is the third default** — loop, unmuted — observed at
+   `12-media-drawer-play.json` (above).
+
+Boundary: the layer-type resolution for multi-file and provider drops, foreground
+typing, centre-drop versus Ctrl-drop, and dropping off a slide stay `code`.
+
+### `media.controls` — the control strip
+
+1. **The strip is the Background layer's disclosure.** The controls render inside
+   the clear-control column only while the revealed layer is `background`
+   (`src/frontend/components/output/preview/Preview.svelte:278-282`); the
+   disclosure button is the one titled `Background`, next to
+   `Clear background [F1]`. `05-start.json` is the step that reveals it (its
+   assertion: "selecting the Background layer reveals a media control strip");
+   `06-media-background.json` records the strip present with `layer:
+   "Background"` and `reveal.revealed: false`, i.e. the layer was already
+   selected. This answers the page's former `unknown` about the reveal control.
+2. **With a video background the strip shows its buttons; with an image
+   background it shows only the name.** Present with buttons and
+   `layer: "Background"` for `video-bg` (`06`, `12`, `14`); at
+   `11-media-next-finished.json` the background was the `logo` image and the same
+   area had `name: "logo"` but no buttons; after the clear at
+   `13-media-drawer-clear.json` it was absent. Code agrees: the name renders for
+   any background and the buttons only for a video/player
+   (`src/frontend/components/output/tools/MediaControls.svelte:114-166`).
+3. **Play/pause drives the live player.** Play resumed the clip (`currentTime`
+   0.973 → 1.044 s), Pause stopped it (1.392 s), and the button flipped back to
+   `Play` (`07-media-playpause.json`).
+4. **Loop and mute change the player, not the stored style.** Clicking loop left
+   `video.loop === false`; clicking mute flipped the button from `Unmute` to
+   `Mute`; the show file's stored media entry still read `loop: true` and
+   `muted: true` (`08-media-loop-mute.json`).
+5. **The lock disables play/pause and mute, not loop.** With the output locked the
+   play/pause and mute buttons were disabled and the loop button was not; the
+   strip stayed readable; unlocking re-enabled them (`09-media-lock.json`,
+   `10-media-unlock.json`).
+6. **The normal-preview strip carries the media name, Play/Pause,
+   `Go forward 10 seconds`, the loop button and the mute button.** Recorded in the
+   strip's button list (`06`); the controller text also shows the clip's
+   `00:00`/`00:03` times, and the code renders a seek slider between the buttons
+   (`MediaControls.svelte:172`). The big-preview `Go back 10 seconds` variant was
+   not shown.
+
+Observed limitation: `muted` is **not** DOM-readable. The output `<video>` is
+hardcoded muted (`src/frontend/components/media/Video.svelte:263`), and
+`video.muted` was `true` even in `12-media-drawer-play.json`, where the strip
+offered `Mute` — i.e. the player was unmuted. `loop` *is* DOM-readable
+(`video.loop` is bound to `videoData.loop`, same line). Read mute state from the
+strip's button title, never from the element.
+
+Still `code`/`unknown`: the seek slider tracking `currentTime`/`duration` (only
+button titles and the player clock were read), clicking ±10 s and its clamps, the
+media-name button opening the preview, and the `videoSync` subscription itself.
+
+### `media.next-finished` — a looping clip advances once, at its end
+
+1. **A looping background with `nextAfterMedia` advanced exactly once.** With
+   `actions.nextAfterMedia: true` on layout slide `fx-1` (`seed.json`) and a
+   background looping at the start of the step (`video.loop === true`), the
+   output moved from slide 1 to slide 2 and stayed there — not two advances
+   (`11-media-next-finished.json`). The video background was gone after the
+   advance and slide 2's own `logo.png` image background rendered.
+2. **The advance was tied to the clip, not a fixed wait.** Playback started at
+   1.392 s of a 3.008 s clip (1616 ms remaining); the advance was observed
+   2794 ms later, inside the run's window around that remaining time
+   (`11-media-next-finished.json`, `nextAfterMedia`). That is the observed half
+   of the ordering claim: the end check runs before the loop branch, so a looping
+   clip still advances.
+
+Boundary: a non-looping background without the flag (the 200 ms clear), the
+audio/timer reuse of the flag, and a **foreground** video with the flag stay
+`code`/`unknown`. The 600 ms double-advance guard is only indirectly observed
+(one advance happened).
 
 
 ## Media folders
@@ -125,7 +270,8 @@ starred file.
 - **Area:** media
 - **Online docs:** <https://freeshow.app/docs/media>
 - **Pinned code:** ff784eb
-- **Confidence:** `code`
+- **Confidence:** `code`, except the single-output click/clear and the no-type
+  default, `observed` 2026-11-12 (see [Observed](#observed--the-media-behaviour-run)).
 
 ### Summary
 
@@ -146,16 +292,24 @@ outline); (3) list mode; (4) a folder of clips with a hover play icon.
 
 1. A single click on a card returns immediately if Ctrl/Cmd/Shift is held, the output is
    locked, a double-click is pending, or an icon button was the target
-   (`MediaCard.svelte:111-118`).
+   (`MediaCard.svelte:111-118`). `observed` (2026-11-12) for the plain,
+   nothing-held, unlocked click on a card; the early-return branches stay `code`
+   (`12-media-drawer-play.json`).
 2. If any active output's background already has this path or id, the click clears the
-   background instead (`MediaCard.svelte:120-126`).
+   background instead (`MediaCard.svelte:120-126`). `observed` (2026-11-12): on one
+   output, a second click on the same card left no `<video>` and the card title
+   returned from `Clear` to `Play` (`13-media-drawer-clear.json`).
 3. Otherwise it computes the layer type and sends a background to **every active output**:
    `setOutput("background", { path, type, loop, muted, startAt: 0, ...style, ignoreLayer })`
-   (`MediaCard.svelte:128-140`).
+   (`MediaCard.svelte:128-140`). `observed` (2026-11-12) on **one** active output
+   only: one plain click put the file on the output with `loop:true`
+   (`12-media-drawer-play.json`). The multi-output fan-out stays `code`.
 4. Defaults in this path: `loop = contentProvider || videoType === "foreground" ? false : true`,
    and `muted = videoType === "background"` (`MediaCard.svelte:129-130`). So a file with no
    folder/file type loops and is **not** muted when clicked in the drawer — muting here only
-   happens when the type is explicitly `background`.
+   happens when the type is explicitly `background`. `observed` (2026-11-12): the
+   no-type video reported `loop:true` and the player was unmuted (the strip offered
+   `Mute`) (`12-media-drawer-play.json`).
 5. A foreground file clears the current slide first (`ignoreLayer`), so it shows above slide
    content and does not loop (`MediaCard.svelte:132-133`).
 6. Double-click adds `{ id, name, type }` to the project via `addProjectItem`
@@ -165,7 +319,9 @@ outline); (3) list mode; (4) a folder of clips with a hover play icon.
    it (`Media.svelte:418-445`).
 8. Ctrl/Cmd+Left/Right steps a highlight through files and previews the highlighted item
    (`activeShow`), which is separate from playing it (`Media.svelte:382-413,450-453`).
-9. Playing is refused while the output is locked (`MediaCard.svelte:112`).
+9. Playing is refused while the output is locked (`MediaCard.svelte:112`). `code`:
+   the 2026-11-12 run locked the output but clicked the strip, never a drawer card,
+   so the refusal was not observed.
 
 ### State and persistence
 
@@ -200,13 +356,16 @@ outline); (3) list mode; (4) a folder of clips with a hover play icon.
   output**; double click **adds to the project** (`MediaCard.svelte:111-157`). Show cards do
   behave the documented way (single = preview, double = output,
   `src/frontend/components/inputs/ShowButton.svelte:100-159`), which is probably where the
-  drawer prose came from.
+  drawer prose came from. `observed` (2026-11-12) for the single-click half: one click
+  played the video on the output (`12-media-drawer-play.json`). The double-click
+  half is not observed.
 
 ### Open questions
 
 - Whether a click on a card also sets the preview (`activeShow`) through some parent handler.
   The card itself does not; only the arrow-selector path does (`Media.svelte:400-413`). A run
-  clicking a card and checking the preview pane would confirm.
+  clicking a card and checking the preview pane would confirm. The 2026-11-12 run clicked a
+  card but did not read the media info panel, so this is not settled.
 
 ---
 
@@ -634,7 +793,11 @@ folder with one file.
 - **Area:** media
 - **Online docs:** <https://freeshow.app/docs/media#add-as-backgrounds>
 - **Pinned code:** ff784eb
-- **Confidence:** `code`
+- **Confidence:** `code`, except the renderer honouring the seeded
+  `{loop:true, muted:true}` slide background, the no-type project-item default
+  and the drawer-click default, `observed` 2026-11-12 (see
+  [Observed](#observed--the-media-behaviour-run)). The drop action itself stays
+  `code`.
 
 ### Summary
 
@@ -654,7 +817,10 @@ the unmute icon on the slide; (4) the Media tool on the right with loop/unmute t
 
 ### How it behaves
 
-1. On a slide drop the data is normalised with a default `backgroundData = { muted: true, loop: true }` (`dropActions.ts:710-711`).
+1. On a slide drop the data is normalised with a default `backgroundData = { muted: true, loop: true }` (`dropActions.ts:710-711`). `code` for the drop
+   normalisation; `observed` (2026-11-12) only for the renderer: a background
+   seeded with that shape played with `video.loop === true` and the player muted
+   (`06-media-background.json`).
 2. The layer is the file/folder type if set, else `foreground` when several files are dropped
    away from the centre, else `background`; content providers are forced to `foreground`
    (`dropActions.ts:700-721`).
@@ -669,9 +835,14 @@ the unmute icon on the slide; (4) the Media tool on the right with loop/unmute t
 6. **Project media is different**: playing a media item from a project reads per-item
    `loop`/`muted` if present, else loops and mutes only when the layer is `background`, else
    neither (`src/frontend/utils/shortcuts.ts:531-542`). With no folder/file type the layer is
-   `""`, so a project video plays unmuted and **without looping** by default.
+   `""`, so a project video plays unmuted and **without looping** by default. `observed`
+   (2026-11-12) for the no-flag case: `video.loop === false` and the strip offered
+   `Mute` (`14-media-project-item.json`). The per-item `loop`/`muted` override stays
+   `code` (no flags were seeded).
 7. Clicking the same media in the drawer uses yet another default: loop unless foreground,
    mute only when the type is explicitly background (`MediaCard.svelte:129-130`).
+   `observed` (2026-11-12) for a no-type video: `loop:true`, unmuted
+   (`12-media-drawer-play.json`).
 
 ### State and persistence
 
@@ -708,7 +879,10 @@ the unmute icon on the slide; (4) the Media tool on the right with loop/unmute t
   suggests: a slide background is created with `{ muted: true, loop: true }`
   (`dropActions.ts:711`), while a project item with no explicit type falls through to
   `loop: false, muted: false` (`shortcuts.ts:533-534`). The two statements are both true and
-  the difference is exactly the drop path.
+  the difference is exactly the drop path. `observed` (2026-11-12) for the two
+  *defaults at the player*: the seeded slide background played looping and muted,
+  the no-type project item non-looping and unmuted (steps 06 and 14); the drop path
+  that creates the first object is still `code`.
 - The doc also says backgrounds are muted "by default"; the drawer single-click path does not
   mute unless the file/folder type is `background` (`MediaCard.svelte:130`). Same word,
   different path.
@@ -716,7 +890,8 @@ the unmute icon on the slide; (4) the Media tool on the right with loop/unmute t
 ### Open questions
 
 - Whether the project-item editor exposes `loop`/`muted` as toggles. `shortcuts.ts:533-534`
-  reads them, but the UI that writes them was not traced.
+  reads them, but the UI that writes them was not traced. The 2026-11-12 run did not open
+  the editor — the item was seeded — so this stays open.
 
 ---
 
@@ -726,7 +901,10 @@ the unmute icon on the slide; (4) the Media tool on the right with loop/unmute t
 - **Area:** media
 - **Online docs:** <https://freeshow.app/docs/media#control-videos-playing-in-output>
 - **Pinned code:** ff784eb
-- **Confidence:** `unknown`
+- **Confidence:** `observed` for the reveal control, strip presence, play/pause,
+  loop, mute and lock behaviour (2026-11-12, see
+  [Observed](#observed--the-media-behaviour-run)); `code` for the seek slider and
+  ±10 s clamping, the media-name preview button and the `videoSync` mechanism.
 
 ### Summary
 
@@ -745,17 +923,34 @@ variant with −10 s.
 ### How it behaves
 
 1. The component only renders when the output has a background (`MediaControls.svelte:114`).
+   `observed` (2026-11-12): absent with no background (`13-media-drawer-clear.json`).
+   With a background the strip's **name** is rendered for any source, but the
+   buttons only for a video or player source: an image background showed the
+   name `logo` and no buttons (`11-media-next-finished.json`), a video background
+   showed name + buttons (`06`, `12`, `14`).
 2. It subscribes to `videoSync(path, outputId)` and mirrors `currentTime`, `duration`,
    `paused`, `loop` and `muted` from the player (`MediaControls.svelte:38-60`).
+   `observed` (2026-11-12) for `paused`, `loop` and `muted`: the button titles
+   tracked the player across steps 06–10. `currentTime`/`duration` reaching the
+   seek slider was not read, and the subscription itself stays `code`.
 3. Play/pause calls `VideoPlayer.play/pause`; +10 s clamps to `duration - 0.1`; −10 s clamps to
-   `0.01` (only in the big variant) (`MediaControls.svelte:101-109,129-144`).
+   `0.01` (only in the big variant) (`MediaControls.svelte:101-109,129-144`). `observed`
+   (2026-11-12) for play/pause: Play advanced the clock and Pause stopped it
+   (`07-media-playpause.json`). The ±10 s buttons and their clamps were not
+   clicked and stay `code`; the normal preview does show the `Go forward 10
+   seconds` button.
 4. Loop and mute call `VideoPlayer.toggleLoop` / `toggleMute`
    (`MediaControls.svelte:74-88`), i.e. they change the live player, not the stored media
-   style.
+   style. `observed` (2026-11-12): loop off and mute flipped the player's reported
+   state while the show's stored media entry still read `loop:true`/`muted:true`
+   (`08-media-loop-mute.json`).
 5. The media name is a button that opens the media preview (`activeShow`/`activeFocus`)
-   (`MediaControls.svelte:90-99,158-164`).
+   (`MediaControls.svelte:90-99,158-164`). The run observed the name shown, not a
+   click on it, so the preview half stays `code`.
 6. All play/pause/mute buttons are disabled while the output is locked; loop is not
-   (`MediaControls.svelte:119,148-154`).
+   (`MediaControls.svelte:119,148-154`). `observed` (2026-11-12):
+   play/pause and mute `disabled`, loop not, while locked; both re-enabled on
+   unlock (`09-media-lock.json`, `10-media-unlock.json`).
 
 ### State and persistence
 
@@ -776,8 +971,11 @@ None. The controls act on the running player.
 
 - <https://freeshow.app/docs/media#control-videos-playing-in-output> — says the controls appear
   "right under the clear buttons" and that a small, almost invisible button under the media
-  clear button reveals them; also mentions mute/unmute. The toggle button that reveals the
-  panel was not traced (`unknown`), but the panel's contents match the code.
+  clear button reveals them; also mentions mute/unmute. `observed` (2026-11-12): the
+  strip renders in that clear-control column and the control that reveals it is
+  the **Background** layer's own disclosure button, next to
+  `Clear background [F1]` (`src/frontend/components/output/preview/Preview.svelte:278-282`).
+  The panel's contents match the code.
 
 ### Doc vs code
 
@@ -787,8 +985,15 @@ None. The controls act on the running player.
 
 ### Open questions
 
-- Which control shows/hides the strip (the doc's "almost invisible button"); it is outside
-  `MediaControls.svelte`.
+- ~~Which control shows/hides the strip (the doc's "almost invisible button"); it is outside
+  `MediaControls.svelte`.~~ Answered 2026-11-12: the **Background** clear-layer
+  disclosure selects it, and `Preview.svelte:281-282` renders `MediaControls` only
+  while `activeClear === "background"` (see Observed).
+- Whether the seek slider follows `currentTime`/`duration` in the way the code
+  suggests (the run read button titles and the player clock, not the slider's
+  value). Reading the slider's bound value while the clip plays would settle it.
+- Whether the ±10 s buttons clamp exactly as the code reads; clicking them with a
+  clip longer than 10 s would settle it.
 
 ---
 
@@ -798,7 +1003,10 @@ None. The controls act on the running player.
 - **Area:** media
 - **Online docs:** <https://freeshow.app/docs/media#go-to-next-slide-when-video-is-finished>
 - **Pinned code:** ff784eb
-- **Confidence:** `code`
+- **Confidence:** `observed` for the looping-background + flag advance and its
+  once-only timing (2026-11-12, see
+  [Observed](#observed--the-media-behaviour-run)); `code` for the clear-on-finish
+  default, the audio/timer reuse and the menu item.
 
 ### Summary
 
@@ -823,10 +1031,15 @@ Shot list: (1) the slide action menu with the item enabled; (2) the icon on the 
    and returns if it advanced; only then does it consider looping
    (`src/frontend/components/media/video/videoPlayer.ts:362-374`). The same check is repeated
    after the loop branch (`videoPlayer.ts:404-407`). That ordering is why it fires while
-   looping.
+   looping. `observed` (2026-11-12): a background that was looping when the
+   observation began advanced at the clip's end (`11-media-next-finished.json`).
+   Whether the advance came from the first or the repeated check was not isolated.
 3. `checkNextAfterMedia` only advances if the current output's slide actually contains the
    ended media, then calls `OutputHelper.advanceOutput(outputId, "", { playNext: true })` and
    guards against a second advance for 600 ms (`src/frontend/components/helpers/showActions.ts:676-728`).
+   `observed` (2026-11-12): exactly one advance happened (slide 1 → 2, and the
+   output did not reach slide 3); the "slide contains the media" guard was
+   satisfied but not exercised negatively, and the 600 ms guard was not isolated.
 4. When the media has no next-after flag and is not looped, the background is cleared after
    200 ms unless `special.clearMediaOnFinish === false` (`videoPlayer.ts:409-423`).
 5. The same `nextAfterMedia` mechanism is used for audio and timers, keyed by the same slide
@@ -859,14 +1072,15 @@ Shot list: (1) the slide action menu with the item enabled; (2) the icon on the 
 ### Doc vs code
 
 - None found. This is one of the few places where a doc claim is directly and unambiguously
-  confirmed by code order.
+  confirmed by code order. `observed` (2026-11-12): a looping background did
+  advance the output at its end (`11-media-next-finished.json`).
 
 ### Open questions
 
 - Whether the check also runs for foreground media that is not the background. The call is
   made from the player for any path, but the guard requires the slide's `background` to match
   (`showActions.ts:704-705`), which suggests foreground items never trigger it. A run with a
-  foreground video would confirm.
+  foreground video would confirm. The 2026-11-12 run did not seed one, so this stays open.
 
 ---
 
@@ -1023,3 +1237,16 @@ foreground file marked in the drawer.
 
 - Whether `blend` is exposed in the media edit UI; it is copied and cleared
   (`clipboard.ts:1396`, `MediaCard.svelte:195`) but no input for it was read.
+
+## Changelog
+
+- `2026-11-12` — added the `observed` section for the `media-behaviour` run and
+  upgraded the paths that run actually asserted: the drawer click/clear and its
+  no-type default (`media.play`), the renderer honouring a seeded
+  `{loop:true, muted:true}` background and the project-item no-type default
+  (`media.background`), the strip's reveal/presence, play/pause, loop, mute and
+  lock behaviour (`media.controls`), and the looping-clip advance
+  (`media.next-finished`). `media.controls` is no longer `unknown`: its reveal
+  control is the Background clear-layer disclosure. The page's "nothing here is
+  `observed`" status note was stale and is corrected; audit `A-008`.
+

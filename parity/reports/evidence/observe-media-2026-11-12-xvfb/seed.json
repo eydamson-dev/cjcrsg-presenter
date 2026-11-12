@@ -1,0 +1,279 @@
+{
+  "seededAt": "2026-11-12T11:08:26.588Z",
+  "store": "/tmp/opencode/fs-store",
+  "dataPath": "/tmp/opencode/fs-data",
+  "settings": {
+    "initialized": true,
+    "disabledServers": {
+      "remote": false,
+      "stage": false,
+      "controller": false,
+      "output_stream": false
+    },
+    "outLocked": false,
+    "mediaFolders": {
+      "parity-media": {
+        "name": "Parity Media",
+        "icon": "folder",
+        "path": "/tmp/opencode/media"
+      }
+    }
+  },
+  "project": {
+    "id": "parity",
+    "name": "Parity Project",
+    "shows": [
+      {
+        "id": "fx-show"
+      },
+      {
+        "id": "fx-notes"
+      },
+      {
+        "id": "tx-show"
+      },
+      {
+        "id": "fx-media"
+      },
+      {
+        "id": "/tmp/opencode/media/video-bg.webm",
+        "name": "background",
+        "type": "video"
+      }
+    ]
+  },
+  "projectCheck": {
+    "projectCount": 1
+  },
+  "shows": [
+    {
+      "file": "parity-three-slides.show",
+      "id": "fx-show",
+      "name": "Parity Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-with-notes.show",
+      "id": "fx-notes",
+      "name": "Parity With Notes",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-transitions.show",
+      "id": "tx-show",
+      "name": "Transition Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "tx-2",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "tx-3",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-with-media.show",
+      "id": "fx-media",
+      "name": "Parity With Media",
+      "slides": 3,
+      "mediaPaths": [
+        "/tmp/opencode/media/video-bg.webm",
+        "/tmp/opencode/media/logo.png"
+      ],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    }
+  ],
+  "showFiles": [
+    "Parity Fixture.show",
+    "Parity With Media.show",
+    "Parity With Notes.show",
+    "Transition Fixture.show"
+  ],
+  "skipped": [],
+  "multiOutput": null,
+  "media": {
+    "files": [
+      {
+        "name": "video-bg.webm",
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "bytes": 36343,
+        "wrote": false,
+        "existedBefore": true
+      },
+      {
+        "name": "logo.png",
+        "path": "/tmp/opencode/media/logo.png",
+        "bytes": 649,
+        "wrote": false,
+        "existedBefore": true
+      }
+    ],
+    "durationSeconds": 3,
+    "ffmpeg": "/usr/bin/ffmpeg",
+    "folder": {
+      "id": "parity-media",
+      "name": "Parity Media",
+      "path": "/tmp/opencode/media"
+    },
+    "media": {
+      "m-bg": {
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "name": "background",
+        "type": "video",
+        "muted": true,
+        "loop": true
+      },
+      "m-logo": {
+        "path": "/tmp/opencode/media/logo.png",
+        "name": "logo",
+        "type": "image"
+      }
+    },
+    "layoutId": "lay-parity",
+    "layoutSlides": [
+      {
+        "index": 0,
+        "id": "fx-1",
+        "background": "m-bg",
+        "actions": {
+          "nextAfterMedia": true
+        }
+      },
+      {
+        "index": 1,
+        "id": "fx-2",
+        "background": "m-logo",
+        "actions": null
+      },
+      {
+        "index": 2,
+        "id": "fx-3",
+        "background": null,
+        "actions": null
+      }
+    ],
+    "projectItem": {
+      "id": "/tmp/opencode/media/video-bg.webm",
+      "name": "background",
+      "type": "video"
+    },
+    "transform": {
+      "media": {
+        "m-bg": {
+          "path": "/tmp/opencode/media/video-bg.webm",
+          "type": "video",
+          "muted": true,
+          "loop": true
+        },
+        "m-logo": {
+          "path": "/tmp/opencode/media/logo.png",
+          "type": "image"
+        }
+      },
+      "layoutId": "lay-parity",
+      "layoutSlides": [
+        {
+          "index": 0,
+          "id": "fx-1",
+          "background": "m-bg",
+          "actions": {
+            "nextAfterMedia": true
+          }
+        },
+        {
+          "index": 1,
+          "id": "fx-2",
+          "background": "m-logo",
+          "actions": null
+        },
+        {
+          "index": 2,
+          "id": "fx-3",
+          "background": null,
+          "actions": null
+        }
+      ],
+      "layoutChildren": [
+        {
+          "parent": "fx-1",
+          "id": "fx-2",
+          "background": "m-logo"
+        },
+        {
+          "parent": "fx-1",
+          "id": "fx-3",
+          "background": "m-logo"
+        }
+      ]
+    }
+  },
+  "mediaFiles": {
+    "dir": "/tmp/opencode/media",
+    "duration": 3,
+    "files": [
+      {
+        "name": "video-bg.webm",
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "bytes": 36343,
+        "wrote": false,
+        "existedBefore": true
+      },
+      {
+        "name": "logo.png",
+        "path": "/tmp/opencode/media/logo.png",
+        "bytes": 649,
+        "wrote": false,
+        "existedBefore": true
+      }
+    ]
+  },
+  "styles": null,
+  "targetShow": {
+    "name": "Parity With Media",
+    "id": "fx-media",
+    "file": "parity-with-media.show"
+  }
+}

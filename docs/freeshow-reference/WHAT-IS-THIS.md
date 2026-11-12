@@ -18,8 +18,9 @@ from a screenshot or from a similar app.
   30 screenshots.
 - **Status:** mostly `code`-level knowledge, with a growing set of `observed`
   claims from recorded runs (`show/presenting.md`, `outputs/output-window.md`,
-  `outputs/multiple-outputs.md`, `remote/stage.md`). The rest is not
-  runtime-verified; a page existing does not make a behaviour understood.
+  `outputs/multiple-outputs.md`, `remote/stage.md`, `drawer/media.md`,
+  `outputs/styles.md`). The rest is not runtime-verified; a page existing does
+  not make a behaviour understood.
 
 ## What it is and is not
 
@@ -158,3 +159,6 @@ The reference checkout and how to run it are in `docs/reference.md`.
 - `2026-11-12` — the `stage-multi-output` run added `observed` claims to
   `outputs/multiple-outputs.md` and `remote/stage.md`; noted both in the status
   line.
+- `2026-11-12` — the `media-behaviour` and `styles-multi-output` runs added
+  `observed` claims to `drawer/media.md` and `outputs/styles.md`; noted both in
+  the status line.

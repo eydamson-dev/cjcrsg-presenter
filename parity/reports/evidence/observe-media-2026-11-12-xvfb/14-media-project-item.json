@@ -1,0 +1,369 @@
+{
+  "index": 14,
+  "step": "media_project_item",
+  "purpose": "a project media item plays without looping and unmuted",
+  "status": "ok",
+  "startedAt": "2026-11-12T11:14:39.525Z",
+  "timestamp": "2026-11-12T11:14:41.144Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 492
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 0
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1329
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Lock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity With Media\n00:03\nbackground\n00:00\n00:03\nClear all\nvideo-bg\n00:00\n00:03\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n2\nInputs\nOnline\nFolders\nParity Media\n2\nAdd folder\nlogo\nvideo-bg\nvideo-bg\nFile extension\nWEBM\nSize\n35 KB\nCreated\nThursday, November 12, 2026\nModified\nThursday, November 12, 2026\nChanged\nThursday, November 12, 2026\nCodecs\n—",
+    "textLength": 468,
+    "textTruncated": false,
+    "lockTitles": [
+      "Lock output [Ctrl+L]"
+    ],
+    "lockTitle": "Lock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": false,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Clear background [F1]",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Background",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "Clear background [F1]",
+          "clearDisabled": false,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity With Media",
+      "00:03\nbackground"
+    ],
+    "activeProjectItems": [
+      "00:03\nbackground"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "default",
+          "name": "",
+          "titleBar": false,
+          "buttonTitle": null,
+          "indicatorTitle": null,
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": true,
+        "layer": "Background",
+        "name": "video-bg",
+        "buttons": [
+          {
+            "title": "Play",
+            "disabled": false
+          },
+          {
+            "title": "Go forward 10 seconds",
+            "disabled": false
+          },
+          {
+            "title": "Loop",
+            "disabled": false
+          },
+          {
+            "title": "Mute",
+            "disabled": false
+          }
+        ],
+        "muteTitle": "Mute",
+        "muteDisabled": false,
+        "playPauseTitle": "Play",
+        "playPauseDisabled": false,
+        "loopTitle": "Loop",
+        "loopDisabled": false
+      }
+    },
+    "mediaDrawer": {
+      "open": true,
+      "folders": [
+        {
+          "name": "Parity Media\n2",
+          "active": true
+        }
+      ],
+      "cards": [
+        {
+          "path": "/tmp/opencode/media/logo.png",
+          "label": "logo",
+          "actionTitle": "Play",
+          "active": false
+        },
+        {
+          "path": "/tmp/opencode/media/video-bg.webm",
+          "label": "video-bg",
+          "actionTitle": "Clear",
+          "active": true
+        }
+      ]
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "",
+    "lines": [],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "default",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "",
+      "lines": [],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [
+        {
+          "src": "file:///tmp/opencode/media/video-bg.webm",
+          "loop": false,
+          "paused": true,
+          "muted": true,
+          "currentTime": 0.170667,
+          "duration": 3.008,
+          "readyState": 4,
+          "videoWidth": 1280,
+          "videoHeight": 720
+        }
+      ],
+      "images": [],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    }
+  ],
+  "pausedAt": 0.298304,
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "playing the project media item put a video on the output"
+    },
+    {
+      "ok": true,
+      "check": "the background is the project media file"
+    },
+    {
+      "ok": true,
+      "check": "a project media item with no loop flag does not loop (loop = false)"
+    },
+    {
+      "ok": true,
+      "check": "a project media item with no muted flag plays unmuted (the strip offers Mute)"
+    },
+    {
+      "ok": true,
+      "check": "the step paused the clip so the captured state is stable"
+    }
+  ],
+  "screenshot": {
+    "controller": "14-media-project-item-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+    ],
+    "outputRetried": true
+  },
+  "durationMs": 32405,
+  "finishedAt": "2026-11-12T11:15:11.930Z"
+}

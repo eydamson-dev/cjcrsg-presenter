@@ -682,20 +682,20 @@ Report: `parity/reports/windows-packaging-2026-11-09.md`.
 
 The written reference of the pinned FreeShow (`ff784eb`, 1.6.8-beta.3) lives in
 `docs/freeshow-reference/`: 225 features with stable IDs, 65 detail pages, and
-1,636 `src/...:line` citations, all checked against the checkout.
+1,640 `src/...:line` citations, all checked against the checkout.
 
 ![FreeShow 1.6.8-beta.3 at rest](docs/freeshow-reference/screenshots/main-show-view.png)
 
 - 30 screenshots of the running reference, captured under Playwright, not by
   desktop screenshot tools. `docs/freeshow-reference/screenshots/README.md` names
   the state and viewport of each.
-- `scripts/check_freeshow_refs.py` — 1,636 references, 0 failed.
+- `scripts/check_freeshow_refs.py` — 1,640 references, 0 failed.
 - `scripts/check_freeshow_coverage.py` — 225 of 225 IDs mentioned by a page.
 - Upstream docs mirror: 54 pages and 34 images at `8d875b5`, refreshed with
   `scripts/fetch_freeshow_docs.sh`.
 
-The pages label every claim `code`, `doc`, `unknown` or `observed`; 99 claims are
-now `observed` from runs, 1,417 `code`, 465 `doc`, 181 `unknown`. A page becomes
+The pages label every claim `code`, `doc`, `unknown` or `observed`; 197 claims are
+now `observed` from runs, 1,477 `code`, 467 `doc`, 186 `unknown`. A page becomes
 a contract only through a scenario, and `code` still needs a run before it counts
 as one.
 
@@ -754,6 +754,61 @@ hidden on the single-display workspace and llvmpipe does not rasterise three
 full-size surfaces within the screenshot timeout, so each output's evidence is its
 DOM text and the controller screenshot, not a frame (see the evidence README's
 "does not show").
+
+### Media behaviour, observed
+
+The third scenario, `media-behaviour`, ran 14/14 steps on 2026-11-12 on a virtual
+X11 display (`xvfb-run`), against a generated 3.008 s VP9 + Opus clip and a
+magenta PNG, seeded as a layout-slide background and as a drawer folder.
+
+| | |
+| --- | --- |
+| Controller, media strip revealed | `parity/reports/evidence/observe-media-2026-11-12-xvfb/06-media-background-controller.png` |
+| Full record | `parity/reports/evidence/observe-media-2026-11-12-xvfb/` |
+| Reference pages updated | `docs/freeshow-reference/drawer/media.md`, `audit.md` `A-008` |
+| Generated fixtures | `parity/tools/generate_media.mjs` → `/tmp/opencode/media/{video-bg.webm,logo.png}` |
+
+What the run establishes (`observed`): a seeded `{loop:true, muted:true}` slide
+background renders as a `<video>` with `loop === true`, a finite 3.008 s duration
+and a decoded 1280×720 frame; a single drawer click plays a background, the same
+card click clears it, and the no-type drawer default is loop + unmuted; the media
+strip appears under the revealed **Background** layer and its play/pause, loop and
+mute buttons change the live player, not the stored media entry; the play/pause and
+mute buttons disable while the output is locked while loop does not; and a looping
+clip carrying `nextAfterMedia` advances the show **exactly once** when it ends —
+the ordering that fires the advance before the loop branch.
+
+Two source facts the run settled: `muted` is **not** DOM-readable (the output
+`<video>` is hardcoded muted, so the strip button title is read instead), and the
+strip is revealed by the Background clear-layer disclosure. Output-window PNGs
+were not captured (llvmpipe); the evidence is the recorded player/DOM state.
+
+### Output styles, observed
+
+The fourth scenario, `styles-multi-output`, ran 10/10 steps on 2026-11-12, three
+normal outputs sharing one show and each bound to a seeded style (`lines:2`,
+`aspectRatio 4:3`, and `layers:["slide","overlays"]`).
+
+| | |
+| --- | --- |
+| Primary output, `lines:2` page 2 | `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/08-styles-lines-paging-output.png` |
+| Controller, three styled tiles | `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/06-styles-aspect-controller.png` |
+| Reference pages updated | `docs/freeshow-reference/outputs/styles.md`, `audit.md` `A-009` |
+| Full record | `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/` |
+
+What the run establishes (`observed`): a style attaches per output and changes how
+shared content looks; an output whose style sets no `aspectRatio` renders 16:9
+(1920×1080) while a `4:3` style renders 1440×1080 at x=240 on the same bounds; a
+`lines:2` output shows exactly two lines while a `lines:0` output shows the whole
+slide; the shared paging step makes one advance move the `lines:2` output to lines
+3–4 while the presentation stays on slide 1 and the `lines:0` output keeps the
+whole slide; and a style without the background layer renders neither image nor
+video background while still drawing the slide text.
+
+The `lines:0` page does **not** switch to "lines 3–4" on advance — its window is
+`null/null` and the page index does not change what it renders; this corrects an
+error in the pre-run observation spec (`audit.md` `A-009`). The Styles settings UI
+and live `refreshOut()` on edit were not exercised (styles were seeded).
 
 ## Verification
 

@@ -145,6 +145,50 @@ change that fixed it.
 - **Fix:** relabelled the caption and the screenshot row, and recorded the
   measured sizes.
 
+## A-008 — `drawer/media.md` said none of its claims were `observed`
+
+- **Status:** corrected in `drawer/media.md` on 2026-11-12.
+- **Where:** `drawer/media.md` said "Nothing here is `observed` — FreeShow was
+  not exercised for behaviour; it was run only to capture the screenshots."
+- **Reference:** the 2026-11-12 `media-behaviour` run
+  (`parity/reports/evidence/observe-media-2026-11-12-xvfb/`, 14/14 steps,
+  `failed: []`, `commitMatchesPin: true` at
+  `ff784eb388c7baef60d67e6d4e7c504f4322bca3`) exercised the drawer click/clear, a
+  seeded slide background, the control strip and the next-on-media-finished
+  advance, and records them in its `NN-<step>.json` assertions.
+- **What actually happens:** four features on the page (`media.play`,
+  `media.background`, `media.controls`, `media.next-finished`) now have `observed`
+  claims; the rest of the page is still `code`/`unknown`. The blanket note was
+  wrong in both directions.
+- **Consequence:** the note would either block an observed claim from a contract
+  or suggest the whole page is run-verified.
+- **Fix:** replaced the note, added the Observed section and per-feature
+  confidence lines, and labelled the specific observed bullets.
+
+## A-009 — The `lines:0` output does not page to lines 3–4
+
+- **Status:** corrected 2026-11-12 in the pre-run spec; the reference page was
+  already right. No claim in `docs/freeshow-reference/` needed changing.
+- **Where:** `parity/reports/reader/media-styles-observation-spec.md` §1,
+  `out.styles.lines`, the "What observed means" cell of the shared-paging row:
+  "advance the show once; assert the `lines:0` output stays on slide 1 (now
+  showing lines 3-4 = the full slide of page 2)".
+- **Reference:**
+  `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/08-styles-lines-paging.json`
+  (FreeShow `ff784eb388c7baef60d67e6d4e7c504f4322bca3`, `commitMatchesPin: true`):
+  the `lines:2` output showed lines 3–4 of slide 1, and the `lines:0` output
+  still showed **all four lines**; the assertion reads "the lines:0 output still
+  shows the whole slide: its window is null/null, so the page does not change
+  it". `outputs/styles.md` already described this correctly.
+- **What actually happens:** a `lines:0` output computes a `null/null` window, so
+  it renders the whole slide on every page. It does not show "the full slide of
+  page 2 = lines 3–4". The presentation stays on slide 1 because the `lines:2`
+  output sets the shared page size (`getFewestOutputLines`).
+- **Consequence:** a scenario asserting lines 3–4 on the `lines:0` output would
+  fail against the reference; the correct expectation is all lines, every page.
+- **Fix:** added a post-run correction to the spec, keeping the old prediction
+  visible, and recorded the observed statement on `outputs/styles.md`.
+
 ## How to add an entry
 
 Use the next number, keep the five parts, and cite the pinned commit. If the

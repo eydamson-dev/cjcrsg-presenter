@@ -1,7 +1,8 @@
-# Outputs: present, window visibility, lock, clear
+# Outputs: present, window visibility, lock, clear, styles
 
 Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the `outputs-basic`
-run of 2026-11-11 and the `stage-multi-output` run of 2026-11-12. Labels follow
+run of 2026-11-11, the `stage-multi-output` run of 2026-11-12 and the
+`styles-multi-output` run of 2026-11-12. Labels follow
 `docs/freeshow-reference/USING-THIS.md`: `label: observed` means a recorded run
 at the pin, `code` means read from the pinned source only.
 
@@ -17,6 +18,13 @@ Run evidence for every `observed` note below:
   (`Parity Stage`), one stage layout with two `slide_text` items. Output content
   is DOM text (`outputs[]`), not output PNGs (the output windows were created
   hidden and their page screenshots timed out on llvmpipe).
+- `parity/reports/evidence/observe-styles-multi-output-2026-11-12-xvfb/` —
+  scenario `styles-multi-output`, 10/10 steps, `failed: []`, one 1920×1080
+  virtual display. Three normal outputs sharing one show, each bound to a style
+  seeded in `settings_synced.json`: `Primary` `lines:2`, `Secondary`
+  `aspectRatio 4:3`, `Tertiary` `layers:["slide","overlays"]`. Evidence is the
+  per-output DOM/geometry state (`text`, `lines`, `contentBox`, `images[]`) plus
+  four output PNGs (steps 07–10, primary only).
 
 ---
 
@@ -270,4 +278,126 @@ notes: >
   output it mirrors on advance. Boundary: the fan-out exclusion mechanism, the
   stage web client (stage.url), the layout editor and the "Current output"
   source dropdown were not exercised.
+```
+
+```yaml
+id: out.styles
+area: outputs
+title: A named style attaches to an output and changes how shared content looks
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/stores.ts:380
+    - src/frontend/components/helpers/output.ts:1856-1861
+    - src/frontend/components/settings/tabs/OutputsTabs.svelte:51
+    - src/types/Settings.ts:13-37
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (styles-multi-output, 2026-11-12): three normal outputs sharing one
+  show and one slide, each bound to a different seeded style, rendered three
+  different looks of the same page - a 2-line window (lines:2), the whole slide
+  at 4:3 (aspectRatio 4:3), and the whole slide with no background layer
+  (layers:["slide","overlays"]) (06-10, especially 10-styles-attach.json). This
+  proves the per-output attach (outputs[id].style) on shared content. "No style
+  means default" was not separately exercised: every output had a style id; a
+  style object with unspecified fields did fall back to the defaults
+  (Primary's missing aspectRatio rendered 16:9). Boundary: the Styles settings
+  UI and the live refreshOut() on edit (styles were seeded in
+  settings_synced.json, not edited), the presets, outputResolutionAsRatio,
+  fontSizeRatio, showAsFaded/lineOpacity, skipVirtualBreaks and
+  delete-while-referenced stay code/unknown.
+```
+
+```yaml
+id: out.styles.aspect
+area: outputs
+title: A style's aspect ratio sets the rendered content box; default 16:9
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/settings/tabs/Styles.svelte:75-76
+    - src/frontend/components/helpers/output.ts:840-912
+    - src/frontend/components/main/popups/AspectRatio.svelte:13-98
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (styles-multi-output, 2026-11-12): on the same 1920×1080 output
+  bounds, the output whose style set no aspectRatio rendered a 1920×1080 content
+  box (16:9), and the output bound to aspectRatio 4:3 rendered a 1440×1080 box
+  at x=240. Both boxes were the output's full height, so the 4:3 box was
+  narrower and letterboxed horizontally (06-styles-aspect.json). This observes
+  the default ratio, the style ratio and the rendered resolution from ratio x
+  bounds. Boundary: the preset list, a custom ratio, outputResolutionAsRatio,
+  fontSizeRatio, alignment, and the media-fit default (the fixture has no media
+  item) stay code.
+```
+
+```yaml
+id: out.styles.lines
+area: outputs
+title: A style's line limit is per output, but the paging step is shared
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/types/Settings.ts:27
+    - src/frontend/components/helpers/output.ts:1968-2023
+    - src/frontend/components/helpers/showActions.ts:163-182
+    - src/frontend/components/helpers/OutputHelper.ts:427-441
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (styles-multi-output, 2026-11-12): on a four-line slide, the lines:2
+  output showed exactly lines 1-2 and not line 3, while the style with no lines
+  field (default 0) showed all four (07-styles-lines-window.json). One Space
+  advance moved the lines:2 output to lines 3-4 and kept the presentation on
+  slide 1, because the 2-line output set the shared page size; the lines:0
+  output still showed all four lines and did not switch to "lines 3-4", since
+  its window is null/null (08-styles-lines-paging.json). Boundary:
+  showAsFaded/lineOpacity and skipVirtualBreaks were not exercised.
+```
+
+```yaml
+id: out.styles.layers
+area: outputs
+title: A style's layer list hides layers per output
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/types/Settings.ts:12
+    - src/frontend/components/helpers/output.ts:1854
+    - src/frontend/components/settings/tabs/Styles.svelte:91
+    - src/frontend/components/output/Output.svelte:408-485
+  read_by: reader
+label: observed
+confidence: high
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (styles-multi-output, 2026-11-12): the output bound to a style with
+  layers:["slide","overlays"] rendered no image and no video background while
+  still rendering the slide layer's text; the output whose style set no layers
+  (default all three) rendered the slide's logo.png image background
+  (09-styles-layers.json, confirmed again at 10-styles-attach.json). Boundary:
+  the three toggle buttons' UI, effects/underlays on the overlays layer, and the
+  rule that a no-path media item takes the slide's background when the
+  background layer is off (no such item in the fixture) stay code. PDF/PPT layer
+  ownership was not exercised.
 ```

@@ -1,0 +1,350 @@
+{
+  "index": 9,
+  "step": "media_lock",
+  "purpose": "locking the output disables play/pause and mute but not loop",
+  "status": "ok",
+  "startedAt": "2026-11-12T11:11:57.398Z",
+  "timestamp": "2026-11-12T11:11:57.910Z",
+  "windowCount": 2,
+  "windows": [
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": true,
+      "hasOutput": false,
+      "bodyChars": 920
+    },
+    {
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "documentTitle": "FreeShow",
+      "readyState": "complete",
+      "hasController": false,
+      "hasOutput": true,
+      "bodyChars": 43
+    }
+  ],
+  "browserWindows": [
+    {
+      "id": 4,
+      "title": "Primary",
+      "visible": false,
+      "offscreen": false,
+      "minimized": false,
+      "focused": false,
+      "opacity": 1,
+      "alwaysOnTop": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    },
+    {
+      "id": 1,
+      "title": "FreeShow",
+      "visible": true,
+      "offscreen": false,
+      "minimized": false,
+      "focused": true,
+      "opacity": 1,
+      "alwaysOnTop": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1329
+      },
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html"
+    }
+  ],
+  "lockTitle": "Unlock output [Ctrl+L]",
+  "controller": {
+    "present": true,
+    "text": "FreeShow\nShow\nEdit\nStage\nParity Project\nParity Fixture\nParity With Notes\nTransition Fixture\nParity With Media\n00:03\nbackground\nParity With Media\n00:03\n Verse one, line one \n Verse one, line two \n1\n-\n Verse one, line three \n2\n-\n Verse two, line one \n3\n-\n Verse one, line three \n4\n-\n Verse two, line one \n5\n-\nNew arrangement\n Verse one, line one \n Verse one, line two \nClear all\nvideo-bg\n00:01\n00:02\nGroups\nMetadata\nMedia\nNo groups\nShows\nMedia\nAudio\nOverlays\nTemplates\nScripture\nCalendar\nFunctions\nSearch\nAll\n4\nUnlabeled\n4\nCategories\nPresentations\nSongs\nNew category\nName\nModified\nParity Fixture\nOct 27, 2024\nParity With Media\nOct 27, 2024\nParity With Notes\nOct 27, 2024\nTransition Fixture\nOct 27, 2024\nImport\nNew show\nParity With Media\nCreated\nSunday, October 27, 2024\nModified\nThursday, November 12, 2026\nUsed\nThursday, November 12, 2026\nCategory\nNone\nSlides\n3\nWords\n16\nTemplate\nNone",
+    "textLength": 883,
+    "textTruncated": false,
+    "lockTitles": [
+      "Unlock output [Ctrl+L]"
+    ],
+    "lockTitle": "Unlock output [Ctrl+L]",
+    "clear": {
+      "root": true,
+      "entries": [
+        {
+          "title": "Clear all [esc]",
+          "disabled": true,
+          "active": false,
+          "text": "Clear all"
+        },
+        {
+          "title": "Background",
+          "disabled": false,
+          "active": true,
+          "text": ""
+        },
+        {
+          "title": "Clear slide  [F2]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Slide",
+          "disabled": false,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear overlays [F3]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Overlays",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear audio [F4]",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Audio",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Clear next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        },
+        {
+          "title": "Next slide timer",
+          "disabled": true,
+          "active": false,
+          "text": ""
+        }
+      ],
+      "groups": [
+        {
+          "layer": "Background",
+          "clearTitle": "",
+          "clearDisabled": true,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Slide",
+          "clearTitle": "Clear slide  [F2]",
+          "clearDisabled": true,
+          "disclosureDisabled": false
+        },
+        {
+          "layer": "Overlays",
+          "clearTitle": "Clear overlays [F3]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Audio",
+          "clearTitle": "Clear audio [F4]",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        },
+        {
+          "layer": "Next slide timer",
+          "clearTitle": "Clear next slide timer",
+          "clearDisabled": true,
+          "disclosureDisabled": true
+        }
+      ]
+    },
+    "projectsArea": false,
+    "projectArea": true,
+    "projectItems": [
+      "Parity Fixture",
+      "Parity With Notes",
+      "Transition Fixture",
+      "Parity With Media",
+      "00:03\nbackground"
+    ],
+    "activeProjectItems": [
+      "Parity With Media"
+    ],
+    "projectButtons": [],
+    "preview": {
+      "root": true,
+      "tiles": [
+        {
+          "id": "default",
+          "name": "",
+          "titleBar": false,
+          "buttonTitle": null,
+          "indicatorTitle": null,
+          "active": true,
+          "struck": false
+        }
+      ]
+    },
+    "media": {
+      "strip": {
+        "present": true,
+        "layer": "Background",
+        "name": "video-bg",
+        "buttons": [
+          {
+            "title": "Play",
+            "disabled": true
+          },
+          {
+            "title": "Go forward 10 seconds",
+            "disabled": false
+          },
+          {
+            "title": "Loop: Enabled",
+            "disabled": false
+          },
+          {
+            "title": "Unmute",
+            "disabled": true
+          }
+        ],
+        "muteTitle": "Unmute",
+        "muteDisabled": true,
+        "playPauseTitle": "Play",
+        "playPauseDisabled": true,
+        "loopTitle": "Loop: Enabled",
+        "loopDisabled": false
+      }
+    },
+    "mediaDrawer": {
+      "open": false,
+      "folders": [],
+      "cards": []
+    },
+    "toast": "",
+    "presentButton": {
+      "on": false,
+      "className": "context #output display off svelte-6w0zc1 bold",
+      "title": "Present [Ctrl+O]",
+      "text": ""
+    },
+    "error": null
+  },
+  "output": {
+    "present": true,
+    "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+    "text": "Verse one, line one \n Verse one, line two",
+    "lines": [
+      "Verse one, line one",
+      "Verse one, line two"
+    ],
+    "mainBackground": "rgba(0, 0, 0, 0)",
+    "rootClass": "fill context #output_window svelte-1uvipqj",
+    "error": null
+  },
+  "outputs": [
+    {
+      "id": "default",
+      "url": "file:///home/eydamson/projects/reference/freeshow/public/index.html",
+      "text": "Verse one, line one \n Verse one, line two",
+      "lines": [
+        "Verse one, line one",
+        "Verse one, line two"
+      ],
+      "stageArea": false,
+      "rootClass": "fill context #output_window svelte-1uvipqj",
+      "mainBackground": "rgba(0, 0, 0, 0)",
+      "videos": [
+        {
+          "src": "file:///tmp/opencode/media/video-bg.webm",
+          "loop": true,
+          "paused": true,
+          "muted": true,
+          "currentTime": 1.392428,
+          "duration": 3.008,
+          "readyState": 4,
+          "videoWidth": 1280,
+          "videoHeight": 720
+        }
+      ],
+      "images": [],
+      "contentBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "viewportBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "error": null
+    }
+  ],
+  "settled": {
+    "controller": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    },
+    "output0": {
+      "settled": true,
+      "runningAnimations": [],
+      "infiniteAnimations": [],
+      "fonts": "loaded"
+    }
+  },
+  "assertions": [
+    {
+      "ok": true,
+      "check": "controller animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "output0 animations reached completion"
+    },
+    {
+      "ok": true,
+      "check": "the output is locked"
+    },
+    {
+      "ok": true,
+      "check": "the strip is still readable while the output is locked"
+    },
+    {
+      "ok": true,
+      "check": "play/pause is disabled while the output is locked"
+    },
+    {
+      "ok": true,
+      "check": "mute is disabled while the output is locked"
+    },
+    {
+      "ok": true,
+      "check": "loop is NOT disabled while the output is locked"
+    }
+  ],
+  "screenshot": {
+    "controller": "09-media-lock-controller.png",
+    "output": null,
+    "outputMethod": null,
+    "errors": [
+      "output: page.screenshot: Timeout 15000ms exceeded.; capturePage returned no image"
+    ],
+    "outputRetried": true
+  },
+  "durationMs": 31496,
+  "finishedAt": "2026-11-12T11:12:28.894Z"
+}

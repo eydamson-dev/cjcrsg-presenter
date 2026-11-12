@@ -1,0 +1,157 @@
+# Media: drawer click/clear, backgrounds, video controls, next on media finished
+
+Features read from FreeShow `ff784eb` (1.6.8-beta.3), plus the `media-behaviour`
+run of 2026-11-12. Labels follow `docs/freeshow-reference/USING-THIS.md`:
+`label: observed` means a recorded run at the pin, `code` means read from the
+pinned source only.
+
+Run evidence for every `observed` note below:
+- `parity/reports/evidence/observe-media-2026-11-12-xvfb/` — scenario
+  `media-behaviour`, 14/14 steps, `failed: []`, one normal output (`default`),
+  xvfb-run virtual display (`:99`, 1920×1080), controller viewport 1600×900.
+  Show `Parity With Media`: layout slide `fx-1` seeded with background `m-bg`
+  (`{loop:true, muted:true}`) and `actions.nextAfterMedia:true`; media folder
+  `/tmp/opencode/media` with `video-bg.webm` (VP9+Opus, 3.008 s) and `logo.png`.
+  The output window was created hidden and every output page screenshot timed
+  out on llvmpipe; evidence is the output DOM/player state
+  (`outputs[]` → `videos[]`, `images[]`) plus the media strip read from the
+  controller, not an output PNG.
+
+---
+
+```yaml
+id: media.play
+area: media
+title: Click a media card to play it on the output; click again to clear
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/drawer/media/MediaCard.svelte:111-157
+    - src/frontend/components/drawer/media/Media.svelte:382-453
+    - src/frontend/converters/project.ts:151-167
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (media-behaviour, 2026-11-12): a plain single click on a no-type
+  video card put the file on the one active output (card title Play -> Clear;
+  output gained <video src=video-bg.webm>), and a second click cleared it (no
+  <video>, card title back to Play). The click default was loop:true with the
+  player unmuted (the strip offered Mute). Evidence:
+  12-media-drawer-play.json, 13-media-drawer-clear.json.
+  The scenario has a single output, so "sends a background to every active
+  output" (MediaCard.svelte:128-140) is observed only for one output; the
+  multi-output fan-out stays code. Boundary: Ctrl/Cmd/Shift-hold, a pending
+  double-click, icon-button targets, playing while locked, foreground typing,
+  double-click add, search Enter and Ctrl/Cmd+Left/Right preview were not
+  exercised.
+```
+
+```yaml
+id: media.background
+area: media
+title: Media as a slide background; the drawer, project-item and slide defaults
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/helpers/dropActions.ts:697-759
+    - src/frontend/utils/shortcuts.ts:531-542
+    - src/frontend/components/drawer/media/MediaCard.svelte:128-140
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (media-behaviour, 2026-11-12) for the player, with the background
+  seeded rather than dropped: a layout-slide background whose show media entry
+  is {loop:true, muted:true} rendered with video.loop === true, a finite 3.008 s
+  duration, readyState 4 and the strip reporting the player muted
+  (06-media-background.json). A project media item with no type played with
+  video.loop === false and the player unmuted (14-media-project-item.json). A
+  drawer click with no type played looping and unmuted (12-media-drawer-play.json).
+  The drop normalisation that produces {muted:true, loop:true}
+  (dropActions.ts:710-711) stays code: the run seeded the object directly.
+  Boundary: per-item loop/muted overrides, foreground typing, multi-file and
+  provider layer resolution, centre-drop vs Ctrl-drop, and dropping off a slide
+  were not exercised.
+```
+
+```yaml
+id: media.controls
+area: media
+title: "The media control strip: reveal, play/pause, loop, mute, lock"
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/output/tools/MediaControls.svelte:38-191
+    - src/frontend/components/output/preview/Preview.svelte:278-282
+    - src/frontend/components/media/Video.svelte:263
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (media-behaviour, 2026-11-12): the strip renders in the clear-control
+  column only while the Background layer is the revealed one (Preview.svelte:
+  278-282); the 05-start step revealed it, and 06 records it present with that
+  layer selected. The reveal control is the Background layer's disclosure
+  button, next to "Clear background [F1]" - this answers the page's former
+  unknown. With a video background the strip showed name + Play/Pause + "Go forward 10 seconds"
+  + loop + mute; with an image background it showed the name only (no buttons);
+  with no background it was absent (06, 11, 13). Play/pause drove the live
+  player (07); loop and mute changed the player while the stored show media
+  entry still read loop:true/muted:true (08); locking disabled play/pause and
+  mute but not loop, and unlocking restored them (09, 10).
+  Source fact settled by the run: muted is not DOM-readable - the output <video>
+  is hardcoded muted (media/Video.svelte:263) and video.muted was true even when
+  the strip offered Mute; read mute state from the strip's button title. loop is
+  DOM-readable.
+  Boundary: the seek slider's currentTime/duration tracking, clicking the +-10 s
+  buttons and their clamps, the media-name preview button and the videoSync
+  subscription stay code.
+```
+
+```yaml
+id: media.next-finished
+area: media
+title: A slide's media reaching its end advances, even when the media loops
+ui: true
+reference:
+  commit: ff784eb388c7baef60d67e6d4e7c504f4322bca3
+  evidence:
+    - src/frontend/components/media/video/videoPlayer.ts:344-428
+    - src/frontend/components/helpers/showActions.ts:676-728
+    - src/frontend/components/slide/Actions.svelte:132
+    - src/frontend/components/context/loadItems.ts:189
+  read_by: reader
+label: observed
+confidence: medium
+scenarios: []
+status: planned
+deviations: []
+notes: >
+  Observed (media-behaviour, 2026-11-12): with actions.nextAfterMedia seeded on
+  layout slide fx-1 and a background looping at the start of the step
+  (video.loop === true), the output advanced from slide 1 to slide 2 exactly
+  once when the clip ended, left the first slide and did not reach slide 3
+  (11-media-next-finished.json). Playback began at 1.392 s of the 3.008 s clip
+  (1616 ms remaining) and the advance was observed 2794 ms later, inside the
+  run's window around that remaining time - tied to the clip, not a fixed wait.
+  The video background was gone afterwards and the advance target's own logo.png
+  background rendered. That observes the ordering claim (the end check runs
+  before the loop branch) for a looping background; whether the first or the
+  repeated check fired was not isolated, and the 600 ms second-advance guard is
+  only indirectly observed (one advance). Boundary: a non-looping background
+  without the flag (the 200 ms clear), the audio/timer reuse and a foreground
+  video with the flag stay code/unknown.
+```

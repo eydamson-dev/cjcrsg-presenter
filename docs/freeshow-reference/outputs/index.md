@@ -30,9 +30,11 @@ The present/start/lock/advance/clear path is now `observed` from the
 multiple-output present/fan-out/select/disable path and the stage-window path
 are `observed` from the 2026-11-12 `stage-multi-output` run; see
 [multiple-outputs](multiple-outputs.md#observed--the-stage-multi-output-run).
-The rest of this area is still `code`, so a contract may rest only on the
-observed entries without a further run or explicit provisional approval
-(`docs/decisions.md:191-193`).
+Per-output styles (attach, aspect, line window and shared paging, layers) are
+`observed` from the 2026-11-12 `styles-multi-output` run; see
+[styles](styles.md#observed--the-styles-multi-output-run). The rest of this area
+is still `code`, so a contract may rest only on the observed entries without a
+further run or explicit provisional approval (`docs/decisions.md:191-193`).
 
 ## The output model
 
@@ -166,3 +168,5 @@ NDI/invisible), one locked (struck-through name), clear-button column visible,
 - `2026-11-12` — the multiple-output and stage-window paths are also `observed`
   now (`stage-multi-output` run); pointed the "rest is still `code`" note at the
   `multiple-outputs` observed section too.
+- `2026-11-12` — per-output styles are `observed` now (`styles-multi-output`
+  run); pointed the "rest is still `code`" note at the `styles` observed section.

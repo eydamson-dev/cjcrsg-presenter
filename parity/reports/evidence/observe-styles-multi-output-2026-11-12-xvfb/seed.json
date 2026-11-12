@@ -1,0 +1,255 @@
+{
+  "seededAt": "2026-11-12T11:15:21.175Z",
+  "store": "/tmp/opencode/fs-store",
+  "dataPath": "/tmp/opencode/fs-data",
+  "settings": {
+    "initialized": true,
+    "disabledServers": {
+      "remote": false,
+      "stage": false,
+      "controller": false,
+      "output_stream": false
+    },
+    "outLocked": false,
+    "outputs": {
+      "primary": {
+        "enabled": true,
+        "active": true,
+        "name": "Primary",
+        "color": "#F0008C",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "screen": null,
+        "style": "style-lines2",
+        "show": {}
+      },
+      "secondary": {
+        "enabled": true,
+        "active": true,
+        "name": "Secondary",
+        "color": "#0A84FF",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "screen": null,
+        "style": "style-43",
+        "show": {}
+      },
+      "tertiary": {
+        "enabled": true,
+        "active": true,
+        "name": "Tertiary",
+        "color": "#30D158",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "screen": null,
+        "style": "style-nobg",
+        "show": {}
+      }
+    }
+  },
+  "project": {
+    "id": "parity",
+    "name": "Parity Project",
+    "shows": [
+      {
+        "id": "fx-show"
+      },
+      {
+        "id": "fx-notes"
+      },
+      {
+        "id": "tx-show"
+      },
+      {
+        "id": "fx-styles"
+      }
+    ]
+  },
+  "projectCheck": {
+    "projectCount": 1
+  },
+  "shows": [
+    {
+      "file": "parity-three-slides.show",
+      "id": "fx-show",
+      "name": "Parity Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-with-notes.show",
+      "id": "fx-notes",
+      "name": "Parity With Notes",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "fx-2",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "fx-3",
+          "parent": "fx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "parity-transitions.show",
+      "id": "tx-show",
+      "name": "Transition Fixture",
+      "slides": 3,
+      "mediaPaths": [],
+      "groupRepairs": [
+        {
+          "child": "tx-2",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        },
+        {
+          "child": "tx-3",
+          "parent": "tx-1",
+          "action": "added to parent children"
+        }
+      ]
+    },
+    {
+      "file": "(built in memory)",
+      "id": "fx-styles",
+      "name": "Parity Styles",
+      "slides": 2,
+      "mediaPaths": [
+        "/tmp/opencode/media/logo.png"
+      ],
+      "groupRepairs": []
+    }
+  ],
+  "showFiles": [
+    "Parity Fixture.show",
+    "Parity Styles.show",
+    "Parity With Notes.show",
+    "Transition Fixture.show"
+  ],
+  "skipped": [
+    {
+      "file": "parity-with-media.show",
+      "reason": "missing media: /srv/freeshow/media/background.mp4, /srv/freeshow/media/logo.png"
+    }
+  ],
+  "multiOutput": null,
+  "media": null,
+  "mediaFiles": {
+    "dir": "/tmp/opencode/media",
+    "duration": 3,
+    "files": [
+      {
+        "name": "video-bg.webm",
+        "path": "/tmp/opencode/media/video-bg.webm",
+        "bytes": 36343,
+        "wrote": false,
+        "existedBefore": true
+      },
+      {
+        "name": "logo.png",
+        "path": "/tmp/opencode/media/logo.png",
+        "bytes": 649,
+        "wrote": false,
+        "existedBefore": true
+      }
+    ]
+  },
+  "styles": {
+    "show": {
+      "id": "fx-styles",
+      "name": "Parity Styles",
+      "file": "(built in memory)"
+    },
+    "slides": [
+      {
+        "id": "st-1",
+        "background": "m-logo",
+        "lines": [
+          "Slide one, line one",
+          "Slide one, line two",
+          "Slide one, line three",
+          "Slide one, line four"
+        ]
+      },
+      {
+        "id": "st-2",
+        "background": null,
+        "lines": [
+          "Slide two, line one",
+          "Slide two, line two"
+        ]
+      }
+    ],
+    "styles": {
+      "style-lines2": {
+        "name": "Two lines",
+        "lines": 2
+      },
+      "style-43": {
+        "name": "Four-three",
+        "aspectRatio": {
+          "width": 4,
+          "height": 3
+        }
+      },
+      "style-nobg": {
+        "name": "No background",
+        "layers": [
+          "slide",
+          "overlays"
+        ]
+      }
+    },
+    "bindings": [
+      {
+        "id": "primary",
+        "name": "Primary",
+        "style": "style-lines2"
+      },
+      {
+        "id": "secondary",
+        "name": "Secondary",
+        "style": "style-43"
+      },
+      {
+        "id": "tertiary",
+        "name": "Tertiary",
+        "style": "style-nobg"
+      }
+    ]
+  },
+  "targetShow": {
+    "name": "Parity Styles",
+    "id": "fx-styles",
+    "file": "(built in memory)"
+  }
+}

@@ -125,12 +125,13 @@ Every behavioural claim carries one label:
 | --- | --- |
 | Features in `feature-inventory.md` | 225 |
 | Detail pages | 65 |
-| Code citations checked | 1,636, 0 failed |
+| Code citations checked | 1,640, 0 failed |
 | Screenshots of the running reference | 30 |
-| Claims labelled `observed` | 90: present/visibility/lock/advance/clear (2026-11-11); end-of-show (2026-11-09) |
+| Claims labelled `observed` | 197: present/visibility/lock/advance/clear (2026-11-11); end-of-show (2026-11-09); multiple outputs + stage (2026-11-12); media click/controls/next-finished (2026-11-12); per-output styles (2026-11-12) |
 
-Some behaviour is now `observed` from recorded runs; see `show/presenting.md`
-and `outputs/output-window.md`. Most pages remain `code`. An `observed` claim may
+Some behaviour is now `observed` from recorded runs; see `show/presenting.md`,
+`outputs/output-window.md`, `outputs/multiple-outputs.md`, `drawer/media.md` and
+`outputs/styles.md`. Most pages remain `code`. An `observed` claim may
 become a requirement, but no page is a contract until a scenario confirms it;
 `USING-THIS.md` says what each label permits.
 

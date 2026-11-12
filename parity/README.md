@@ -174,10 +174,12 @@ controller screenshots were fine. The reference's own capture agrees:
 with `[OSR] capture mode: cpu bitmap ... gpu compositing=hardware`. Use the
 workspace when the output frame is part of the evidence.
 
-**What it cannot observe:** per-output styles or transitions, window placement
-and monitors, the remote/stage/controller web clients, media, audio, or anything
-that depends on the controller clock. Multiple outputs and the stage *window* are
-covered by `stage-multi-output`; the stage **web client** (port 5511, `stage.url`
+**What it cannot observe:** window placement and monitors, the
+remote/stage/controller web clients, audio playback (`audio.play`), or anything
+that depends on the controller clock. Per-output styles and media are covered by
+`styles-multi-output` and `media-behaviour` (see below), and multiple outputs and
+the stage *window* are covered by `stage-multi-output`; the stage **web client**
+(port 5511, `stage.url`
 and its query parameters) is not — it needs a browser pointed at the reference's
 stage server, which is a different route. The output window's size comes from the
 profile and the screen and is recorded, not forced; the controller clock is
@@ -213,6 +215,75 @@ missing `children` links in the **scratch-profile copy only** and records them i
 reference checkout are untouched. The fixtures should be fixed at the source,
 and the reader should record the loader rule; until then, a run without the
 repair observes a one-slide show.
+
+## Observing media and output styles
+
+Two more scenarios cover the Tier 1 media and output-style features. They need
+media files, which do not exist on a clean machine, so the driver generates them:
+
+```bash
+node parity/tools/generate_media.mjs            # once, or let the driver do it
+node parity/tools/observe_reference.mjs /tmp/opencode/observe-media-$(date +%F) --scenario media-behaviour
+node parity/tools/observe_reference.mjs /tmp/opencode/observe-styles-$(date +%F) --scenario styles-multi-output
+```
+
+`generate_media.mjs` writes two deterministic files into `/tmp/opencode/media`:
+`video-bg.webm` (WebM VP9 + Opus, 1280×720, 3 s, solid red → green → blue with a
+quiet 440 Hz sine) and `logo.png` (320×180 magenta with a white border). The audio
+track is required: the reference detects the end of a background from an
+`HTMLAudioElement` (`media/video/videoPlayer.ts:344-360`), so a silent file would
+fall back to a ticker. The driver calls the same module at seed time, so both
+scenarios work from a cold `/tmp`.
+
+- **`media-behaviour`** seeds the media fixture (repointed at the generated files),
+  a `mediaFolders` entry, and a media project item. It records `media.play`,
+  `media.background`, `media.controls` and `media.next-finished`. The clip is
+  paused through the strip right after `start` so a 3 s clip still has time for the
+  later steps; the next-after-media step resumes it and records how long the
+  advance took relative to the clip's remaining time.
+- **`styles-multi-output`** seeds `settings_synced.json` with three styles and three
+  normal outputs bound to them (`lines: 2`, `aspectRatio 4:3`,
+  `layers: ["slide","overlays"]`), and a show built in memory whose first slide has
+  four text lines and an image background. It records `out.styles`,
+  `out.styles.aspect`, `out.styles.lines` and `out.styles.layers` from each
+  output's content-box geometry, visible text lines and rendered `img.media`/`video.media`.
+
+**What the observations rest on.** The output windows stay hidden on this machine,
+so nothing here reads pixels. `readOutput` now also returns each page's
+`videos[]` (`src`, `loop`, `paused`, `muted`, `currentTime`, `duration`,
+`readyState`, `videoWidth`, `videoHeight`), `images[]`, `contentBox` (the
+`.zoomed .slide` rect, which carries the style's `aspect-ratio`) and `viewportBox`
+(the `.zoomed` rect). `readController` now also returns the media control strip
+(`title` + `disabled` per button, plus the revealed layer and the media name) and
+the media drawer's folders/cards.
+
+**The two shapes the reader could not resolve, now read from the source:**
+
+- A dropped layout-slide background is a **media id**, not an object. The
+  `showMedia` history handler adds the dropped media to `show.media` and stores
+  that entry's key in `layouts[layout].slides[i].background`
+  (`src/frontend/components/helpers/history.ts:110-142`); a child slide's layout
+  data lives under the parent entry's `children[childId]`. `checkNextAfterMedia`
+  then reads `layoutSlide.data.background` and
+  `layoutSlide.data.actions.nextAfterMedia`
+  (`helpers/showActions.ts:690-716`). The scratch copy of the fixture is written
+  in that shape; the committed fixture is untouched.
+- The output `<video>` is **hardcoded muted** (`media/Video.svelte:263`), so
+  `video.muted` is always true and is not evidence of the stored muted state. The
+  driver reads the mute state from the strip's button title (`Mute` when the
+  player is unmuted, `Unmute` when it is muted; `MediaControls.svelte:152`,
+  `Show.svelte:112`). `loop` *is* DOM-observable: the element's `loop` attribute is
+  bound to the player's `videoData.loop` (`media/Video.svelte:73,263`).
+
+**The strip's reveal control** (the reader's `unknown`) is the per-layer clear
+selection: `Preview.svelte:281-282` renders `MediaControls` only while the
+revealed clear layer is `background`, and the layer's disclosure button
+(`data-title` "Background", `ClearButtons.svelte:148`) is what selects it. The
+media scenario records the strip absent at `open_show` and present after the
+Background layer is selected.
+
+The button titles are the reference's English labels (`public/lang/en.json`), so
+the media scenario assumes an English dictionary; `run.json` records the locale.
 
 Two reference traps this driver had to handle, in case the next driver meets
 them again:

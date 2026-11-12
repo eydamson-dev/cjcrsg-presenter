@@ -8,17 +8,23 @@
 // called.
 //
 // Usage:
-//   cd parity/tools && node observe_reference.mjs <outdir> [--scenario outputs-basic|stage-multi-output]
+//   cd parity/tools && node observe_reference.mjs <outdir> [--scenario <id>]
+//
+// Scenarios: outputs-basic, stage-multi-output, media-behaviour,
+// styles-multi-output.
 //
 // The scratch profile is deleted and reseeded on every run. The reference
 // checkout is only read: its package.json and built public/index.html are
-// inspected, and Electron is launched with cwd there.
+// inspected, and Electron is launched with cwd there. Media fixtures are
+// generated into /tmp (see generate_media.mjs) and referenced by absolute path
+// from a scratch copy of the fixture; the committed fixture is never edited.
 
 import { createRequire } from "module"
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "fs"
 import { homedir } from "os"
 import { basename, dirname, join, resolve, sep } from "path"
 import { fileURLToPath } from "url"
+import { generateMedia, MEDIA_DIR as MEDIA_FIXTURE_DIR, MEDIA_VIDEO_NAME, MEDIA_LOGO_NAME } from "./generate_media.mjs"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repo = resolve(here, "..", "..")
@@ -57,6 +63,55 @@ const STAGE_LAYOUT_NAME = "Parity Stage"
 const OUTPUT_STAGE = { id: "stage", name: STAGE_LAYOUT_NAME, color: "#555555" }
 const STAGE_ITEM_CURRENT = "textCurrent"
 const STAGE_ITEM_NEXT = "textNext"
+
+// Media fixtures. `parity-with-media.show` references absolute paths that do not
+// exist on a clean machine, so the scratch copy is repointed at files generated
+// under /tmp. The layout-slide background is a *media id*, not an object: the
+// reference's `showMedia` history handler adds the media entry to `show.media`
+// and stores that entry's key in `layouts[layout].slides[i].background`
+// (`components/helpers/history.ts:110-142`), and `checkNextAfterMedia` reads
+// `layoutSlide.data.background` plus `layoutSlide.data.actions.nextAfterMedia`
+// (`components/helpers/showActions.ts:690-716`).
+const MEDIA_VIDEO = join(MEDIA_FIXTURE_DIR, MEDIA_VIDEO_NAME)
+const MEDIA_LOGO = join(MEDIA_FIXTURE_DIR, MEDIA_LOGO_NAME)
+const MEDIA_FOLDER_ID = "parity-media"
+const MEDIA_FOLDER_NAME = "Parity Media"
+const MEDIA_SHOW_NAME = "Parity With Media"
+const MEDIA_VIDEO_MEDIA_ID = "m-bg"
+const MEDIA_LOGO_MEDIA_ID = "m-logo"
+const MEDIA_OUTPUT_ID = "default"
+
+// Styles. `styles` is a synced setting (`electron/data/defaults.ts:108`,
+// `store.ts:35`), so it lives in settings_synced.json. `settings.outputs[id].style`
+// names an entry in it; an unknown id falls back to the built-in default
+// (`helpers/output.ts:1856-1861`).
+const STYLES_SHOW_ID = "fx-styles"
+const STYLES_SHOW_NAME = "Parity Styles"
+const STYLES_LAYOUT_ID = "lay-parity"
+const STYLE_LINES2 = "style-lines2"
+const STYLE_43 = "style-43"
+const STYLE_NOBG = "style-nobg"
+const STYLE_DEFINITIONS = {
+    [STYLE_LINES2]: { name: "Two lines", lines: 2 },
+    [STYLE_43]: { name: "Four-three", aspectRatio: { width: 4, height: 3 } },
+    [STYLE_NOBG]: { name: "No background", layers: ["slide", "overlays"] }
+}
+// Slide text for the styles fixture. Four lines on slide one so a `lines: 2`
+// style pages, and two on slide two so "the slide advanced" is distinguishable
+// from "the line window paged".
+const STYLES_SLIDE_1 = ["Slide one, line one", "Slide one, line two", "Slide one, line three", "Slide one, line four"]
+const STYLES_SLIDE_2 = ["Slide two, line one", "Slide two, line two"]
+const OUTPUT_TERTIARY = { id: "tertiary", name: "Tertiary", color: "#30D158" }
+
+// The English titles the reference gives its own controls. They are the
+// observable for state that is not in the DOM (`$dictionary` loaded from
+// public/lang/en.json; `run.json` records the locale).
+const TITLE_PLAY = "Play"
+const TITLE_PAUSE = "Pause"
+const TITLE_MUTE = "Mute"
+const TITLE_UNMUTE = "Unmute"
+const TITLE_LOOP = "Loop"
+const TITLE_CLEAR_BACKGROUND_LAYER = "Background"
 
 // Slide text of `parity-three-slides.show`, in layout order.
 const SLIDE_ONE = "Verse one, line one"
@@ -302,6 +357,155 @@ function seedMultiOutput(store) {
     return { outputs, layout }
 }
 
+function fixtureMediaPaths(show) {
+    return Object.values(show.media || {})
+        .map((media) => media && media.path)
+        .filter(Boolean)
+}
+
+// Rewrite the committed fixture's scratch copy. The committed file keeps its
+// `/srv/freeshow/media/...` paths; only the copy the reference loads is repointed.
+// Slide one keeps the advance target: its layout entry gets the video as its
+// background (a media id) and the next-after-media flag. Slide two is given its
+// own background so the reference's "ghost background" rule (a slide without a
+// background inherits the previous one's, `showActions.ts:372-383`) does not
+// carry the video onto the advance target, which would make the drawer
+// click/clear step start from an already-active background.
+function transformMediaFixture(show) {
+    const media = show.media || {}
+    media[MEDIA_VIDEO_MEDIA_ID] = {
+        ...(media[MEDIA_VIDEO_MEDIA_ID] || {}),
+        path: MEDIA_VIDEO,
+        name: (media[MEDIA_VIDEO_MEDIA_ID] && media[MEDIA_VIDEO_MEDIA_ID].name) || "background",
+        type: "video",
+        muted: true,
+        loop: true
+    }
+    media[MEDIA_LOGO_MEDIA_ID] = {
+        ...(media[MEDIA_LOGO_MEDIA_ID] || {}),
+        path: MEDIA_LOGO,
+        name: (media[MEDIA_LOGO_MEDIA_ID] && media[MEDIA_LOGO_MEDIA_ID].name) || "logo",
+        type: "image"
+    }
+    show.media = media
+
+    const layoutId = (show.settings && show.settings.activeLayout) || Object.keys(show.layouts || {})[0]
+    const layout = (show.layouts || {})[layoutId]
+    if (!layout || !Array.isArray(layout.slides) || !layout.slides.length) {
+        throw new Error(`media fixture has no layout slides under "${layoutId}"`)
+    }
+    const first = layout.slides[0]
+    first.background = MEDIA_VIDEO_MEDIA_ID
+    first.actions = { ...(first.actions || {}), nextAfterMedia: true }
+    const second = layout.slides[1] || null
+    if (second) second.background = MEDIA_LOGO_MEDIA_ID
+    // A layout that lists a following slide *and* that slide as a child of the
+    // first entry indexes the child first (`helpers/shows.ts:393-460`: each entry's
+    // `children` are expanded before the next entry). The child's layout data is
+    // the object under the parent entry's `children[childId]`, and that is what
+    // `playSlide` reads as `layout[index].data`, so the advance target's own
+    // background belongs there.
+    const childIds = layout.slides
+        .slice(1)
+        .map((slide) => slide && slide.id)
+        .filter(Boolean)
+    first.children = { ...(first.children || {}) }
+    for (const childId of childIds) {
+        first.children[childId] = { ...(first.children[childId] || {}), background: MEDIA_LOGO_MEDIA_ID }
+    }
+
+    return {
+        media: {
+            [MEDIA_VIDEO_MEDIA_ID]: { path: MEDIA_VIDEO, type: "video", muted: true, loop: true },
+            [MEDIA_LOGO_MEDIA_ID]: { path: MEDIA_LOGO, type: "image" }
+        },
+        layoutId,
+        layoutSlides: layout.slides.map((slide, index) => ({
+            index,
+            id: slide.id,
+            background: slide.background === undefined ? null : slide.background,
+            actions: slide.actions || null
+        })),
+        layoutChildren: childIds.map((childId) => ({ parent: first.id, id: childId, background: first.children[childId].background }))
+    }
+}
+
+function textItem(lines) {
+    return {
+        style: "top:0;left:0;width:100%;height:100%;",
+        align: "text-align: center;",
+        lines: lines.map((value) => ({ align: "", text: [{ value, style: "" }] }))
+    }
+}
+
+// A show with per-output-observable content, built in memory so no committed
+// fixture changes. Every slide is its own group (`group: "."`): FreeShow's loader
+// deletes `group: null` slides it cannot find in a preceding parent's `children`
+// (`converters/importHelpers.ts:271-290`), and a layout that lists a parent *and*
+// its children indexes the children twice. Two ungrouped slides give exactly two
+// pages.
+function createStylesFixture() {
+    const show = {
+        name: STYLES_SHOW_NAME,
+        private: false,
+        category: null,
+        settings: { activeLayout: STYLES_LAYOUT_ID, template: null },
+        timestamps: { created: 1730000000000, modified: null, used: null },
+        quickAccess: {},
+        meta: {},
+        media: { [MEDIA_LOGO_MEDIA_ID]: { path: MEDIA_LOGO, name: "logo", type: "image" } },
+        slides: {
+            "st-1": { group: ".", color: "", settings: {}, notes: "", items: [textItem(STYLES_SLIDE_1)] },
+            "st-2": { group: ".", color: null, settings: {}, notes: "", items: [textItem(STYLES_SLIDE_2)] }
+        },
+        layouts: {
+            [STYLES_LAYOUT_ID]: {
+                name: "Default",
+                notes: "",
+                slides: [{ id: "st-1", background: MEDIA_LOGO_MEDIA_ID }, { id: "st-2" }]
+            }
+        }
+    }
+    return { file: "(built in memory)", path: null, id: STYLES_SHOW_ID, name: STYLES_SHOW_NAME, show, mediaPaths: [MEDIA_LOGO], built: true }
+}
+
+// Three normal outputs, each bound to a different seeded style. Shapes as in
+// seedMultiOutput; the only new field is `style`.
+function seedStylesOutputs() {
+    return {
+        [OUTPUT_PRIMARY.id]: {
+            enabled: true,
+            active: true,
+            name: OUTPUT_PRIMARY.name,
+            color: OUTPUT_PRIMARY.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: STYLE_LINES2,
+            show: {}
+        },
+        [OUTPUT_SECONDARY.id]: {
+            enabled: true,
+            active: true,
+            name: OUTPUT_SECONDARY.name,
+            color: OUTPUT_SECONDARY.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: STYLE_43,
+            show: {}
+        },
+        [OUTPUT_TERTIARY.id]: {
+            enabled: true,
+            active: true,
+            name: OUTPUT_TERTIARY.name,
+            color: OUTPUT_TERTIARY.color,
+            bounds: { ...OUTPUT_BOUNDS },
+            screen: null,
+            style: STYLE_NOBG,
+            show: {}
+        }
+    }
+}
+
 function seedProfile(options) {
     const store = assertScratchPath("--store", options.store)
     const dataPath = assertScratchPath("--data", options.dataPath)
@@ -315,19 +519,59 @@ function seedProfile(options) {
     mkdirSync(store, { recursive: true })
     mkdirSync(join(dataPath, "Shows"), { recursive: true })
 
+    // What the scenario's profile needs, declared on the scenario itself so the
+    // default seeds (`outputs-basic`, `stage-multi-output`) stay byte-identical.
+    const plan = (SCENARIOS[options.scenario] && SCENARIOS[options.scenario].seed) || {}
+    const targetShowName = plan.targetShow || TARGET_SHOW
+
     const fixtures = SHOW_FIXTURES.map(readFixture)
     const skipped = []
+
+    // Media: generated first, then the fixture's scratch copy is repointed at the
+    // generated files. Nothing is written to parity/fixtures. `mediaFiles` covers a
+    // scenario that needs the files but not the media fixture (the styles run only
+    // needs the logo).
+    let mediaFiles = null
+    let mediaTransform = null
+    if (plan.media || plan.mediaFiles) {
+        mediaFiles = generateMedia({})
+        const missing = mediaFiles.files.filter((file) => !existsSync(file.path))
+        if (missing.length) throw new Error(`generated media is missing: ${missing.map((file) => file.path).join(", ")}`)
+    }
 
     // FreeShow reads absolute media paths. If the machine has them, the media
     // fixture is a normal show; if not, seeding it would put a broken show in
     // front of the reader.
     if (existsSync(join(fixturesDir, OPTIONAL_MEDIA_FIXTURE))) {
         const mediaFixture = readFixture(OPTIONAL_MEDIA_FIXTURE)
-        const missing = mediaFixture.mediaPaths.filter((path) => !existsSync(path))
-        if (missing.length) {
-            skipped.push({ file: mediaFixture.file, reason: `missing media: ${missing.join(", ")}` })
-        } else {
+        if (plan.media) {
+            mediaTransform = transformMediaFixture(mediaFixture.show)
+            mediaFixture.mediaPaths = fixtureMediaPaths(mediaFixture.show)
+            const missing = mediaFixture.mediaPaths.filter((path) => !existsSync(path))
+            if (missing.length) throw new Error(`the media fixture's generated files are missing: ${missing.join(", ")}`)
             fixtures.push(mediaFixture)
+        } else {
+            const missing = mediaFixture.mediaPaths.filter((path) => !existsSync(path))
+            if (missing.length) {
+                skipped.push({ file: mediaFixture.file, reason: `missing media: ${missing.join(", ")}` })
+            } else {
+                fixtures.push(mediaFixture)
+            }
+        }
+    }
+
+    // Styles: a show built in memory, so no committed fixture changes.
+    let stylesSeed = null
+    if (plan.styles) {
+        const stylesFixture = createStylesFixture()
+        fixtures.push(stylesFixture)
+        stylesSeed = {
+            show: { id: stylesFixture.id, name: stylesFixture.name, file: stylesFixture.file },
+            slides: [
+                { id: "st-1", background: MEDIA_LOGO_MEDIA_ID, lines: STYLES_SLIDE_1 },
+                { id: "st-2", background: null, lines: STYLES_SLIDE_2 }
+            ],
+            styles: STYLE_DEFINITIONS
         }
     }
 
@@ -359,24 +603,42 @@ function seedProfile(options) {
         disabledServers: { remote: false, stage: false, controller: false, output_stream: false },
         outLocked: false
     }
+    // A media project item's id is the media *path*: `togglePlayingMedia` resolves
+    // whatever is selected with `getMedia(item.id)` (`examples` in
+    // `utils/shortcuts.ts:531-542`), and MediaCard's own double-click adds
+    // `{ id: path, name, type }` (`drawer/media/MediaCard.svelte:151-157`). `index`
+    // is filled in by the project list.
+    const projectShows = fixtures.map((fixture) => ({ id: fixture.id }))
+    if (plan.media) projectShows.push({ id: MEDIA_VIDEO, name: "background", type: "video" })
+
     const projects = {
         projects: {
             [PROJECT_ID]: {
                 name: PROJECT_NAME,
                 created: 1730000000000,
                 parent: "/",
-                shows: fixtures.map((fixture) => ({ id: fixture.id }))
+                shows: projectShows
             }
         },
         folders: {},
         projectTemplates: {}
     }
 
-    // Only the stage/multi-output scenario gets outputs and a stage layout: a seed
-    // with three outputs would change what `outputs-basic` observes, and that
-    // scenario is committed evidence.
-    const multiOutput = options.scenario === "stage-multi-output" ? seedMultiOutput(store) : null
+    // Only the stage and styles scenarios seed outputs: a seed with three outputs
+    // would change what `outputs-basic` observes, and that scenario is committed
+    // evidence. The styles scenario also gets a stage-free set of three outputs,
+    // each bound to one seeded style.
+    const multiOutput = plan.outputs === "stage" ? seedMultiOutput(store) : null
     if (multiOutput) settings.outputs = multiOutput.outputs
+    if (plan.outputs === "styles") settings.outputs = seedStylesOutputs()
+
+    // The Media drawer lists the files in `settings.mediaFolders` (folder shape
+    // from `dropActions.ts:608-622`; listing through `Main.READ_FOLDER`).
+    if (plan.media) {
+        settings.mediaFolders = {
+            [MEDIA_FOLDER_ID]: { name: MEDIA_FOLDER_NAME, icon: "folder", path: MEDIA_FIXTURE_DIR }
+        }
+    }
 
     writeJson(join(store, "config.json"), config)
     writeJson(join(store, "settings.json"), settings)
@@ -385,9 +647,12 @@ function seedProfile(options) {
     // self-describing rather than relying on defaults.
     writeJson(join(store, "themes.json"), {})
     writeJson(join(store, "templates.json"), {})
+    // `styles` is a synced setting (`defaultSyncedSettings.styles`,
+    // `electron/data/defaults.ts:108`) persisted in settings_synced.json.
+    if (plan.styles) writeJson(join(store, "settings_synced.json"), { styles: STYLE_DEFINITIONS })
 
-    const target = fixtures.find((fixture) => fixture.name === TARGET_SHOW)
-    if (!target) throw new Error(`fixture named "${TARGET_SHOW}" was not seeded`)
+    const target = fixtures.find((fixture) => fixture.name === targetShowName)
+    if (!target) throw new Error(`fixture named "${targetShowName}" was not seeded`)
 
     // Read back everything the seed claims. A seed that did not land is the
     // difference between an observation and an assertion about an empty profile.
@@ -425,6 +690,61 @@ function seedProfile(options) {
         }
     }
 
+    let mediaRecord = null
+    if (mediaFiles && plan.media) {
+        const settingsOnDisk = JSON.parse(readFileSync(join(store, "settings.json"), "utf8"))
+        const folders = settingsOnDisk.mediaFolders || {}
+        const folder = folders[MEDIA_FOLDER_ID]
+        if (!folder || folder.path !== MEDIA_FIXTURE_DIR) {
+            throw new Error(`the media folder seed did not land: ${JSON.stringify(folders)}`)
+        }
+        const showOnDisk = JSON.parse(readFileSync(join(dataPath, "Shows", `${MEDIA_SHOW_NAME}.show`), "utf8"))[1]
+        const layoutId = showOnDisk.settings.activeLayout
+        const first = showOnDisk.layouts[layoutId].slides[0]
+        if (first.background !== MEDIA_VIDEO_MEDIA_ID) {
+            throw new Error(`the layout-slide background did not land: ${JSON.stringify(first)}`)
+        }
+        if (!first.actions || first.actions.nextAfterMedia !== true) {
+            throw new Error(`nextAfterMedia did not land on the layout slide: ${JSON.stringify(first)}`)
+        }
+        mediaRecord = {
+            files: mediaFiles.files,
+            durationSeconds: mediaFiles.duration,
+            ffmpeg: mediaFiles.ffmpeg,
+            folder: { id: MEDIA_FOLDER_ID, name: folder.name, path: folder.path },
+            media: showOnDisk.media,
+            layoutId,
+            layoutSlides: showOnDisk.layouts[layoutId].slides.map((slide, index) => ({
+                index,
+                id: slide.id,
+                background: slide.background === undefined ? null : slide.background,
+                actions: slide.actions || null
+            })),
+            projectItem: { id: MEDIA_VIDEO, name: "background", type: "video" },
+            transform: mediaTransform
+        }
+    }
+
+    let stylesRecord = null
+    if (plan.styles) {
+        const synced = JSON.parse(readFileSync(join(store, "settings_synced.json"), "utf8"))
+        const outputsOnDisk = JSON.parse(readFileSync(join(store, "settings.json"), "utf8")).outputs || {}
+        const styleIds = Object.keys(synced.styles || {})
+        const bindings = Object.entries(outputsOnDisk).map(([id, output]) => ({ id, name: output.name, style: output.style || null }))
+        if (styleIds.length !== Object.keys(STYLE_DEFINITIONS).length) {
+            throw new Error(`the style seed did not land: ${JSON.stringify(styleIds)}`)
+        }
+        if (bindings.length !== 3 || bindings.some((entry) => !styleIds.includes(entry.style))) {
+            throw new Error(`the output style bindings did not land: ${JSON.stringify(bindings)}`)
+        }
+        stylesRecord = {
+            show: stylesSeed.show,
+            slides: stylesSeed.slides,
+            styles: synced.styles,
+            bindings
+        }
+    }
+
     const seededShows = fixtures.map((fixture) => ({
         file: fixture.file,
         id: fixture.id,
@@ -445,7 +765,10 @@ function seedProfile(options) {
         showFiles,
         skipped,
         multiOutput: multiOutputRecord,
-        targetShow: { name: TARGET_SHOW, id: target.id, file: target.file }
+        media: mediaRecord,
+        mediaFiles: mediaFiles ? { dir: mediaFiles.dir, duration: mediaFiles.duration, files: mediaFiles.files } : null,
+        styles: stylesRecord,
+        targetShow: { name: targetShowName, id: target.id, file: target.file }
     }
 }
 
@@ -630,6 +953,64 @@ function readController(page) {
 
         const toast = document.querySelector(".toast")
 
+        // The media control strip. MediaControls is rendered *beside* the clear
+        // buttons, and only while its layer is the revealed one
+        // (Preview.svelte:278-298), so the strip is read from `.clear-btns` and
+        // everything inside `.clear` is excluded. The buttons it carries are the
+        // only readable form of the player's `muted`/`loop` state: the output's
+        // `<video>` is hardcoded muted (`media/Video.svelte:263`).
+        const clearBtnsRoot = document.querySelector("#previewArea .clear-btns")
+        const stripButtons = clearBtnsRoot
+            ? [...clearBtnsRoot.querySelectorAll("button")].filter((button) => !button.closest(".clear"))
+            : []
+        const stripEntries = stripButtons.map((button) => ({
+            title: button.getAttribute("data-title") || "",
+            disabled: button.disabled === true
+        }))
+        const activeClearButton = document.querySelector("#previewArea .clear button.isActive")
+        const muteButton = stripEntries.find((entry) => entry.title === "Mute" || entry.title === "Unmute") || null
+        const playPauseButton = stripEntries.find((entry) => entry.title === "Play" || entry.title === "Pause") || null
+        const loopButton = stripEntries.find((entry) => entry.title.startsWith("Loop")) || null
+        const stripName = clearBtnsRoot ? clearBtnsRoot.querySelector(".name") : null
+        const media = {
+            strip: {
+                present: !!(muteButton || playPauseButton || loopButton),
+                layer: activeClearButton ? activeClearButton.getAttribute("data-title") || "" : null,
+                name: clean(stripName ? stripName.innerText : ""),
+                buttons: stripEntries,
+                muteTitle: muteButton ? muteButton.title : null,
+                muteDisabled: muteButton ? muteButton.disabled : null,
+                playPauseTitle: playPauseButton ? playPauseButton.title : null,
+                playPauseDisabled: playPauseButton ? playPauseButton.disabled : null,
+                loopTitle: loopButton ? loopButton.title : null,
+                loopDisabled: loopButton ? loopButton.disabled : null
+            }
+        }
+
+        // The media drawer: its folder tabs and cards. The card's own `data-title`
+        // is "Play" when the media is not on an output and "Clear" when it is
+        // (`drawer/Card.svelte:41`), which is the observable for the click/clear
+        // half of media.play. The card's path is the Label's `data-title`
+        // (`drawer/Label.svelte:60`).
+        const mediaCategories = document.querySelector('[class~="#category_media"]')
+        const mediaDrawer = {
+            open: !!mediaCategories,
+            folders: [...document.querySelectorAll('[class~="#category_media_button"]')].map((button) => ({
+                name: clean(button.innerText),
+                active: button.classList.contains("isActive")
+            })),
+            cards: [...document.querySelectorAll('[class~="#media_card"]')].map((card) => {
+                const label = card.querySelector(".label")
+                const title = card.querySelector(".card")
+                return {
+                    path: label ? label.getAttribute("data-title") || "" : "",
+                    label: clean(label ? label.innerText : ""),
+                    actionTitle: title ? title.getAttribute("data-title") || "" : "",
+                    active: !!card.querySelector(".main.active")
+                }
+            })
+        }
+
         return {
             text: fullText.slice(0, 6000),
             textLength: fullText.length,
@@ -642,6 +1023,8 @@ function readController(page) {
             activeProjectItems,
             projectButtons,
             preview: { root: !!previewRoot, tiles },
+            media,
+            mediaDrawer,
             toast: clean(toast ? toast.innerText : "")
         }
     })
@@ -658,7 +1041,21 @@ function readOutput(page) {
                 .trim()
 
         const root = document.querySelector('[class~="#output_window"]') || document.querySelector("main.background")
-        if (!root) return { root: false, text: "", lines: [], rootClass: null, mainBackground: null, outputId: null, stageArea: false }
+        if (!root) {
+            return {
+                root: false,
+                text: "",
+                lines: [],
+                rootClass: null,
+                mainBackground: null,
+                outputId: null,
+                stageArea: false,
+                videos: [],
+                images: [],
+                contentBox: null,
+                viewportBox: null
+            }
+        }
 
         const raw = root.innerText || (document.body ? document.body.innerText : "")
         const lines = raw
@@ -672,6 +1069,32 @@ function readOutput(page) {
         // (stage/StageLayout.svelte:164). It is the only place a page names
         // itself, and it is what joins a window to a preview tile.
         const zoomed = document.querySelector(".zoomed[id]")
+
+        const box = (element) => {
+            if (!element) return null
+            const rect = element.getBoundingClientRect()
+            return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) }
+        }
+        // Both background kinds are rendered as real elements with class "media":
+        // `<video class="media" ... loop={videoData.loop}>` for a video
+        // (media/Video.svelte:263) and `<img class="media" ...>` for an image
+        // (media/Image.svelte:26-28). `loop` is bound to the player's
+        // `videoData.loop`, so it is the reliable DOM signal; the element's
+        // `muted` is hardcoded and is recorded only to show that it is not the
+        // player's muted state.
+        const videos = [...root.querySelectorAll("video.media")].map((video) => ({
+            src: video.currentSrc || video.getAttribute("src") || "",
+            loop: video.loop === true,
+            paused: video.paused === true,
+            muted: video.muted === true,
+            currentTime: Number(video.currentTime) || 0,
+            duration: Number.isFinite(video.duration) ? Number(video.duration) : null,
+            readyState: video.readyState,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight
+        }))
+        const images = [...root.querySelectorAll("img.media")].map((image) => image.currentSrc || image.getAttribute("src") || "")
+
         return {
             root: true,
             text: clean(raw),
@@ -681,7 +1104,14 @@ function readOutput(page) {
             outputId: zoomed ? zoomed.id : null,
             // A stage output renders StageLayout (MainOutput.svelte:143-144),
             // whose root is `.stageArea` (stage/StageLayout.svelte:147).
-            stageArea: !!document.querySelector(".stageArea")
+            stageArea: !!document.querySelector(".stageArea"),
+            videos,
+            images,
+            // The slide/content container carries the style's aspect ratio
+            // (`Zoomed.svelte:166-179`: `aspect-ratio: resolution.width/height`),
+            // so its box is where a 4:3 style is visible without pixels.
+            contentBox: box(document.querySelector(".zoomed .slide")),
+            viewportBox: box(document.querySelector(".zoomed"))
         }
     })
 }
@@ -844,6 +1274,8 @@ async function captureState(ctx) {
             activeProjectItems: controller.activeProjectItems || [],
             projectButtons: controller.projectButtons || [],
             preview: controller.preview || { root: false, tiles: [] },
+            media: controller.media || { strip: { present: false, layer: null, buttons: [] } },
+            mediaDrawer: controller.mediaDrawer || { open: false, folders: [], cards: [] },
             toast: controller.toast || "",
             presentButton,
             error: controller.error || null
@@ -868,6 +1300,10 @@ async function captureState(ctx) {
                 stageArea: !!page.stageArea,
                 rootClass: page.rootClass || null,
                 mainBackground: page.mainBackground || null,
+                videos: page.videos || [],
+                images: page.images || [],
+                contentBox: page.contentBox || null,
+                viewportBox: page.viewportBox || null,
                 error: page.error || null
             }))
             .sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")))
@@ -1231,38 +1667,49 @@ async function stepOpenProject(ctx) {
     // The show list renders before the show metadata arrives; wait for the name
     // so the next step clicks a project item that is fully known.
     const showItem = ctx.win.locator(`#projectArea div[id="show_${ctx.seed.targetShow.id}"]`)
-    await waitForLocator(showItem, `the show "${TARGET_SHOW}" in the project`, 20000)
+    await waitForLocator(showItem, `the show "${ctx.seed.targetShow.name}" in the project`, 20000)
     await waitFor(
-        `the name of "${TARGET_SHOW}" to load in the project`,
-        async () => (await showItem.innerText()).includes(TARGET_SHOW),
+        `the name of "${ctx.seed.targetShow.name}" to load in the project`,
+        async () => (await showItem.innerText()).includes(ctx.seed.targetShow.name),
         20000
     )
 }
 
-function verifyOpenProject(state) {
+function verifyOpenProject(state, ctx) {
+    const name = ctx.seed.targetShow.name
     check(state.controller.projectArea, "the project's show list opened", state.controller.projectItems)
     check(
-        state.controller.projectItems.some((text) => text.includes(TARGET_SHOW)),
-        `the project lists the show "${TARGET_SHOW}"`,
+        state.controller.projectItems.some((text) => text.includes(name)),
+        `the project lists the show "${name}"`,
         state.controller.projectItems
     )
 }
 
 async function stepOpenShow(ctx) {
     const show = ctx.win.locator(`#projectArea div[id="show_${ctx.seed.targetShow.id}"] button`).first()
-    const button = await waitForLocator(show, `the show "${TARGET_SHOW}" in the project`, 20000)
+    const button = await waitForLocator(show, `the show "${ctx.seed.targetShow.name}" in the project`, 20000)
     await clickUnobstructed(ctx, button)
     // ShowButton.click loads the show asynchronously before it can be played.
     await wait(800)
 }
 
-function verifyOpenShow(state) {
+function verifyOpenShow(state, ctx) {
+    const name = ctx.seed.targetShow.name
     check(state.controller.projectArea, "the project is still open", state.controller.projectItems)
     check(
-        state.controller.activeProjectItems.some((text) => text.includes(TARGET_SHOW)),
-        `"${TARGET_SHOW}" is the active project item`,
+        state.controller.activeProjectItems.some((text) => text.includes(name)),
+        `"${name}" is the active project item`,
         state.controller.activeProjectItems
     )
+}
+
+// The "the component only renders when the output has a background" half of
+// media.controls, observed before the show starts: the clear controls are there,
+// the media strip is not.
+function verifyOpenShowNoBackground(state, ctx) {
+    verifyOpenShow(state, ctx)
+    check(state.controller.clear.root, "the clear controls are present before anything is on the output", state.controller.clear)
+    check(stripOf(state).present === false, "no media control strip is rendered while the output has no background", stripOf(state))
 }
 
 async function stepStart(ctx) {
@@ -1429,7 +1876,16 @@ async function readOutputSnapshot(ctx) {
     for (const page of found.outputs) {
         const state = await readOutput(page).catch(() => null)
         if (!state) continue
-        list.push({ id: state.outputId || null, text: state.text || "", stageArea: !!state.stageArea })
+        list.push({
+            id: state.outputId || null,
+            text: state.text || "",
+            stageArea: !!state.stageArea,
+            lines: state.lines || [],
+            videos: state.videos || [],
+            images: state.images || [],
+            contentBox: state.contentBox || null,
+            viewportBox: state.viewportBox || null
+        })
     }
     return list.sort((a, b) => String(a.id).localeCompare(String(b.id)))
 }
@@ -1522,31 +1978,32 @@ async function clickEnabledToggle(ctx) {
     await wait(900)
 }
 
-async function stepPresentOutputs(ctx) {
+// One Present click fans out to every enabled output (`toggleOutputs(null)`,
+// helpers/output.ts:115-134). `expectedNames` are the seeded output names, which
+// are also the OS window titles (OutputLifecycle.ts:1575).
+async function presentOutputs(ctx, expectedNames) {
+    const count = expectedNames.length
     ctx.popups = await dismissStartupPopups(ctx.win, ctx.log)
     const before = await readPresentState(ctx.win)
     if (!before) throw new StepFailure("the Present button is not in the controller")
     if (before.on) throw new StepFailure(`the outputs were already presenting before the step: ${JSON.stringify(before)}`)
 
-    // One click, three enabled outputs: `toggleOutputs(null)` fans out to every
-    // enabled output, stage included (helpers/output.ts:115-134).
     await clickInController(ctx, "#output_window_button")
 
-    await waitForOutputPages(ctx, 3)
-    const expected = [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name]
+    await waitForOutputPages(ctx, count)
     await waitFor(
-        `the three output windows to take their seeded titles`,
+        `the ${count} output windows to take their seeded titles`,
         async () => {
             const titles = await windowTitles(ctx.app)
-            return expected.every((name) => titles.includes(name))
+            return expectedNames.every((name) => titles.includes(name))
         },
         45000
     )
     await waitFor(
-        "the three output pages to finish loading",
+        `the ${count} output pages to finish loading`,
         async () => {
             const pages = (await findPages(ctx.app)).outputs
-            if (pages.length !== 3) return false
+            if (pages.length !== count) return false
             const states = await Promise.all(pages.map((page) => page.evaluate(() => document.readyState).catch(() => "")))
             return states.every((state) => state === "complete")
         },
@@ -1556,10 +2013,10 @@ async function stepPresentOutputs(ctx) {
     // (MainOutput.svelte:55-61), and it needs its own output data from the main
     // process first. Wait until every page names the output it renders.
     await waitFor(
-        "the three output pages to name the output they render",
+        `the ${count} output pages to name the output they render`,
         async () => {
             const ids = await readOutputSnapshot(ctx)
-            return ids.length === 3 && ids.every((output) => !!output.id)
+            return ids.length === count && ids.every((output) => !!output.id)
         },
         60000
     )
@@ -1568,7 +2025,11 @@ async function stepPresentOutputs(ctx) {
     // screen picker instead. Record the popup, then close it so later clicks land.
     const dismissed = await dismissOverlayPopups(ctx)
     const after = await readPresentState(ctx.win)
-    return { presentButton: after, overlayPopupsDismissed: dismissed }
+    return { presentButton: after, overlayPopupsDismissed: dismissed, expectedOutputs: expectedNames }
+}
+
+async function stepPresentOutputs(ctx) {
+    return presentOutputs(ctx, [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_STAGE.name])
 }
 
 function verifyPresentOutputs(state) {
@@ -1998,6 +2459,741 @@ function verifyBackToShow(state) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Media behaviour (media.play, media.background, media.controls,
+// media.next-finished)
+///////////////////////////////////////////////////////////////////////////////
+
+// A background's rendered form is an element with class "media"; the output's
+// own `<video>` is the only reliable DOM signal for `loop`, and its buttons live
+// in the controller's media strip.
+function outputVideos(state, id) {
+    const output = outputById(state, id)
+    return output && Array.isArray(output.videos) ? output.videos : []
+}
+
+function outputImages(state, id) {
+    const output = outputById(state, id)
+    return output && Array.isArray(output.images) ? output.images : []
+}
+
+function primaryVideo(state) {
+    const videos = outputVideos(state, MEDIA_OUTPUT_ID)
+    return videos.length ? videos[0] : null
+}
+
+function stripOf(state) {
+    return (state.controller && state.controller.media && state.controller.media.strip) || { present: false }
+}
+
+async function readOutputById(ctx, id) {
+    const found = await findPages(ctx.app)
+    for (const page of found.outputs) {
+        const state = await readOutput(page).catch(() => null)
+        if (state && state.outputId === id) return state
+    }
+    return null
+}
+
+async function readPrimaryVideo(ctx) {
+    const state = await readOutputById(ctx, MEDIA_OUTPUT_ID)
+    if (!state || !state.videos || !state.videos.length) return null
+    return state.videos[0]
+}
+
+async function readStrip(ctx) {
+    const state = await readController(ctx.win).catch(() => null)
+    return state && state.media ? state.media.strip : { present: false }
+}
+
+// The strip is not always on screen: Preview.svelte renders MediaControls in the
+// clear-control section only when the revealed layer is "background"
+// (Preview.svelte:278-298). That is the control the reference docs could not
+// name; selecting the layer's own disclosure (it carries data-title
+// "preview.background") is what reveals it. Revealing is idempotent.
+async function revealMediaStrip(ctx) {
+    const disclosure = ctx.win.locator(`#previewArea .clear .combinedButton button[data-title="${TITLE_CLEAR_BACKGROUND_LAYER}"]`)
+    const count = await disclosure.count().catch(() => 0)
+    if (!count) throw new StepFailure(`the "${TITLE_CLEAR_BACKGROUND_LAYER}" layer disclosure is not in the clear controls`)
+    const button = disclosure.first()
+    if (await button.isDisabled().catch(() => false)) {
+        throw new StepFailure(`the "${TITLE_CLEAR_BACKGROUND_LAYER}" layer disclosure is disabled: the output has no background to show controls for`)
+    }
+    const alreadyOpen = await button.evaluate((element) => element.classList.contains("isActive")).catch(() => false)
+    if (!alreadyOpen) {
+        await clickInController(ctx, button)
+        await waitFor(
+            "the Background clear layer to become the selected one",
+            async () => button.evaluate((element) => element.classList.contains("isActive")).catch(() => false),
+            8000
+        )
+    }
+    await waitFor("the media control strip to render", async () => (await readStrip(ctx)).present, 8000)
+    return { revealed: !alreadyOpen }
+}
+
+// Pause through the strip so a 3 s clip's remaining time is still available to
+// the next-finished step. The click is only made once the strip reports the
+// player as playing ("Pause"), so it cannot toggle the wrong way.
+async function pauseViaStrip(ctx) {
+    const reveal = await revealMediaStrip(ctx)
+    const pause = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_PAUSE}"]`), "the media strip's Pause button", 10000)
+    const before = await readPrimaryVideo(ctx)
+    await clickInController(ctx, pause)
+    await waitFor("the media strip to report the player as paused", async () => (await readStrip(ctx)).playPauseTitle === TITLE_PLAY, 8000)
+    const after = await readPrimaryVideo(ctx)
+    return { reveal, wasPlaying: before ? before.paused === false : false, pausedAt: after ? after.currentTime : null }
+}
+
+// The show file the seed wrote. The strip's loop/mute toggles must change the
+// live player only (`MediaControls.svelte:74-88` calls VideoPlayer.toggleLoop /
+// toggleMute and keeps no write), so the stored media entry is read back from
+// disk, not from the UI.
+function readStoredMediaEntry(ctx, mediaId) {
+    const file = join(ctx.seed.dataPath, "Shows", `${MEDIA_SHOW_NAME}.show`)
+    if (!existsSync(file)) throw new StepFailure(`the seeded show file is missing: ${file}`)
+    const parsed = JSON.parse(readFileSync(file, "utf8"))
+    const show = parsed[1]
+    if (!show || !show.media) throw new StepFailure(`the seeded show has no media: ${file}`)
+    return show.media[mediaId] || null
+}
+
+async function openMediaDrawer(ctx) {
+    const tab = await waitForLocator(ctx.win.locator("button#media"), "the Media drawer tab", 15000)
+    // Clicking a drawer tab switches to it, and the drawer's own handler opens
+    // the drawer if it was closed.
+    await clickInController(ctx, tab)
+    await waitFor("the Media drawer's categories", async () => (await ctx.win.locator('[class~="#category_media"]').count()) > 0, 20000)
+}
+
+async function selectMediaFolder(ctx) {
+    const folder = ctx.win.locator('[class~="#category_media_button"]').filter({ hasText: MEDIA_FOLDER_NAME })
+    const button = await waitForLocator(folder, `the "${MEDIA_FOLDER_NAME}" media folder`, 20000)
+    await clickInController(ctx, button)
+    await waitFor(
+        `the "${MEDIA_FOLDER_NAME}" folder to become the active media tab`,
+        async () => button.evaluate((element) => element.classList.contains("isActive")).catch(() => false),
+        15000
+    )
+    await waitFor("the media folder's cards", async () => (await ctx.win.locator('[class~="#media_card"]').count()) >= 2, 20000)
+    return { folder: MEDIA_FOLDER_NAME }
+}
+
+function mediaCard(ctx, filePath) {
+    return ctx.win.locator(`[class~="#media_card"]:has(.label[data-title="${filePath}"])`)
+}
+
+async function cardLocator(ctx, filePath) {
+    return waitForLocator(mediaCard(ctx, filePath), `the media card for ${filePath}`, 20000)
+}
+
+async function cardActionTitle(card) {
+    return card.locator(".card").getAttribute("data-title").catch(() => null)
+}
+
+async function stepStartPaused(ctx) {
+    await ctx.win.keyboard.press("Space")
+    await waitForOutputText(ctx.app, (text) => text.includes(SLIDE_ONE), 30000)
+    await waitFor("the background video on the output", async () => !!(await readPrimaryVideo(ctx)), 15000)
+    const paused = await pauseViaStrip(ctx)
+    return { wasPlaying: paused.wasPlaying, pausedAt: paused.pausedAt }
+}
+
+function verifyStartPaused(state) {
+    check(state.output.present, "the output page exists")
+    check(state.output.text.includes(SLIDE_ONE), "the show started on the first slide", state.output.text)
+    check(state.wasPlaying === true, "the background clip was playing before the step paused it", state.wasPlaying)
+    const video = primaryVideo(state)
+    check(!!video, "the output renders the seeded background video", video)
+    check(video.paused === true, "the clip is paused, so the next-finished step still has time to run", video)
+    check(stripOf(state).present === true, "selecting the Background layer reveals a media control strip", stripOf(state))
+}
+
+async function stepMediaBackground(ctx) {
+    // The seeded state is read, not changed. Reveal the strip so its buttons are
+    // part of this step's record.
+    const reveal = await revealMediaStrip(ctx)
+    const video = await readPrimaryVideo(ctx)
+    return { reveal, pausedAt: video ? video.currentTime : null }
+}
+
+function verifyMediaBackground(state, ctx) {
+    const video = primaryVideo(state)
+    check(!!video, "the output renders a background <video>", video)
+    if (!video) return
+    check(String(video.src).endsWith(MEDIA_VIDEO_NAME), `the background is ${MEDIA_VIDEO_NAME}`, video.src)
+    check(video.loop === true, "the layout-slide background's loop:true is honoured by the player (video.loop)", video)
+    check(Number.isFinite(video.duration) && video.duration > 0, "the clip reports a finite duration (decoded, not treated as a live stream)", video)
+    const expected = state.mediaDurationSeconds || (ctx.seed.media && ctx.seed.media.durationSeconds) || null
+    if (expected) {
+        check(Math.abs(video.duration - expected) <= 0.75, `the clip's duration matches the generated clip (${expected}s)`, { duration: video.duration, expected })
+    }
+    check(video.readyState >= 2, "the clip has decoded enough to render a frame (readyState >= 2)", video)
+    check(video.videoWidth === 1280 && video.videoHeight === 720, "the decoded frame is 1280x720", { width: video.videoWidth, height: video.videoHeight })
+    check(video.paused === true, "the clip is still paused", video)
+    // This is a property of the reference's markup, not of the player's state:
+    // asserting it documents why the muted observation has to come from a button.
+    check(video.muted === true, "the output <video> is hardcoded muted, so video.muted is NOT evidence of the stored muted state", video)
+
+    const strip = stripOf(state)
+    check(strip.present, "the media control strip is present while a background exists", strip)
+    check(String(strip.layer || "").toLowerCase() === "background", 'the strip is the revealed "Background" layer', { layer: strip.layer })
+    check(String(strip.name || "").includes("video-bg"), "the strip names the background media", strip.name)
+    check(strip.muteTitle === TITLE_UNMUTE, "the strip's mute button reports the player as muted (title Unmute)", strip)
+    check(strip.playPauseTitle === TITLE_PLAY, "the strip's play button reports the player as paused (title Play)", strip)
+    check(state.pausedAt !== null && state.pausedAt !== undefined, "the pause recorded the player's position", state.pausedAt)
+}
+
+async function stepMediaPlayPause(ctx) {
+    await revealMediaStrip(ctx)
+    const before = await readPrimaryVideo(ctx)
+    if (!before) throw new StepFailure("no video background before the play/pause step")
+    if (before.paused !== true) throw new StepFailure(`the clip was not paused before the play click: ${JSON.stringify(before)}`)
+    const startedAt = before.currentTime
+
+    const play = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_PLAY}"]`), "the media strip's Play button", 8000)
+    await clickInController(ctx, play)
+    const resumed = await waitFor(
+        "the clip to resume",
+        async () => {
+            const video = await readPrimaryVideo(ctx)
+            return video && video.paused === false && video.currentTime > startedAt + 0.05 ? video : null
+        },
+        8000,
+        100
+    )
+    const pause = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_PAUSE}"]`), "the media strip's Pause button", 8000)
+    await clickInController(ctx, pause)
+    const paused = await waitFor(
+        "the clip to pause",
+        async () => {
+            const video = await readPrimaryVideo(ctx)
+            return video && video.paused === true ? video : null
+        },
+        8000,
+        100
+    )
+    return { playStartedAt: startedAt, playResumedTo: resumed.currentTime, playPausedAt: paused.currentTime }
+}
+
+function verifyMediaPlayPause(state) {
+    check(typeof state.playResumedTo === "number" && state.playResumedTo > state.playStartedAt + 0.02, "clicking Play resumed the clip and its clock advanced", {
+        from: state.playStartedAt,
+        to: state.playResumedTo
+    })
+    check(typeof state.playPausedAt === "number" && state.playPausedAt >= state.playResumedTo, "clicking Pause stopped the clock", {
+        resumedTo: state.playResumedTo,
+        pausedAt: state.playPausedAt
+    })
+    const video = primaryVideo(state)
+    check(!!video && video.paused === true, "the player is paused after the second click", video)
+    check(stripOf(state).playPauseTitle === TITLE_PLAY, "the strip flips back to Play", stripOf(state))
+}
+
+async function stepMediaLoopMute(ctx) {
+    await revealMediaStrip(ctx)
+    const before = await readPrimaryVideo(ctx)
+    if (!before) throw new StepFailure("no video background before the loop/mute step")
+    if (before.loop !== true) throw new StepFailure(`the player did not report loop before the toggle: ${JSON.stringify(before)}`)
+
+    const loopBefore = await readStrip(ctx)
+    const loopButton = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title^="${TITLE_LOOP}"]`), "the media strip's loop button", 8000)
+    const loopTitleBefore = await loopButton.getAttribute("data-title")
+    await clickInController(ctx, loopButton)
+    const loopOff = await waitFor(
+        "the player to report loop off",
+        async () => {
+            const video = await readPrimaryVideo(ctx)
+            return video && video.loop === false ? video : null
+        },
+        10000
+    )
+    // Read the stored entry between the toggles: if the strip persisted, the
+    // file would already say loop:false here.
+    const storedAfterToggle = readStoredMediaEntry(ctx, MEDIA_VIDEO_MEDIA_ID)
+
+    const muteButton = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_UNMUTE}"]`), "the media strip's mute button (the player is muted)", 8000)
+    await clickInController(ctx, muteButton)
+    await waitFor("the strip to report the player as unmuted", async () => (await readStrip(ctx)).muteTitle === TITLE_MUTE, 8000)
+    const stripUnmuted = await readStrip(ctx)
+
+    // Restore the seeded player state: media.next-finished is the claim that a
+    // *looping* background advances, so the loop must be on when that step runs.
+    const loopBack = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title^="${TITLE_LOOP}"]`), "the loop button", 8000)
+    await clickInController(ctx, loopBack)
+    await waitFor(
+        "the player to report loop on again",
+        async () => {
+            const video = await readPrimaryVideo(ctx)
+            return video && video.loop === true ? video : null
+        },
+        10000
+    )
+    const muteBack = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_MUTE}"]`), "the mute button (the player is unmuted)", 8000)
+    await clickInController(ctx, muteBack)
+    await waitFor("the strip to report the player as muted again", async () => (await readStrip(ctx)).muteTitle === TITLE_UNMUTE, 8000)
+
+    return {
+        loopTitleBefore,
+        loopTitleBeforeState: loopBefore.loopTitle,
+        loopAfterToggle: loopOff.loop,
+        muteTitleAfterToggle: stripUnmuted.muteTitle,
+        muteTitleAfterRestore: (await readStrip(ctx)).muteTitle,
+        storedLoopAfterToggle: storedAfterToggle ? storedAfterToggle.loop : null,
+        storedMutedAfterToggle: storedAfterToggle ? storedAfterToggle.muted : null
+    }
+}
+
+function verifyMediaLoopMute(state) {
+    check(state.loopAfterToggle === false, "clicking the strip's loop button turned the live player's loop off (video.loop)", state.loopAfterToggle)
+    check(state.muteTitleAfterToggle === TITLE_MUTE, "clicking the strip's mute button unmuted the live player (the button then offers Mute)", state.muteTitleAfterToggle)
+    check(state.muteTitleAfterRestore === TITLE_UNMUTE, "the strip was left reporting the seeded muted state", state.muteTitleAfterRestore)
+    check(state.storedLoopAfterToggle === true, "the show's stored media entry still says loop:true after the live toggle (the strip does not persist)", {
+        stored: state.storedLoopAfterToggle
+    })
+    check(state.storedMutedAfterToggle === true, "the show's stored media entry still says muted:true after the live toggle", { stored: state.storedMutedAfterToggle })
+    check(stripOf(state).present === true, "the strip is still present", stripOf(state))
+}
+
+async function stepMediaLock(ctx) {
+    await revealMediaStrip(ctx)
+    await ctx.win.keyboard.press("Control+l")
+    await waitFor(
+        "the lock control to report Unlock",
+        async () => {
+            const controller = await readController(ctx.win)
+            return (controller.lockTitles || []).includes("Unlock output [Ctrl+L]")
+        },
+        10000
+    )
+    // Selecting the layer is not gated by the lock, and re-revealing keeps the
+    // strip in this step's record.
+    await revealMediaStrip(ctx)
+}
+
+function verifyMediaLock(state) {
+    check(state.lockTitle === "Unlock output [Ctrl+L]", "the output is locked", state.lockTitle)
+    const strip = stripOf(state)
+    check(strip.present, "the strip is still readable while the output is locked", strip)
+    check(strip.playPauseDisabled === true, "play/pause is disabled while the output is locked", strip)
+    check(strip.muteDisabled === true, "mute is disabled while the output is locked", strip)
+    check(strip.loopDisabled === false, "loop is NOT disabled while the output is locked", strip)
+}
+
+async function stepMediaUnlock(ctx) {
+    await ctx.win.keyboard.press("Control+l")
+    await waitFor(
+        "the lock control to report Lock",
+        async () => {
+            const controller = await readController(ctx.win)
+            return (controller.lockTitles || []).includes("Lock output [Ctrl+L]")
+        },
+        10000
+    )
+    await revealMediaStrip(ctx)
+}
+
+function verifyMediaUnlock(state) {
+    check(state.lockTitle === "Lock output [Ctrl+L]", "the output is unlocked again", state.lockTitle)
+    const strip = stripOf(state)
+    check(strip.present, "the strip is still present", strip)
+    check(strip.playPauseDisabled === false && strip.muteDisabled === false, "play/pause and mute are enabled again", strip)
+}
+
+async function stepMediaNextFinished(ctx) {
+    await revealMediaStrip(ctx)
+    const before = await readPrimaryVideo(ctx)
+    if (!before) throw new StepFailure("no video background before the next-finished observation")
+    if (before.paused !== true) throw new StepFailure(`the clip was not paused before the next-finished observation: ${JSON.stringify(before)}`)
+    if (before.loop !== true) throw new StepFailure(`the clip was not looping before the next-finished observation: ${JSON.stringify(before)}`)
+    if (!Number.isFinite(before.duration) || before.duration <= 0) {
+        throw new StepFailure(`the clip's duration is not finite, so the end cannot be timed: ${JSON.stringify(before)}`)
+    }
+
+    const play = await waitForLocator(ctx.win.locator(`#previewArea .clear-btns button[data-title="${TITLE_PLAY}"]`), "the media strip's Play button", 8000)
+    const startedAt = Date.now()
+    const playFrom = before.currentTime
+    await clickInController(ctx, play)
+
+    const remainingMs = Math.max(0, Math.round((before.duration - playFrom) * 1000))
+    const timeout = remainingMs + 20000
+    const advanced = await waitFor(
+        `the output to advance to the second slide (the clip had ${remainingMs} ms left)`,
+        async () => {
+            const state = await readOutputById(ctx, MEDIA_OUTPUT_ID)
+            return state && state.root && String(state.text || "").includes(SLIDE_TWO) ? state : null
+        },
+        timeout
+    )
+    // The background cross-fades to the advance target's own image; the outgoing
+    // video element is unmounted once the new one has loaded
+    // (`output/layers/Background.svelte:87-126`). Wait for that rather than
+    // sampling during the cross-fade.
+    const settledAfterAdvance = await waitFor(
+        "the outgoing video background to be replaced by the advance target's image",
+        async () => {
+            const state = await readOutputById(ctx, MEDIA_OUTPUT_ID)
+            if (!state) return null
+            const videos = (state.videos || []).filter((video) => String(video.src).endsWith(MEDIA_VIDEO_NAME))
+            const images = state.images || []
+            return videos.length === 0 && images.some((src) => String(src).endsWith(MEDIA_LOGO_NAME)) ? state : null
+        },
+        10000
+    )
+    return {
+        nextAfterMedia: {
+            duration: before.duration,
+            playFrom,
+            remainingMs,
+            advancedAfterMs: Date.now() - startedAt,
+            text: settledAfterAdvance.text
+        }
+    }
+}
+
+function verifyMediaNextFinished(state, ctx) {
+    const output = outputById(state, MEDIA_OUTPUT_ID)
+    check(!!output, "the output page is present", state.outputs.map((entry) => entry.id))
+    if (!output) return
+    check(output.text.includes(SLIDE_TWO), "the looping background's end advanced the output to the second slide", output.text)
+    check(!output.text.includes(SLIDE_ONE), "the output left the first slide", output.text)
+    check(!output.text.includes(SLIDE_THREE), "exactly one slide advance happened (not two)", output.text)
+
+    const before = ctx.steps.find((step) => step.step === "media_background")
+    const beforeVideo = before ? (outputVideos(before, MEDIA_OUTPUT_ID)[0] || null) : null
+    check(!!beforeVideo && beforeVideo.loop === true, "the background was looping before it advanced (the ordering claim: the next-after-media check runs before the loop branch)", beforeVideo)
+
+    const timing = state.nextAfterMedia || {}
+    const lower = Math.max(0, (timing.remainingMs || 0) - 1500)
+    const upper = (timing.remainingMs || 0) + 8000
+    check(
+        typeof timing.advancedAfterMs === "number" && timing.advancedAfterMs >= lower && timing.advancedAfterMs <= upper,
+        `the advance happened when the clip's remaining time ran out (${timing.remainingMs} ms), not on a fixed wait`,
+        timing
+    )
+    // The advance target carries its own image background, so the video is no
+    // longer the background after the advance.
+    check(outputVideos(state, MEDIA_OUTPUT_ID).length === 0, "the video background is no longer rendered after the advance", output.videos)
+    check(
+        outputImages(state, MEDIA_OUTPUT_ID).some((src) => String(src).endsWith(MEDIA_LOGO_NAME)),
+        "the advance target renders its own image background",
+        output.images
+    )
+}
+
+async function stepMediaDrawerPlay(ctx) {
+    await openMediaDrawer(ctx)
+    const folder = await selectMediaFolder(ctx)
+    const card = await cardLocator(ctx, MEDIA_VIDEO)
+    const cardTitleBefore = await cardActionTitle(card)
+    await clickInController(ctx, card.locator(".over"))
+    await waitFor(
+        "a video background to appear on the output",
+        async () => {
+            const video = await readPrimaryVideo(ctx)
+            return video && String(video.src).endsWith(MEDIA_VIDEO_NAME) ? video : null
+        },
+        15000
+    )
+    const paused = await pauseViaStrip(ctx)
+    return { cardTitleBefore, folder: folder.folder, pausedAt: paused.pausedAt }
+}
+
+function verifyMediaDrawerPlay(state) {
+    check(state.cardTitleBefore === TITLE_PLAY, "the drawer card reports the media as not on any output before the click", state.cardTitleBefore)
+    const video = primaryVideo(state)
+    check(!!video, "one click on the drawer card put the media on the output", video)
+    if (!video) return
+    check(String(video.src).endsWith(MEDIA_VIDEO_NAME), "the background is the clicked file", video.src)
+    check(video.loop === true, "a file with no folder/file type loops when clicked in the drawer (loop = true)", video)
+    check(stripOf(state).muteTitle === TITLE_MUTE, "the same click leaves it unmuted (the strip offers Mute, i.e. the player is unmuted)", stripOf(state))
+    check(video.paused === true, "the step paused the clip so the captured state is stable", video)
+}
+
+async function stepMediaDrawerClear(ctx) {
+    await openMediaDrawer(ctx)
+    const card = await cardLocator(ctx, MEDIA_VIDEO)
+    const cardTitleBefore = await cardActionTitle(card)
+    if (cardTitleBefore !== "Clear") {
+        throw new StepFailure(`the card does not report the background as active before the clear click: ${JSON.stringify(cardTitleBefore)}`)
+    }
+    await clickInController(ctx, card.locator(".over"))
+    await waitFor("the video background to be cleared", async () => (await readPrimaryVideo(ctx)) === null, 15000)
+    return { cardTitleBefore }
+}
+
+function verifyMediaDrawerClear(state) {
+    check(state.cardTitleBefore === "Clear", "the card reported the media as already on the output before the click", state.cardTitleBefore)
+    check(
+        outputVideos(state, MEDIA_OUTPUT_ID).length === 0,
+        "clicking the same card cleared the background: no <video> remains on the output",
+        outputVideos(state, MEDIA_OUTPUT_ID)
+    )
+    const card = ((state.controller.mediaDrawer && state.controller.mediaDrawer.cards) || []).find((entry) => entry.path === MEDIA_VIDEO) || null
+    check(!!card, "the drawer is still open and its cards are readable", state.controller.mediaDrawer)
+    if (card) check(card.actionTitle === TITLE_PLAY, "the card reports the media as no longer on the output", card)
+}
+
+async function stepMediaProjectItem(ctx) {
+    const item = ctx.win.locator('#projectArea div[id^="show_"]').filter({ hasText: "background" })
+    const row = await waitForLocator(item, "the seeded project media item", 15000)
+    await clickInController(ctx, row.locator("button").first())
+    await wait(400)
+    // Space plays the selected item (`togglePlayingMedia`, shortcuts.ts:491-548);
+    // for a media item it calls setOutput with the project's loop/muted defaults.
+    await ctx.win.keyboard.press("Space")
+    await waitFor("a video background for the project item", async () => !!(await readPrimaryVideo(ctx)), 15000)
+    const paused = await pauseViaStrip(ctx)
+    return { pausedAt: paused.pausedAt }
+}
+
+function verifyMediaProjectItem(state) {
+    const video = primaryVideo(state)
+    check(!!video, "playing the project media item put a video on the output", video)
+    if (!video) return
+    check(String(video.src).endsWith(MEDIA_VIDEO_NAME), "the background is the project media file", video.src)
+    check(video.loop === false, "a project media item with no loop flag does not loop (loop = false)", video)
+    check(stripOf(state).muteTitle === TITLE_MUTE, "a project media item with no muted flag plays unmuted (the strip offers Mute)", stripOf(state))
+    check(video.paused === true, "the step paused the clip so the captured state is stable", video)
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Output styles (out.styles, out.styles.aspect, out.styles.lines,
+// out.styles.layers)
+///////////////////////////////////////////////////////////////////////////////
+
+function normalStyledOutputs(state) {
+    return [OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.id, OUTPUT_TERTIARY.id].map((id) => outputById(state, id))
+}
+
+function textRatio(box) {
+    if (!box || !box.width || !box.height) return null
+    return box.width / box.height
+}
+
+async function stepPresentStylesOutputs(ctx) {
+    return presentOutputs(ctx, [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_TERTIARY.name])
+}
+
+function verifyPresentStylesOutputs(state) {
+    const ids = sortedNames(state.outputs.map((output) => output.id))
+    check(state.outputs.length === 3, "three output pages exist", state.outputs.map((output) => output.id))
+    check(
+        JSON.stringify(ids) === JSON.stringify(sortedNames([OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.id, OUTPUT_TERTIARY.id])),
+        "the three pages render the three seeded normal outputs",
+        ids
+    )
+    check(state.outputs.every((output) => output.stageArea !== true), "none of them is a stage output", state.outputs.map((output) => output.stageArea))
+    const titles = outputTitles(state)
+    for (const name of [OUTPUT_PRIMARY.name, OUTPUT_SECONDARY.name, OUTPUT_TERTIARY.name]) {
+        check(titles.includes(name), `an OS window titled "${name}" exists`, titles)
+    }
+    check(state.controller.preview.tiles.length === 3, "the preview draws one tile per output", tileNames(state))
+}
+
+async function stepStylesStart(ctx) {
+    await ctx.win.keyboard.press("Space")
+    const firstLine = STYLES_SLIDE_1[0]
+    await waitFor(
+        "the three styled outputs to show the first slide",
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            return [OUTPUT_PRIMARY.id, OUTPUT_SECONDARY.id, OUTPUT_TERTIARY.id].every((id) => {
+                const output = snapshot.find((entry) => entry.id === id)
+                return !!(output && output.text.includes(firstLine))
+            })
+        },
+        30000
+    )
+}
+
+function verifyStylesStart(state) {
+    for (const output of normalStyledOutputs(state)) {
+        check(!!output, `output ${output ? output.id : "?"} is present`, state.outputs.map((entry) => entry.id))
+        if (output) check(output.text.includes(STYLES_SLIDE_1[0]), `${output.id} renders the first slide`, output.text)
+    }
+}
+
+async function stepStylesAspect(ctx) {
+    // Read only: the aspect comes from the seeded style, so the step's record is
+    // the observation.
+    return { note: "read the seeded per-output style's rendered content box" }
+}
+
+function verifyStylesAspect(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both styled outputs are present", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+
+    for (const output of [primary, secondary]) {
+        check(!!output.contentBox && output.contentBox.width > 0 && output.contentBox.height > 0, `${output.id} renders a content box`, output.contentBox)
+        check(!!output.viewportBox && output.viewportBox.width > 0, `${output.id} renders an output viewport`, output.viewportBox)
+    }
+    const wide = textRatio(primary.contentBox)
+    const fourThree = textRatio(secondary.contentBox)
+    check(wide !== null && Math.abs(wide - 16 / 9) < 0.02, "the output with no aspectRatio renders 16:9 (the default)", { ratio: wide, box: primary.contentBox })
+    check(fourThree !== null && Math.abs(fourThree - 4 / 3) < 0.02, "the output bound to aspectRatio 4:3 renders 4:3", { ratio: fourThree, box: secondary.contentBox })
+
+    // "contain" fit (`getStyleResolution(..., "fit")`, slide/getStyleResolution.ts:20-26)
+    // sizes the content box to one axis of the output. Which axis depends on
+    // whether the window itself is wider than the style's ratio, so the check is
+    // "touches at least one edge" rather than a fixed axis.
+    const touches = (box, viewport) =>
+        Math.min(Math.abs(box.width - viewport.width), Math.abs(box.height - viewport.height))
+    check(touches(primary.contentBox, primary.viewportBox) <= 1, "the 16:9 content box fits inside the output on one axis", {
+        box: primary.contentBox,
+        viewport: primary.viewportBox
+    })
+    check(touches(secondary.contentBox, secondary.viewportBox) <= 1, "the 4:3 content box fits inside the output on one axis", {
+        box: secondary.contentBox,
+        viewport: secondary.viewportBox
+    })
+    check(
+        secondary.contentBox.width < primary.contentBox.width,
+        "the 4:3 content box is narrower than the 16:9 one on the same output bounds",
+        { fourThree: secondary.contentBox, sixteenNine: primary.contentBox }
+    )
+    check(
+        Math.abs(primary.contentBox.height - secondary.contentBox.height) <= 2,
+        "both content boxes are the output's full height (4:3 is letterboxed horizontally)",
+        { fourThree: secondary.contentBox, sixteenNine: primary.contentBox }
+    )
+}
+
+async function stepStylesLinesWindow(ctx) {
+    return { note: "read the per-output line window" }
+}
+
+function verifyStylesLinesWindow(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both styled outputs are present", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+    const primaryLines = primary.lines || []
+    check(
+        primaryLines.length === 2 && primaryLines[0].includes(STYLES_SLIDE_1[0]) && primaryLines[1].includes(STYLES_SLIDE_1[1]),
+        "the lines:2 output shows exactly lines 1-2 of the four-line slide",
+        primaryLines
+    )
+    check(
+        !primary.text.includes(STYLES_SLIDE_1[2]),
+        "the lines:2 output does not show line 3 yet",
+        primaryLines
+    )
+    const secondaryLines = secondary.lines || []
+    check(
+        STYLES_SLIDE_1.every((line) => secondaryLines.some((visible) => visible.includes(line))),
+        "the lines:0 output shows the whole slide (all four lines)",
+        secondaryLines
+    )
+}
+
+async function stepStylesPaging(ctx) {
+    const before = await readOutputSnapshot(ctx)
+    await ctx.win.keyboard.press("Space")
+    await waitFor(
+        "the lines:2 output to page to lines 3-4",
+        async () => {
+            const snapshot = await readOutputSnapshot(ctx)
+            const primary = snapshot.find((entry) => entry.id === OUTPUT_PRIMARY.id)
+            return !!(primary && primary.text.includes(STYLES_SLIDE_1[2]) && !primary.text.includes(STYLES_SLIDE_1[0]))
+        },
+        30000
+    )
+    await wait(600)
+    return { before }
+}
+
+function verifyStylesPaging(state) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    check(!!primary && !!secondary, "both styled outputs are present", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary) return
+    const primaryLines = primary.lines || []
+    check(
+        primaryLines.length === 2 && primaryLines[0].includes(STYLES_SLIDE_1[2]) && primaryLines[1].includes(STYLES_SLIDE_1[3]),
+        "one advance moved the lines:2 output to lines 3-4 of the same slide",
+        primaryLines
+    )
+    check(!primary.text.includes(STYLES_SLIDE_1[0]), "the lines:2 output no longer shows line 1", primary.text)
+
+    const secondaryLines = secondary.lines || []
+    check(
+        STYLES_SLIDE_1.every((line) => secondaryLines.some((visible) => visible.includes(line))),
+        "the lines:0 output still shows the whole slide: its window is null/null, so the page does not change it",
+        secondaryLines
+    )
+    check(
+        !secondary.text.includes(STYLES_SLIDE_2[0]),
+        "the shared paging step kept the presentation on slide one: the 2-line output set the page size, so the advance did not leave the slide",
+        secondary.text
+    )
+}
+
+async function stepStylesLayers(ctx) {
+    return { note: "read the per-output layer set" }
+}
+
+function verifyStylesLayers(state) {
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    const tertiary = outputById(state, OUTPUT_TERTIARY.id)
+    check(!!secondary && !!tertiary, "the default-layer and no-background outputs are present", state.outputs.map((entry) => entry.id))
+    if (!secondary || !tertiary) return
+    check(
+        outputImages(state, OUTPUT_SECONDARY.id).some((src) => String(src).endsWith(MEDIA_LOGO_NAME)),
+        "the output with all layers renders the slide's image background",
+        outputImages(state, OUTPUT_SECONDARY.id)
+    )
+    check(
+        outputImages(state, OUTPUT_TERTIARY.id).length === 0,
+        'the layers:["slide","overlays"] output does not render the background layer',
+        outputImages(state, OUTPUT_TERTIARY.id)
+    )
+    check(
+        outputVideos(state, OUTPUT_TERTIARY.id).length === 0,
+        "nor a video background",
+        outputVideos(state, OUTPUT_TERTIARY.id)
+    )
+    check(tertiary.text.includes(STYLES_SLIDE_1[0]), "the no-background output still renders the slide layer's text", tertiary.text)
+}
+
+async function stepStylesSummary(ctx) {
+    return { note: "compare the three outputs' rendered state" }
+}
+
+function verifyStylesSummary(state, ctx) {
+    const primary = outputById(state, OUTPUT_PRIMARY.id)
+    const secondary = outputById(state, OUTPUT_SECONDARY.id)
+    const tertiary = outputById(state, OUTPUT_TERTIARY.id)
+    check(!!primary && !!secondary && !!tertiary, "all three outputs are still open", state.outputs.map((entry) => entry.id))
+    if (!primary || !secondary || !tertiary) return
+
+    // One show, one slide, three looks: the differences come from
+    // `outputs[id].style`, not from different content.
+    check(
+        [primary, secondary, tertiary].every((output) => output.text.includes(STYLES_SLIDE_1[2])),
+        "the three outputs are showing the same page of the same slide",
+        [primary.text, secondary.text, tertiary.text]
+    )
+    check((primary.lines || []).length === 2, "the lines:2 output still shows a 2-line window", primary.lines)
+    check((secondary.lines || []).length === 4, "the lines:0 output still shows the whole slide", secondary.lines)
+    check(
+        Math.abs(textRatio(primary.contentBox) - 16 / 9) < 0.02 && Math.abs(textRatio(secondary.contentBox) - 4 / 3) < 0.02,
+        "the 16:9 and 4:3 outputs still render their own aspect",
+        { primary: primary.contentBox, secondary: secondary.contentBox }
+    )
+    check(
+        outputImages(state, OUTPUT_SECONDARY.id).length > 0 && outputImages(state, OUTPUT_TERTIARY.id).length === 0,
+        "the background layer is still visible on one output and hidden on the other",
+        { secondary: outputImages(state, OUTPUT_SECONDARY.id), tertiary: outputImages(state, OUTPUT_TERTIARY.id) }
+    )
+    check(primary.contentBox.width !== secondary.contentBox.width, "the two aspect styles render different geometry", {
+        primary: primary.contentBox,
+        secondary: secondary.contentBox
+    })
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Scenarios
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -2005,6 +3201,7 @@ const SCENARIOS = {
     "outputs-basic": {
         description:
             "Open a project show in the output window, read it, lock and unlock it, advance, and clear it. Record every step.",
+        seed: { targetShow: TARGET_SHOW },
         steps: [
             { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
             { name: "present", purpose: "open the physical output window", run: stepPresent, verify: verifyPresent },
@@ -2022,6 +3219,7 @@ const SCENARIOS = {
     "stage-multi-output": {
         description:
             "Two enabled normal outputs plus one stage output, seeded into the scratch profile. Open all three, start and advance the show, read each output's own text, toggle outputs in the preview, and disable/enable one output from Settings > Outputs. Records out.multiple, out.multiple.select, out.stage-window and stage.items.",
+        seed: { targetShow: TARGET_SHOW, outputs: "stage" },
         steps: [
             { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
             { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
@@ -2077,6 +3275,124 @@ const SCENARIOS = {
                 verify: verifyEnableOutput
             },
             { name: "back_to_show", purpose: "return to the show page with all three outputs live", run: stepBackToShow, verify: verifyBackToShow }
+        ]
+    },
+    "media-behaviour": {
+        description:
+            "One normal output, the media fixture with a looping background video and nextAfterMedia on its first slide, and a seeded media folder. Start the show, pause the clip through the media strip, exercise play/pause/loop/mute and the lock, play it out to observe the next-after-media advance, then click the drawer card to set and clear a background and play the project media item. Records media.play, media.background, media.controls and media.next-finished.",
+        seed: { targetShow: MEDIA_SHOW_NAME, media: true },
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "present", purpose: "open the physical output window", run: stepPresent, verify: verifyPresent },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            {
+                name: "open_show",
+                purpose: "select the media fixture; no background exists yet, so no media strip",
+                run: stepOpenShow,
+                verify: verifyOpenShowNoBackground
+            },
+            {
+                name: "start",
+                purpose: "start the show, reveal the Background strip and pause the clip before it ends",
+                run: stepStartPaused,
+                verify: verifyStartPaused
+            },
+            {
+                name: "media_background",
+                purpose: "the seeded layout-slide background: loop, duration, decode, muted from the strip",
+                run: stepMediaBackground,
+                verify: verifyMediaBackground
+            },
+            {
+                name: "media_playpause",
+                purpose: "the strip's play/pause drives the live player",
+                run: stepMediaPlayPause,
+                verify: verifyMediaPlayPause
+            },
+            {
+                name: "media_loop_mute",
+                purpose: "loop and mute change the live player and not the stored media style",
+                run: stepMediaLoopMute,
+                verify: verifyMediaLoopMute
+            },
+            {
+                name: "media_lock",
+                purpose: "locking the output disables play/pause and mute but not loop",
+                run: stepMediaLock,
+                verify: verifyMediaLock
+            },
+            { name: "media_unlock", purpose: "unlocking restores the strip's buttons", run: stepMediaUnlock, verify: verifyMediaUnlock },
+            {
+                name: "media_next_finished",
+                purpose: "a looping background with nextAfterMedia advances once at the end, timed against the clip",
+                run: stepMediaNextFinished,
+                verify: verifyMediaNextFinished
+            },
+            {
+                name: "media_drawer_play",
+                purpose: "one click on the drawer card sets the video background with the no-type defaults",
+                run: stepMediaDrawerPlay,
+                verify: verifyMediaDrawerPlay
+            },
+            {
+                name: "media_drawer_clear",
+                purpose: "clicking the same card again clears the background",
+                run: stepMediaDrawerClear,
+                verify: verifyMediaDrawerClear
+            },
+            {
+                name: "media_project_item",
+                purpose: "a project media item plays without looping and unmuted",
+                run: stepMediaProjectItem,
+                verify: verifyMediaProjectItem
+            }
+        ]
+    },
+    "styles-multi-output": {
+        description:
+            "Three normal outputs bound to three seeded styles (lines:2, aspectRatio 4:3, layers without background), showing one four-line slide whose background is an image. Present, start, then read each output's content box, line window and layers before and after one advance. Records out.styles, out.styles.aspect, out.styles.lines and out.styles.layers.",
+        seed: { targetShow: STYLES_SHOW_NAME, mediaFiles: true, styles: true, outputs: "styles" },
+        steps: [
+            { name: "ready", purpose: "controller up, seeded project listed", run: stepReady, verify: verifyReady },
+            { name: "open_project", purpose: "open the seeded project", run: stepOpenProject, verify: verifyOpenProject },
+            { name: "open_show", purpose: "select the styles fixture", run: stepOpenShow, verify: verifyOpenShow },
+            {
+                name: "present_outputs",
+                purpose: "one Present click opens a window for each of the three styled outputs",
+                run: stepPresentStylesOutputs,
+                verify: verifyPresentStylesOutputs
+            },
+            { name: "start", purpose: "start the show on all three outputs", run: stepStylesStart, verify: verifyStylesStart },
+            {
+                name: "styles_aspect",
+                purpose: "the 4:3 style renders a 4:3 content box, the default style 16:9",
+                run: stepStylesAspect,
+                verify: verifyStylesAspect
+            },
+            {
+                name: "styles_lines_window",
+                purpose: "each output computes its own visible line window from its style",
+                run: stepStylesLinesWindow,
+                verify: verifyStylesLinesWindow
+            },
+            {
+                name: "styles_lines_paging",
+                purpose: "the paging step is shared: the 2-line output sets the page size for every output",
+                run: stepStylesPaging,
+                verify: verifyStylesPaging
+            },
+            {
+                name: "styles_layers",
+                purpose: "a style without the background layer does not render the slide's image background",
+                run: stepStylesLayers,
+                verify: verifyStylesLayers
+            },
+            {
+                name: "styles_attach",
+                purpose: "the three looks come from outputs[id].style, all reading the same slide",
+                run: stepStylesSummary,
+                verify: verifyStylesSummary
+            }
         ]
     }
 }
@@ -2144,6 +3460,28 @@ async function main() {
         const repaired = seed.shows.filter((show) => show.groupRepairs && show.groupRepairs.length)
         if (repaired.length) {
             log(`repaired fixture groups for FreeShow's loader: ${repaired.map((show) => `${show.name} (${show.groupRepairs.length} child slides)`).join(", ")}`)
+        }
+        if (seed.media) {
+            log(
+                `media fixtures: ${seed.media.files
+                    .map((file) => `${file.path} (${file.bytes} bytes, ${file.wrote ? "generated" : "kept"})`)
+                    .join(", ")}; folder ${seed.media.folder.name} -> ${seed.media.folder.path}`
+            )
+            log(
+                `media layout slide ${seed.media.layoutSlides[0].id}: background=${seed.media.layoutSlides[0].background}, actions=${JSON.stringify(
+                    seed.media.layoutSlides[0].actions
+                )}`
+            )
+        } else if (seed.mediaFiles) {
+            log(`media fixtures: ${seed.mediaFiles.files.map((file) => `${file.path} (${file.bytes} bytes, ${file.wrote ? "generated" : "kept"})`).join(", ")}`)
+        }
+        if (seed.styles) {
+            log(
+                `seeded styles: ${Object.entries(seed.styles.styles)
+                    .map(([id, style]) => `${id} (${JSON.stringify(style)})`)
+                    .join(", ")}`
+            )
+            log(`seeded style bindings: ${seed.styles.bindings.map((binding) => `${binding.name}=${binding.style}`).join(", ")}`)
         }
         if (seed.skipped.length) log(`skipped fixtures: ${seed.skipped.map((item) => `${item.file} (${item.reason})`).join(", ")}`)
     } catch (err) {
@@ -2231,7 +3569,17 @@ async function main() {
                 pinnedCommit: PINNED_COMMIT,
                 built: reference.built
             },
-            profile: { store: seed.store, dataPath: seed.dataPath, project: seed.project, shows: seed.shows, skipped: seed.skipped, multiOutput: seed.multiOutput },
+            profile: {
+                store: seed.store,
+                dataPath: seed.dataPath,
+                project: seed.project,
+                shows: seed.shows,
+                skipped: seed.skipped,
+                multiOutput: seed.multiOutput,
+                media: seed.media ? { files: seed.media.files, folder: seed.media.folder, projectItem: seed.media.projectItem } : null,
+                mediaFiles: seed.mediaFiles ? seed.mediaFiles.files : null,
+                styles: seed.styles ? { styles: seed.styles.styles, bindings: seed.styles.bindings } : null
+            },
             harness: {
                 script: "parity/tools/observe_reference.mjs",
                 node: process.version,
