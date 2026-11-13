@@ -31,19 +31,20 @@ sudo dnf install -y xorg-x11-server-Xvfb openbox xdotool
 install -m 0755 agent-workspace-linux-x86_64-unknown-linux-gnu ~/.local/bin/agent-workspace-linux
 ```
 
-Registered in `~/.config/opencode/opencode.json` under `mcp.servers` as
-`agent-workspace` (command `agent-workspace-linux mcp`). Code Mode keeps its 82
-tools discoverable rather than preloaded.
+Registered **project-locally** in `.opencode/opencode.jsonc` under `mcp.servers` as
+`agent-workspace` (command `agent-workspace-linux mcp`), so the tools exist in
+this repo only. Code Mode keeps its 82 tools discoverable rather than preloaded.
 
 The **KWin** backend also works with zero extra packages, but see the capture
 trap below — prefer **X11** for this app.
 
 ## From OpenCode
 
-The server is registered globally in `~/.config/opencode/opencode.json` as
-`agent-workspace`, so every session has the tools without setup. Under Code Mode
-they are `tools["agent-workspace"].workspace_*`, found with `search()` rather
-than loaded up front.
+The server is registered in this repo's `.opencode/opencode.jsonc`, so a session
+started in this checkout has the tools without setup; other projects do not. It
+is not in `~/.config/opencode/opencode.json`. Under Code Mode they are
+`tools["agent-workspace"].workspace_*`, found with `search()` rather than loaded
+up front.
 
 Orientation before acting: `mcp_agent_context` gives one snapshot of running
 workspaces, handles and viewer state.
@@ -97,6 +98,28 @@ agent-workspace-linux workspace run --id cjx --cwd "$PWD" \
     --env CJCRSG_SMOKE_OUT=/tmp/smoke.json -- ./target/debug/cjcrsg-presenter
 ```
 
+## Lifetime: stop it when you are done
+
+The workspace has **no idle timeout**. `workspace start` creates a desktop, a
+compositor and every app inside it, and nothing expires them. `workspace stop` is
+the only thing that ends a run, so an abandoned workspace keeps its windows, its
+processes and its audio devices until the machine goes down.
+
+That is exactly how a QA session in November left a Jitsi page open in a hidden
+Chromium that captured the host's Bluetooth microphone for two days. A forgotten
+workspace is not a tidy leftover; it is a running desktop with your device access.
+
+Rules:
+
+- `workspace stop --id <id>` (`workspace_stop` over MCP) is the **last action of
+  every session that starts one**, not cleanup to do later.
+- Before ending a session, check: `agent-workspace-linux workspace list` reports
+  `running` per workspace.
+- `scripts/native-check.sh` already does this with `trap cleanup EXIT`. Manual and
+  MCP-driven runs have no such guard, so the agent is the guard.
+- Workspace apps are children of the daemon, so stopping the workspace also
+  releases the microphone and camera held by any page in it.
+
 ## Traps
 
 - **A window screenshot does not contain the WebView.** `workspace
@@ -109,6 +132,11 @@ agent-workspace-linux workspace run --id cjx --cwd "$PWD" \
   the window first.
 - **`pkill -f` matches its own shell.** Same trap as the root `AGENTS.md`.
   Use the workspace pid handles or a pid file.
+- **A workspace page can hold the host's real microphone.** The workspace relays
+  the host audio session, so `getUserMedia` in a workspace browser is your actual
+  microphone, never a fake device. A joined WebRTC call keeps it open after the
+  session ends. Close the page and stop the workspace. `fuser /dev/snd/*` shows
+  nothing for a Bluetooth input, so check `pactl list source-outputs` instead.
 - **Xvfb has no GPU.** stderr carries `MESA-EGL: DRI3 error`; that is expected.
   Do not read rendering speed or video smoothness off this environment.
 

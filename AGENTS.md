@@ -157,6 +157,11 @@ look at it, and say what you saw.
 - **Keep sessions short.** Each long session re-sends its history on every step.
   Start a fresh session per feature. Search `docs/decision-log.md` before revisiting
   a settled decision, so the same question is not worked out twice.
+- **Stop the agent workspace when the session ends.** It has no idle timeout: a
+  forgotten workspace keeps its desktop, its apps and any open page alive,
+  including a browser holding the host's real microphone. `workspace stop` is the
+  last action of any session that started one — see
+  [`docs/agent-workspace.md`](docs/agent-workspace.md).
 - **Do not stop at a milestone boundary.** If the user has asked for the plan to
   be finished, finishing one item is the cue to start the next, not to hand back.
 - **Unverified is a state you can report.** Say "not measured" plainly rather

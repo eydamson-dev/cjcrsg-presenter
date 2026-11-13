@@ -4,7 +4,7 @@ What exists, what does not, and what to do next. **Update this at the end of
 every session.** It is the only place that describes current state; if it is
 wrong, the next session starts wrong.
 
-Last updated: 2026-11-12.
+Last updated: 2026-11-14.
 
 ## Verify the workspace in one command
 
@@ -313,6 +313,11 @@ slide grid. The five drawer tabs with no library behind them say so explicitly
 
 ## Known gaps and hazards
 
+- **The agent workspace never expires on its own.** There is no idle timeout: a
+  forgotten workspace keeps its desktop, its apps and their device access,
+  including the host's real microphone, until `workspace stop`. Stop it as the
+  last action of any session that starts one; `scripts/native-check.sh` already
+  does it in `trap cleanup EXIT`. See `docs/agent-workspace.md`.
 - **The controller does not repaint on engine changes.** `POST /api/next` moves
   `/api/state` to revision 1 while the controller keeps showing `rev 0 · 1 / 12`
   until the user clicks something; reproduced on the host with a real GPU, so it
